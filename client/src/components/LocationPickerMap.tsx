@@ -44,6 +44,9 @@ function MapUpdater({ lat, lng }: { lat: number; lng: number }) {
   const map = useMap();
   useEffect(() => {
     map.setView([lat, lng], map.getZoom() || 15);
+    map.invalidateSize();
+    const t = setTimeout(() => map.invalidateSize(), 200);
+    return () => clearTimeout(t);
   }, [lat, lng, map]);
   return null;
 }

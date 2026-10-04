@@ -97,6 +97,12 @@ function MapController({
   });
 
   useEffect(() => {
+    map.invalidateSize();
+    const t = setTimeout(() => map.invalidateSize(), 200);
+    return () => clearTimeout(t);
+  }, [map]);
+
+  useEffect(() => {
     if (selectedProperty && Number.isFinite(selectedProperty.latitude) && Number.isFinite(selectedProperty.longitude)) {
       map.flyTo([selectedProperty.latitude, selectedProperty.longitude], Math.max(map.getZoom(), 14), {
         duration: 0.8,

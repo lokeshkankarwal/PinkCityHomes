@@ -124,11 +124,74 @@
   }
 }
 
-/* ── Leaflet Map ─────────────────────────────────────── */
+/* ── Leaflet Tile & Layer Positioning Protection ───────────────── */
 .leaflet-container {
   height: 100%;
   width: 100%;
+  position: relative;
+  overflow: hidden;
   z-index: 0;
-  border-radius: 1rem;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Ensure global image resets (Tailwind preflight: max-width 100%, height auto) never break Leaflet */
+.leaflet-container img {
+  max-width: none !important;
+  max-height: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* Explicit tile sizing & border removal */
+.leaflet-tile {
+  width: 256px !important;
+  height: 256px !important;
+  border-radius: 0 !important;
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+  filter: inherit;
+  visibility: hidden;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  user-select: none;
+  -webkit-user-drag: none;
+  transform-origin: 0 0;
+}
+
+.leaflet-tile-loaded {
+  visibility: inherit;
+}
+
+/* Leaflet layer hierarchy positioning */
+.leaflet-map-pane,
+.leaflet-tile-pane,
+.leaflet-layer,
+.leaflet-tile-container,
+.leaflet-pane,
+.leaflet-tile,
+.leaflet-marker-icon,
+.leaflet-marker-shadow,
+.leaflet-pane > svg,
+.leaflet-pane > canvas,
+.leaflet-zoom-box,
+.leaflet-image-layer {
+  position: absolute !important;
+  left: 0;
+  top: 0;
+}
+
+.leaflet-tile-pane {
+  z-index: 200;
+}
+
+.leaflet-tile-container {
+  pointer-events: none;
+}
+
+/* Custom Marker Pills */
+.pinkcity-location-pill {
+  background: transparent;
+  border: none;
 }
 
