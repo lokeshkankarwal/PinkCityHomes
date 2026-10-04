@@ -85,7 +85,7 @@ export default function Layout() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-cream text-navy antialiased">
+    <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 antialiased">
       {/* Toast Notification Container */}
       <ToastContainer />
 
@@ -93,8 +93,8 @@ export default function Layout() {
       <header
         className={`sticky top-0 z-40 border-b backdrop-blur-md transition-colors ${
           isSuperAdmin
-            ? "bg-navy-950/95 border-navy-800 text-white"
-            : "bg-white/95 border-slate-200/80 shadow-nav text-navy"
+            ? "bg-slate-950/95 border-slate-800 text-white"
+            : "bg-white/95 border-slate-200 shadow-sm text-slate-900"
         }`}
       >
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
@@ -314,10 +314,27 @@ export default function Layout() {
             )}
           </nav>
 
-          {/* ── Mobile Hamburger Button ── */}
-          <div className="flex items-center gap-2 md:hidden">
+          {/* ── Mobile Actions & Hamburger Button ── */}
+          <div className="flex items-center gap-1.5 md:hidden">
+            {isSeller && (
+              <div className="flex items-center gap-1.5 mr-1">
+                <Link
+                  to="/properties"
+                  className="px-2.5 py-1 rounded-xl text-xs font-bold bg-slate-100 text-slate-800 border border-slate-300 hover:bg-slate-200 transition shadow-xs"
+                >
+                  Buy
+                </Link>
+                <Link
+                  to="/rentals"
+                  className="px-2.5 py-1 rounded-xl text-xs font-bold bg-slate-100 text-slate-800 border border-slate-300 hover:bg-slate-200 transition shadow-xs"
+                >
+                  Rent
+                </Link>
+              </div>
+            )}
+
             {isCustomer && cartCount > 0 && (
-              <Link to="/customer/cart" className="relative p-2 text-navy">
+              <Link to="/customer/cart" className="relative p-2 text-slate-800">
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                 </svg>
@@ -332,8 +349,8 @@ export default function Layout() {
               onClick={() => setMobileMenuOpen(true)}
               className={`p-2 rounded-2xl transition active:scale-95 ${
                 isSuperAdmin
-                  ? "text-slate-300 hover:text-white bg-navy-900 border border-navy-800"
-                  : "text-navy hover:bg-slate-100 border border-slate-200"
+                  ? "text-slate-300 hover:text-white bg-slate-900 border border-slate-800"
+                  : "text-slate-800 hover:bg-slate-100 border border-slate-300 bg-white shadow-xs"
               }`}
               aria-label="Open navigation menu"
             >
@@ -584,10 +601,32 @@ export default function Layout() {
           ) : isSeller ? (
             <>
               <NavLink
+                to="/properties"
+                className={({ isActive }) =>
+                  `flex flex-col items-center py-1 px-1.5 text-[10px] font-bold transition ${
+                    isActive ? "text-pink-600" : "text-slate-600 hover:text-slate-900"
+                  }`
+                }
+              >
+                <span className="text-base">🔍</span>
+                <span>Buy</span>
+              </NavLink>
+              <NavLink
+                to="/rentals"
+                className={({ isActive }) =>
+                  `flex flex-col items-center py-1 px-1.5 text-[10px] font-bold transition ${
+                    isActive ? "text-pink-600" : "text-slate-600 hover:text-slate-900"
+                  }`
+                }
+              >
+                <span className="text-base">🔑</span>
+                <span>Rent</span>
+              </NavLink>
+              <NavLink
                 to="/seller/dashboard"
                 className={({ isActive }) =>
-                  `flex flex-col items-center py-1 px-2 text-[10px] font-semibold transition ${
-                    isActive ? "text-pink-600 font-bold" : "text-slate-500"
+                  `flex flex-col items-center py-1 px-1.5 text-[10px] font-bold transition ${
+                    isActive ? "text-pink-600" : "text-slate-600 hover:text-slate-900"
                   }`
                 }
               >
@@ -597,19 +636,19 @@ export default function Layout() {
               <NavLink
                 to="/seller/properties"
                 className={({ isActive }) =>
-                  `flex flex-col items-center py-1 px-2 text-[10px] font-semibold transition ${
-                    isActive ? "text-pink-600 font-bold" : "text-slate-500"
+                  `flex flex-col items-center py-1 px-1.5 text-[10px] font-bold transition ${
+                    isActive ? "text-pink-600" : "text-slate-600 hover:text-slate-900"
                   }`
                 }
               >
                 <span className="text-base">🏡</span>
-                <span>Properties</span>
+                <span>Listings</span>
               </NavLink>
               <NavLink
                 to="/seller/clients"
                 className={({ isActive }) =>
-                  `flex flex-col items-center py-1 px-2 text-[10px] font-semibold transition ${
-                    isActive ? "text-pink-600 font-bold" : "text-slate-500"
+                  `flex flex-col items-center py-1 px-1.5 text-[10px] font-bold transition ${
+                    isActive ? "text-pink-600" : "text-slate-600 hover:text-slate-900"
                   }`
                 }
               >
@@ -617,21 +656,10 @@ export default function Layout() {
                 <span>Leads</span>
               </NavLink>
               <NavLink
-                to="/insights"
-                className={({ isActive }) =>
-                  `flex flex-col items-center py-1 px-2 text-[10px] font-semibold transition ${
-                    isActive ? "text-pink-600 font-bold" : "text-slate-500"
-                  }`
-                }
-              >
-                <span className="text-base">📈</span>
-                <span>Market</span>
-              </NavLink>
-              <NavLink
                 to="/customer/profile"
                 className={({ isActive }) =>
-                  `flex flex-col items-center py-1 px-2 text-[10px] font-semibold transition ${
-                    isActive ? "text-pink-600 font-bold" : "text-slate-500"
+                  `flex flex-col items-center py-1 px-1.5 text-[10px] font-bold transition ${
+                    isActive ? "text-pink-600" : "text-slate-600 hover:text-slate-900"
                   }`
                 }
               >

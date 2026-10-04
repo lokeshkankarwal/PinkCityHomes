@@ -44,8 +44,6 @@ export default {
           200: "#FAF0E5",
           300: "#F5E5D2",
         },
-        charcoal: "#1E293B",
-        slate: "#64748B",
         success: {
           DEFAULT: "#10B981",
           light: "#D1FAE5",

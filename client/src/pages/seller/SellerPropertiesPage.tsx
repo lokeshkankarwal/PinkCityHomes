@@ -319,21 +319,22 @@ export default function SellerPropertiesPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="font-serif text-3xl font-bold">My Property Listings</h1>
-          <p className="text-sm text-ink/70">
-            Create, edit, and manage your inventory for sale or rent
+          <span className="text-xs font-bold uppercase tracking-wider text-pink-600">Partner Inventory</span>
+          <h1 className="font-display text-3xl font-bold text-slate-900 mt-1">My Property Listings</h1>
+          <p className="text-xs sm:text-sm text-slate-500">
+            Create, edit, and manage your inventory for sale or rent in Jaipur
           </p>
         </div>
         <button
           onClick={handleOpenAdd}
-          className="rounded-xl bg-ink px-5 py-2.5 text-sm font-semibold text-sand shadow hover:bg-ink/90 transition"
+          className="rounded-2xl bg-pink-600 px-5 py-2.5 text-xs sm:text-sm font-bold text-white shadow-md hover:bg-pink-700 transition active:scale-95 flex items-center gap-1.5 self-start sm:self-auto"
         >
-          + Add New Property
+          <span>+</span> Add New Property
         </button>
       </div>
 
       {error && (
-        <div className="rounded-xl bg-red-50 border border-red-200 p-4 text-sm text-red-800">
+        <div className="rounded-2xl bg-rose-50 border border-rose-200 p-4 text-xs font-semibold text-rose-800">
           {error}
         </div>
       )}
@@ -351,14 +352,15 @@ export default function SellerPropertiesPage() {
             INACTIVE: "Inactive / Deactivated",
             SOLD: "Sold",
           };
+          const isActive = statusFilter === tab;
           return (
             <button
               key={tab}
               onClick={() => setStatusFilter(tab)}
-              className={`rounded-xl px-4 py-2 text-xs font-semibold transition ${
-                statusFilter === tab
-                  ? "bg-ink text-sand shadow-sm"
-                  : "bg-white text-ink/70 border border-ink/10 hover:bg-sand"
+              className={`rounded-2xl px-4 py-2 text-xs font-bold transition-all active:scale-95 border ${
+                isActive
+                  ? "bg-slate-900 text-white border-slate-900 shadow-sm"
+                  : "bg-white text-slate-700 border-slate-300 hover:bg-slate-100 hover:border-slate-400"
               }`}
             >
               {labels[tab]} ({count})
@@ -368,22 +370,22 @@ export default function SellerPropertiesPage() {
       </div>
 
       {loading ? (
-        <div className="py-20 text-center text-ink/60">Loading properties...</div>
+        <div className="py-20 text-center text-xs font-semibold text-slate-400">Loading listings...</div>
       ) : properties.length === 0 ? (
-        <div className="rounded-3xl border border-ink/10 bg-white p-12 text-center space-y-3">
-          <p className="font-serif text-xl font-bold">No properties listed yet</p>
-          <p className="text-sm text-ink/70">
+        <div className="rounded-3xl border border-slate-200 bg-white p-12 text-center space-y-3">
+          <p className="font-display text-xl font-bold text-slate-900">No properties listed yet</p>
+          <p className="text-xs text-slate-500">
             Add your first property listing for sale or rent to begin receiving customer inquiries and scheduling tours.
           </p>
           <button
             onClick={handleOpenAdd}
-            className="rounded-xl bg-ink px-4 py-2 text-sm font-semibold text-sand"
+            className="rounded-2xl bg-pink-600 px-5 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-pink-700 transition"
           >
-            Create Property
+            + Create Property
           </button>
         </div>
       ) : properties.filter((p) => (statusFilter === "ALL" ? true : p.status === statusFilter)).length === 0 ? (
-        <div className="rounded-3xl border border-ink/10 bg-white p-12 text-center text-sm text-ink/60">
+        <div className="rounded-3xl border border-slate-200 bg-white p-12 text-center text-xs font-semibold text-slate-500">
           No properties found under "{statusFilter === "INACTIVE" ? "Inactive / Deactivated" : statusFilter}".
         </div>
       ) : (
@@ -393,32 +395,22 @@ export default function SellerPropertiesPage() {
             .map((p) => (
             <div
               key={p.id}
-              className="overflow-hidden rounded-3xl border border-ink/10 bg-white shadow-sm transition hover:shadow-md flex flex-col justify-between"
+              className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm hover:shadow-md hover:border-slate-300 transition-all flex flex-col justify-between"
             >
               <div>
                 <div className="relative">
                   <img
                     src={imgSrc(p.primaryImage)}
                     alt=""
-                    className="h-44 w-full object-cover"
+                    className="h-48 w-full object-cover bg-slate-100"
                   />
                   <div className="absolute top-3 left-3 flex flex-wrap gap-1.5 z-10">
-                    <span
-                      className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
-                        p.status === "ACTIVE"
-                          ? "bg-moss text-white"
-                          : p.status === "SOLD"
-                          ? "bg-red-700 text-white"
-                          : "bg-gray-500 text-white"
-                      }`}
-                    >
-                      {p.status}
-                    </span>
-                    <span className="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-brass text-ink">
+                    <Badge status={p.status} />
+                    <span className="rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-slate-900/90 text-white backdrop-blur-sm">
                       {p.listingType === "RENT" ? "FOR RENT" : "FOR SALE"}
                     </span>
                     {p.projectName && (
-                      <span className="rounded-full px-2 py-0.5 text-[10px] font-bold tracking-wider bg-ink/80 text-sand truncate max-w-[130px]">
+                      <span className="rounded-full px-2.5 py-0.5 text-[10px] font-bold tracking-wider bg-slate-900/80 text-white truncate max-w-[130px]">
                         🏢 {p.projectName}
                       </span>
                     )}
@@ -426,63 +418,63 @@ export default function SellerPropertiesPage() {
                 </div>
 
                 <div className="p-4 space-y-2">
-                  <h3 className="font-serif text-lg font-bold line-clamp-1">{p.title}</h3>
-                  <p className="font-serif text-xl font-bold text-brass">
+                  <h3 className="font-display text-base font-bold text-slate-900 line-clamp-1">{p.title}</h3>
+                  <p className="font-display text-xl font-bold text-slate-900">
                     {p.listingType === "RENT" ? `${inr(p.price)}/mo` : inr(p.price)}
                   </p>
-                  <p className="text-xs text-ink/70">
-                    {p.bhk} BHK · {p.carpetArea} sq ft · <span className="capitalize">{p.locality}</span>
+                  <p className="text-xs text-slate-500 capitalize">
+                    {p.bhk} BHK · {p.carpetArea} sq ft · {p.locality}
                     {p.city ? `, ${p.city}` : ""}
                   </p>
-                  <div className="flex gap-4 text-xs text-ink/60 pt-1 border-t border-ink/5">
-                    <span>Views: {p.views ?? 0}</span>
-                    <span>Photos: {p.images?.length ?? 0}</span>
+                  <div className="flex gap-4 text-xs text-slate-400 pt-2 border-t border-slate-100">
+                    <span>👁 Views: {p.views ?? 0}</span>
+                    <span>📷 Photos: {p.images?.length ?? 0}</span>
                   </div>
                 </div>
               </div>
 
-              <div className="border-t border-ink/5 p-3 bg-sand/20 flex flex-wrap gap-2 justify-between items-center text-xs">
+              <div className="border-t border-slate-100 p-3 bg-slate-50/70 flex flex-wrap gap-2 justify-between items-center text-xs">
                 <div className="flex flex-wrap gap-1.5">
                   <Link
                     to={`/properties/${p.id}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="rounded-lg bg-moss/10 text-moss border border-moss/30 px-2.5 py-1 font-semibold hover:bg-moss/20 flex items-center gap-1"
+                    className="rounded-xl bg-slate-100 text-slate-800 border border-slate-300 px-3 py-1.5 font-bold hover:bg-slate-200 transition"
                   >
-                    👁 Explore
+                    View
                   </Link>
                   <button
                     onClick={() => handleOpenEdit(p)}
-                    className="rounded-lg bg-white border border-ink/20 px-2.5 py-1 font-semibold text-ink hover:bg-sand flex items-center gap-1"
+                    className="rounded-xl bg-slate-900 text-white px-3 py-1.5 font-bold hover:bg-slate-800 transition shadow-xs"
                   >
-                    ✏️ Edit
+                    Edit
                   </button>
                   <button
                     onClick={() => setShowUploadModal(p)}
-                    className="rounded-lg bg-white border border-ink/20 px-2.5 py-1 font-semibold text-ink hover:bg-sand flex items-center gap-1"
+                    className="rounded-xl bg-white border border-slate-300 px-3 py-1.5 font-bold text-slate-800 hover:bg-slate-100 transition shadow-xs"
                   >
-                    📷 Photos
+                    Photos
                   </button>
                 </div>
                 <div className="flex flex-wrap gap-1.5 items-center">
                   {p.status !== "SOLD" && (
                     <button
                       onClick={() => setDeactivateTarget(p)}
-                      className={`rounded-lg border px-2.5 py-1 font-semibold transition ${
+                      className={`rounded-xl border px-3 py-1.5 font-bold transition ${
                         p.status === "ACTIVE"
                           ? "border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100"
-                          : "border-moss/40 bg-moss/10 text-moss hover:bg-moss/20"
+                          : "border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100"
                       }`}
                     >
                       {p.status === "ACTIVE" ? "Deactivate" : "Activate"}
                     </button>
                   )}
                   {p.status === "SOLD" && (
-                    <span className="text-[11px] font-bold text-ink/60">Marked SOLD</span>
+                    <span className="text-[11px] font-bold text-slate-400">Marked SOLD</span>
                   )}
                   <button
                     onClick={() => setDeleteTarget(p)}
-                    className="rounded-lg border border-red-200 bg-red-50 text-red-700 px-2.5 py-1 font-semibold hover:bg-red-100 transition"
+                    className="rounded-xl border border-rose-300 bg-rose-50 text-rose-700 px-3 py-1.5 font-bold hover:bg-rose-100 transition"
                   >
                     Delete
                   </button>

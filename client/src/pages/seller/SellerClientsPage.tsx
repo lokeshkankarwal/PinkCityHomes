@@ -145,17 +145,18 @@ export default function SellerClientsPage() {
   };
 
   return (
-    <div className="space-y-6 pb-16">
+    <div className="space-y-6 pb-16 animate-fade-in">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="font-serif text-3xl font-bold">Client Relationship Management (CRM)</h1>
-          <p className="text-sm text-ink/70">
+          <span className="text-xs font-bold uppercase tracking-wider text-pink-600">Lead Management</span>
+          <h1 className="font-display text-3xl font-bold text-slate-900 mt-1">Client Relationship Management (CRM)</h1>
+          <p className="text-xs sm:text-sm text-slate-500">
             Track customer interest levels, call logs, WhatsApp follow-ups, and scheduled property tours
           </p>
         </div>
         <button
           onClick={() => setShowAddClient(true)}
-          className="rounded-xl bg-ink px-5 py-2.5 text-sm font-semibold text-sand shadow hover:bg-ink/90"
+          className="rounded-2xl bg-pink-600 px-5 py-2.5 text-xs sm:text-sm font-bold text-white shadow-md hover:bg-pink-700 transition active:scale-95 self-start sm:self-auto"
         >
           + Add Client / Lead
         </button>
@@ -170,12 +171,12 @@ export default function SellerClientsPage() {
             placeholder="Search by client name, phone, or email..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full rounded-2xl border border-ink/20 px-4 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-brass bg-white shadow-sm"
+            className="w-full rounded-2xl border border-slate-300 px-4 py-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-pink-500 bg-white text-slate-900 shadow-xs"
           />
           {searchTerm && (
             <button
               onClick={() => setSearchTerm("")}
-              className="absolute right-3 top-2.5 text-xs text-ink/40 hover:text-ink"
+              className="absolute right-3 top-3 text-xs text-slate-400 hover:text-slate-700"
             >
               ✕
             </button>
@@ -183,7 +184,7 @@ export default function SellerClientsPage() {
         </div>
 
         {/* Filter Tabs */}
-        <div className="flex rounded-xl bg-ink/5 p-1 text-xs font-semibold overflow-x-auto">
+        <div className="flex rounded-2xl bg-slate-100 p-1 text-xs font-bold overflow-x-auto border border-slate-200">
           {[
             { id: "", label: "All Clients" },
             { id: "HIGH", label: "🔥 High Interest" },
@@ -193,10 +194,10 @@ export default function SellerClientsPage() {
             <button
               key={tab.id}
               onClick={() => setFilterInterest(tab.id)}
-              className={`rounded-lg px-3.5 py-1.5 whitespace-nowrap transition ${
+              className={`rounded-xl px-4 py-1.5 whitespace-nowrap transition-all ${
                 filterInterest === tab.id
-                  ? "bg-white text-ink shadow-sm font-bold"
-                  : "text-ink/60 hover:text-ink"
+                  ? "bg-slate-900 text-white shadow-sm font-bold"
+                  : "text-slate-600 hover:text-slate-900"
               }`}
             >
               {tab.label}

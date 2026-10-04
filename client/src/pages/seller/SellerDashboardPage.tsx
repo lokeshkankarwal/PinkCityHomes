@@ -98,19 +98,19 @@ export default function SellerDashboardPage() {
         <div className="flex flex-wrap items-center gap-2.5">
           <Link
             to="/seller/properties?new=1"
-            className="rounded-2xl bg-pink-600 px-4 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-md hover:bg-pink-700 transition active:scale-95 flex items-center gap-1.5"
+            className="rounded-2xl bg-pink-600 px-5 py-2.5 text-xs sm:text-sm font-bold text-white shadow-md hover:bg-pink-700 transition active:scale-95 flex items-center gap-1.5"
           >
             <span>+</span> Add Property
           </Link>
           <Link
             to="/seller/properties"
-            className="rounded-2xl bg-navy px-4 py-2.5 text-xs sm:text-sm font-semibold text-white hover:bg-navy-800 transition active:scale-95"
+            className="rounded-2xl bg-slate-900 px-5 py-2.5 text-xs sm:text-sm font-bold text-white shadow-md hover:bg-slate-800 transition active:scale-95"
           >
             Manage Listings
           </Link>
           <Link
             to="/seller/clients"
-            className="rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-xs sm:text-sm font-semibold text-slate-700 hover:bg-slate-50 transition active:scale-95"
+            className="rounded-2xl border-2 border-slate-300 bg-white px-5 py-2.5 text-xs sm:text-sm font-bold text-slate-800 hover:bg-slate-50 hover:border-slate-400 transition active:scale-95 shadow-sm"
           >
             Clients &amp; Leads
           </Link>
@@ -121,99 +121,99 @@ export default function SellerDashboardPage() {
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
         <Link
           to="/seller/properties"
-          className="group rounded-3xl border border-slate-200/80 bg-white p-4 shadow-card hover:border-navy hover:shadow-card-hover transition active:scale-95 flex flex-col justify-between"
+          className="group rounded-3xl border-2 border-slate-200 bg-white p-4 shadow-sm hover:border-slate-900 hover:shadow-md transition active:scale-95 flex flex-col justify-between"
           title="Click to view all your properties"
         >
-          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 group-hover:text-navy transition">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600 group-hover:text-slate-900 transition">
             Total Inventory
           </span>
-          <div className="flex items-baseline justify-between mt-2">
-            <p className="font-display text-2xl font-bold text-navy">{stats?.totalProperties ?? 0}</p>
-            <span className="text-xs text-slate-400 group-hover:text-navy group-hover:translate-x-0.5 transition">&rarr;</span>
+          <div className="flex items-baseline justify-between mt-3">
+            <p className="font-display text-3xl font-extrabold text-slate-900">{stats?.totalProperties ?? 0}</p>
+            <span className="text-xs text-slate-400 group-hover:text-slate-900 group-hover:translate-x-0.5 transition font-bold">&rarr;</span>
           </div>
         </Link>
 
         <Link
           to="/seller/properties?status=ACTIVE"
-          className="group rounded-3xl border border-emerald-200 bg-emerald-50/50 p-4 shadow-card hover:border-emerald-500 hover:shadow-card-hover transition active:scale-95 flex flex-col justify-between"
+          className="group rounded-3xl border-2 border-emerald-300 bg-emerald-50/70 p-4 shadow-sm hover:border-emerald-600 hover:shadow-md transition active:scale-95 flex flex-col justify-between"
           title="Click to view active searchable listings"
         >
-          <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-800">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-900">
             Active Listings
           </span>
-          <div className="flex items-baseline justify-between mt-2">
-            <p className="font-display text-2xl font-bold text-emerald-800">{stats?.activeProperties ?? 0}</p>
-            <span className="text-xs text-emerald-600 group-hover:translate-x-0.5 transition">&rarr;</span>
+          <div className="flex items-baseline justify-between mt-3">
+            <p className="font-display text-3xl font-extrabold text-emerald-800">{stats?.activeProperties ?? 0}</p>
+            <span className="text-xs text-emerald-600 group-hover:translate-x-0.5 transition font-bold">&rarr;</span>
           </div>
         </Link>
 
         <Link
           to="/seller/clients"
-          className="group rounded-3xl border border-slate-200/80 bg-white p-4 shadow-card hover:border-navy hover:shadow-card-hover transition active:scale-95 flex flex-col justify-between"
+          className="group rounded-3xl border-2 border-slate-200 bg-white p-4 shadow-sm hover:border-slate-900 hover:shadow-md transition active:scale-95 flex flex-col justify-between"
           title="Click to view all clients"
         >
-          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 group-hover:text-navy transition">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600 group-hover:text-slate-900 transition">
             Total Clients
           </span>
-          <div className="flex items-baseline justify-between mt-2">
-            <p className="font-display text-2xl font-bold text-navy">{stats?.totalClients ?? 0}</p>
-            <span className="text-xs text-slate-400 group-hover:text-navy group-hover:translate-x-0.5 transition">&rarr;</span>
+          <div className="flex items-baseline justify-between mt-3">
+            <p className="font-display text-3xl font-extrabold text-slate-900">{stats?.totalClients ?? 0}</p>
+            <span className="text-xs text-slate-400 group-hover:text-slate-900 group-hover:translate-x-0.5 transition font-bold">&rarr;</span>
           </div>
         </Link>
 
         <Link
           to="/seller/clients"
-          className="group rounded-3xl border border-amber-200 bg-amber-50/50 p-4 shadow-card hover:border-amber-400 hover:shadow-card-hover transition active:scale-95 flex flex-col justify-between"
+          className="group rounded-3xl border-2 border-amber-300 bg-amber-50/70 p-4 shadow-sm hover:border-amber-600 hover:shadow-md transition active:scale-95 flex flex-col justify-between"
           title="Click to manage all leads"
         >
-          <span className="text-[11px] font-bold uppercase tracking-wider text-amber-900">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-amber-950">
             Total Leads
           </span>
-          <div className="flex items-baseline justify-between mt-2">
-            <p className="font-display text-2xl font-bold text-amber-900">{stats?.totalLeads ?? 0}</p>
-            <span className="text-xs text-amber-600 group-hover:translate-x-0.5 transition">&rarr;</span>
+          <div className="flex items-baseline justify-between mt-3">
+            <p className="font-display text-3xl font-extrabold text-amber-900">{stats?.totalLeads ?? 0}</p>
+            <span className="text-xs text-amber-700 group-hover:translate-x-0.5 transition font-bold">&rarr;</span>
           </div>
         </Link>
 
         <Link
           to="/seller/clients?interest=HIGH"
-          className="group rounded-3xl border border-rose-200 bg-rose-50/60 p-4 shadow-card hover:border-rose-400 hover:shadow-card-hover transition active:scale-95 flex flex-col justify-between"
+          className="group rounded-3xl border-2 border-rose-300 bg-rose-50/70 p-4 shadow-sm hover:border-rose-600 hover:shadow-md transition active:scale-95 flex flex-col justify-between"
           title="Filter high interest clients"
         >
-          <span className="text-[11px] font-bold uppercase tracking-wider text-rose-800">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-rose-950">
             High Interest
           </span>
-          <div className="flex items-baseline justify-between mt-2">
-            <p className="font-display text-2xl font-bold text-rose-900">{stats?.highInterest ?? 0}</p>
-            <span className="text-xs text-rose-600 group-hover:translate-x-0.5 transition">&rarr;</span>
+          <div className="flex items-baseline justify-between mt-3">
+            <p className="font-display text-3xl font-extrabold text-rose-900">{stats?.highInterest ?? 0}</p>
+            <span className="text-xs text-rose-700 group-hover:translate-x-0.5 transition font-bold">&rarr;</span>
           </div>
         </Link>
 
         <Link
           to="/seller/clients?interest=MEDIUM"
-          className="group rounded-3xl border border-amber-200 bg-amber-50/60 p-4 shadow-card hover:border-amber-400 hover:shadow-card-hover transition active:scale-95 flex flex-col justify-between"
+          className="group rounded-3xl border-2 border-amber-200 bg-white p-4 shadow-sm hover:border-amber-500 hover:shadow-md transition active:scale-95 flex flex-col justify-between"
           title="Filter medium interest clients"
         >
           <span className="text-[11px] font-bold uppercase tracking-wider text-amber-800">
             Medium
           </span>
-          <div className="flex items-baseline justify-between mt-2">
-            <p className="font-display text-2xl font-bold text-amber-900">{stats?.mediumInterest ?? 0}</p>
-            <span className="text-xs text-amber-600 group-hover:translate-x-0.5 transition">&rarr;</span>
+          <div className="flex items-baseline justify-between mt-3">
+            <p className="font-display text-3xl font-extrabold text-amber-900">{stats?.mediumInterest ?? 0}</p>
+            <span className="text-xs text-amber-600 group-hover:translate-x-0.5 transition font-bold">&rarr;</span>
           </div>
         </Link>
 
         <Link
           to="/seller/clients?interest=LOW"
-          className="group rounded-3xl border border-slate-200 bg-slate-50/70 p-4 shadow-card hover:border-slate-400 hover:shadow-card-hover transition active:scale-95 flex flex-col justify-between"
+          className="group rounded-3xl border-2 border-slate-200 bg-white p-4 shadow-sm hover:border-slate-500 hover:shadow-md transition active:scale-95 flex flex-col justify-between"
           title="Filter low interest clients"
         >
           <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600">
             Low Interest
           </span>
-          <div className="flex items-baseline justify-between mt-2">
-            <p className="font-display text-2xl font-bold text-slate-800">{stats?.lowInterest ?? 0}</p>
-            <span className="text-xs text-slate-400 group-hover:translate-x-0.5 transition">&rarr;</span>
+          <div className="flex items-baseline justify-between mt-3">
+            <p className="font-display text-3xl font-extrabold text-slate-800">{stats?.lowInterest ?? 0}</p>
+            <span className="text-xs text-slate-400 group-hover:translate-x-0.5 transition font-bold">&rarr;</span>
           </div>
         </Link>
       </div>

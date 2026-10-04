@@ -6,20 +6,20 @@
 
 /* ── CSS Design Tokens ─────────────────────────────── */
 :root {
-  --primary: #0B1D35;
-  --primary-hover: #133C6C;
+  --primary: #0F172A;
+  --primary-hover: #1E293B;
   --accent: #E91E8C;
-  --accent-soft: #FEF0F7;
-  --accent-hover: #CC1478;
-  --background: #FDF8F3;
+  --accent-soft: #FDF2F8;
+  --accent-hover: #DB2777;
+  --background: #F8FAFC;
   --surface: #FFFFFF;
-  --surface-hover: #F8F9FB;
-  --text-primary: #1E293B;
-  --text-secondary: #64748B;
+  --surface-hover: #F1F5F9;
+  --text-primary: #0F172A;
+  --text-secondary: #475569;
   --border: #E2E8F0;
-  --success: #10B981;
-  --warning: #F59E0B;
-  --danger: #EF4444;
+  --success: #059669;
+  --warning: #D97706;
+  --danger: #DC2626;
 }
 
 /* ── Base Styles ────────────────────────────────────── */
