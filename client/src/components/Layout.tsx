@@ -18,6 +18,11 @@ const drawerNavLink = ({ isActive }: { isActive: boolean }) =>
       : "text-slate-700 hover:text-navy hover:bg-slate-100"
   }`;
 
+const bottomNavLink = ({ isActive }: { isActive: boolean }) =>
+  `flex flex-col items-center py-1 px-1.5 text-[10px] font-semibold transition ${
+    isActive ? "text-pink-600 font-bold" : "text-slate-500 hover:text-slate-900"
+  }`;
+
 const adminNavLink = ({ isActive }: { isActive: boolean }) =>
   `relative px-3 py-1.5 rounded-xl text-xs font-semibold tracking-wide transition-all duration-200 ${
     isActive
@@ -335,25 +340,8 @@ export default function Layout() {
 
           {/* ── Mobile Actions & Hamburger Button ── */}
           <div className="flex items-center gap-1.5 md:hidden">
-            {isSeller && (
-              <div className="flex items-center gap-1.5 mr-1">
-                <Link
-                  to="/properties"
-                  className="px-2.5 py-1 rounded-xl text-xs font-bold bg-slate-100 text-slate-800 border border-slate-300 hover:bg-slate-200 transition shadow-xs"
-                >
-                  Buy
-                </Link>
-                <Link
-                  to="/rentals"
-                  className="px-2.5 py-1 rounded-xl text-xs font-bold bg-slate-100 text-slate-800 border border-slate-300 hover:bg-slate-200 transition shadow-xs"
-                >
-                  Rent
-                </Link>
-              </div>
-            )}
-
             {isCustomer && cartCount > 0 && (
-              <Link to="/customer/cart" className="relative p-2 text-slate-800">
+              <Link to="/customer/cart" className="relative p-2 text-slate-800" aria-label="Purchase Cart">
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                 </svg>
@@ -381,91 +369,84 @@ export default function Layout() {
         </div>
       </header>
 
-      {/* ── Mobile Slide-Over Drawer ── */}
+      {/* ── Mobile Account / Navigation Bottom Sheet (Replaces huge desktop drawer) ── */}
       {mobileMenuOpen && (
-        <div className="fixed inset-0 z-50 md:hidden">
+        <div className="fixed inset-0 z-50 md:hidden flex flex-col justify-end">
           {/* Backdrop */}
           <div
             className="fixed inset-0 bg-navy-950/60 backdrop-blur-sm transition-opacity"
             onClick={() => setMobileMenuOpen(false)}
           />
 
-          {/* Drawer panel */}
-          <div className="fixed inset-y-0 right-0 max-w-xs w-full bg-white shadow-2xl p-5 flex flex-col justify-between overflow-y-auto z-10 animate-slide-in-right pb-safe">
-            <div className="space-y-4">
-              {/* Drawer Header */}
-              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                <div className="flex items-center gap-2">
-                  <div className="h-7 w-7 rounded-xl bg-gradient-to-tr from-pink-600 to-amber-500 flex items-center justify-center text-white font-display font-bold text-xs">
-                    P
-                  </div>
-                  <span className="font-display text-lg font-bold text-navy">
-                    <span className="text-pink-600">Pink</span>CityHomes
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="rounded-xl p-1.5 text-slate-400 hover:text-navy hover:bg-slate-100 transition"
-                  aria-label="Close menu"
-                >
-                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
+          {/* Bottom Sheet panel — naturally sized, no empty space */}
+          <div className="relative z-10 w-full max-h-[85vh] overflow-y-auto rounded-t-3xl bg-white p-5 shadow-2xl animate-slide-in-up border-t border-slate-200 pb-safe">
+            {/* Grab handle indicator */}
+            <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-slate-300" />
 
-              {/* User Profile Summary */}
+            <div className="space-y-4">
+              {/* Compact User Identity Header */}
               {user ? (
-                <div className="rounded-2xl border border-slate-200/80 bg-slate-50 p-3 space-y-1">
-                  <div className="flex items-center gap-2.5">
-                    <div className="h-8 w-8 rounded-full bg-pink-600 text-white font-bold flex items-center justify-center text-xs">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="h-10 w-10 rounded-full bg-gradient-to-tr from-pink-600 via-rose-500 to-amber-500 text-white font-bold flex items-center justify-center text-sm shadow-sm flex-shrink-0">
                       {user.name.charAt(0).toUpperCase()}
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="font-bold text-xs text-navy truncate">{user.name}</p>
-                      <p className="text-[10px] text-slate-500 truncate">{user.email}</p>
+                    <div className="min-w-0 truncate">
+                      <p className="font-display font-bold text-sm text-navy truncate">{user.name}</p>
+                      <span className="inline-block rounded-full bg-navy-100 text-navy-800 text-[9px] font-bold px-2 py-0.5 uppercase tracking-wider">
+                        {user.role}
+                      </span>
                     </div>
-                    <span className="rounded-full bg-navy-100 text-navy-800 text-[9px] font-bold px-2 py-0.5 uppercase tracking-wider">
-                      {user.role}
-                    </span>
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="rounded-full p-2 text-slate-400 hover:text-navy hover:bg-slate-100 transition flex-shrink-0"
+                    aria-label="Close menu"
+                  >
+                    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 gap-2">
-                  <Link
-                    to="/login"
-                    className="rounded-xl border border-slate-200 px-3 py-2 text-center text-xs font-semibold text-navy hover:bg-slate-50 transition"
+                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                  <div className="flex items-center gap-2">
+                    <div className="h-7 w-7 rounded-xl bg-gradient-to-tr from-pink-600 to-amber-500 flex items-center justify-center text-white font-display font-bold text-xs">
+                      P
+                    </div>
+                    <span className="font-display text-base font-bold text-navy">
+                      <span className="text-pink-600">Pink</span>CityHomes
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="rounded-full p-1.5 text-slate-400 hover:text-navy hover:bg-slate-100 transition"
+                    aria-label="Close menu"
                   >
-                    Log In
-                  </Link>
-                  <Link
-                    to="/register"
-                    className="rounded-xl bg-navy px-3 py-2 text-center text-xs font-semibold text-white shadow hover:bg-navy-800 transition"
-                  >
-                    Register
-                  </Link>
+                    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
                 </div>
               )}
 
-              {/* Navigation Links */}
+              {/* Navigation Links — Only secondary items, strictly no duplicates from bottom nav */}
               <div className="space-y-1 text-xs font-semibold">
                 {isSuperAdmin ? (
                   <>
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3 pt-1">
-                      Administration
-                    </p>
                     <NavLink to="/admin/dashboard" className={drawerNavLink}>
-                      📊 Dashboard
-                    </NavLink>
-                    <NavLink to="/admin/sellers" className={drawerNavLink}>
-                      🏢 Sellers Management
+                      📊 Dashboard Overview
                     </NavLink>
                     <NavLink to="/admin/users" className={drawerNavLink}>
                       👥 Users Directory
                     </NavLink>
+                    <NavLink to="/admin/sellers" className={drawerNavLink}>
+                      🏢 Sellers Management
+                    </NavLink>
                     <NavLink to="/admin/properties" className={drawerNavLink}>
-                      🏡 Inventory Governance
+                      🏡 Properties Governance
                     </NavLink>
                     <NavLink to="/admin/disabled" className={drawerNavLink}>
                       ⛔ Disabled Records
@@ -474,11 +455,36 @@ export default function Layout() {
                       📜 Audit Logs
                     </NavLink>
                   </>
-                ) : (
+                ) : isSeller ? (
                   <>
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3 pt-1">
-                      Explore Properties
-                    </p>
+                    <NavLink to="/customer/profile" className={drawerNavLink}>
+                      👤 Seller Profile &amp; Settings
+                    </NavLink>
+                    <a
+                      href="mailto:support@pinkcityhomes.in"
+                      className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-700 hover:text-navy hover:bg-slate-100 min-h-[42px] transition"
+                    >
+                      💬 Help &amp; Partner Support
+                    </a>
+                  </>
+                ) : isCustomer ? (
+                  <>
+                    <NavLink to="/customer/profile" className={drawerNavLink}>
+                      👤 My Profile &amp; Settings
+                    </NavLink>
+                    <NavLink to="/insights" className={drawerNavLink}>
+                      📈 Jaipur Market Intelligence
+                    </NavLink>
+                    <a
+                      href="mailto:support@pinkcityhomes.in"
+                      className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-700 hover:text-navy hover:bg-slate-100 min-h-[42px] transition"
+                    >
+                      💬 Help &amp; Support
+                    </a>
+                  </>
+                ) : (
+                  // Guest
+                  <>
                     <NavLink to="/properties" className={drawerNavLink}>
                       🔍 Buy Properties
                     </NavLink>
@@ -488,63 +494,37 @@ export default function Layout() {
                     <NavLink to="/insights" className={drawerNavLink}>
                       📈 Market Insights
                     </NavLink>
-
-                    {isCustomer && (
-                      <>
-                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3 pt-3">
-                          Buyer Account
-                        </p>
-                        <NavLink to="/customer/favourites" className={drawerNavLink}>
-                          ❤️ Saved Properties {favCount > 0 && `(${favCount})`}
-                        </NavLink>
-                        <NavLink to="/customer/cart" className={drawerNavLink}>
-                          🛒 Purchase Cart {cartCount > 0 && `(${cartCount})`}
-                        </NavLink>
-                        <NavLink to="/customer/orders" className={drawerNavLink}>
-                          📦 Orders &amp; Purchases
-                        </NavLink>
-                        <NavLink to="/customer/profile" className={drawerNavLink}>
-                          👤 My Profile
-                        </NavLink>
-                      </>
-                    )}
-
-                    {isSeller && (
-                      <>
-                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3 pt-3">
-                          Seller Workspace
-                        </p>
-                        <NavLink to="/seller/dashboard" className={drawerNavLink}>
-                          📊 Dashboard
-                        </NavLink>
-                        <NavLink to="/seller/properties" className={drawerNavLink}>
-                          🏡 Manage Listings
-                        </NavLink>
-                        <NavLink to="/seller/clients" className={drawerNavLink}>
-                          👥 CRM Leads &amp; Clients
-                        </NavLink>
-                        <NavLink to="/customer/profile" className={drawerNavLink}>
-                          👤 Seller Profile
-                        </NavLink>
-                      </>
-                    )}
+                    <div className="grid grid-cols-2 gap-2 pt-3">
+                      <Link
+                        to="/login"
+                        className="rounded-xl border border-slate-200 px-3 py-2.5 text-center text-xs font-semibold text-navy hover:bg-slate-50 transition"
+                      >
+                        Log In
+                      </Link>
+                      <Link
+                        to="/register"
+                        className="rounded-xl bg-navy px-3 py-2.5 text-center text-xs font-semibold text-white shadow hover:bg-navy-800 transition"
+                      >
+                        Sign Up
+                      </Link>
+                    </div>
                   </>
                 )}
               </div>
-            </div>
 
-            {/* Drawer Logout */}
-            {user && (
-              <div className="pt-4 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={handleLogout}
-                  className="w-full rounded-xl border border-rose-200 bg-rose-50/50 py-2.5 text-center text-xs font-semibold text-rose-700 hover:bg-rose-100 transition active:scale-95"
-                >
-                  Sign Out
-                </button>
-              </div>
-            )}
+              {/* Sign Out Button (for authenticated users) */}
+              {user && (
+                <div className="pt-3 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="w-full rounded-xl border border-rose-200 bg-rose-50/60 py-2.5 text-center text-xs font-semibold text-rose-700 hover:bg-rose-100 transition active:scale-95 flex items-center justify-center gap-1.5"
+                  >
+                    <span>🚪</span> Sign Out
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -554,199 +534,112 @@ export default function Layout() {
         <Outlet />
       </main>
 
-      {/* ── Mobile Bottom App Bar (Fixed at bottom on phones) ───────── */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 border-t border-slate-200/80 backdrop-blur-md md:hidden px-2 py-1 shadow-lg pb-safe">
+      {/* ── Mobile Bottom App Bar (Fixed at bottom on phones, 5 items max) ───────── */}
+      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 border-t border-slate-200/80 backdrop-blur-md md:hidden px-1 py-1 shadow-lg pb-safe">
         <div className="flex items-center justify-around text-center">
           {isSuperAdmin ? (
             <>
-              <NavLink
-                to="/admin/dashboard"
-                className={({ isActive }) =>
-                  `flex flex-col items-center py-1 px-2 text-[10px] font-semibold transition ${
-                    isActive ? "text-pink-600 font-bold" : "text-slate-500"
-                  }`
-                }
-              >
+              <NavLink to="/admin/dashboard" className={bottomNavLink}>
                 <span className="text-base">📊</span>
-                <span>Dashboard</span>
+                <span>Home</span>
               </NavLink>
-              <NavLink
-                to="/admin/sellers"
-                className={({ isActive }) =>
-                  `flex flex-col items-center py-1 px-2 text-[10px] font-semibold transition ${
-                    isActive ? "text-pink-600 font-bold" : "text-slate-500"
-                  }`
-                }
-              >
-                <span className="text-base">🏢</span>
-                <span>Sellers</span>
-              </NavLink>
-              <NavLink
-                to="/admin/properties"
-                className={({ isActive }) =>
-                  `flex flex-col items-center py-1 px-2 text-[10px] font-semibold transition ${
-                    isActive ? "text-pink-600 font-bold" : "text-slate-500"
-                  }`
-                }
-              >
-                <span className="text-base">🏡</span>
-                <span>Properties</span>
-              </NavLink>
-              <NavLink
-                to="/admin/users"
-                className={({ isActive }) =>
-                  `flex flex-col items-center py-1 px-2 text-[10px] font-semibold transition ${
-                    isActive ? "text-pink-600 font-bold" : "text-slate-500"
-                  }`
-                }
-              >
+              <NavLink to="/admin/users" className={bottomNavLink}>
                 <span className="text-base">👥</span>
                 <span>Users</span>
               </NavLink>
-              <NavLink
-                to="/admin/disabled"
-                className={({ isActive }) =>
-                  `flex flex-col items-center py-1 px-2 text-[10px] font-semibold transition ${
-                    isActive ? "text-pink-600 font-bold" : "text-slate-500"
-                  }`
-                }
-              >
-                <span className="text-base">⛔</span>
-                <span>Disabled</span>
+              <NavLink to="/admin/sellers" className={bottomNavLink}>
+                <span className="text-base">🏢</span>
+                <span>Sellers</span>
               </NavLink>
+              <NavLink to="/admin/properties" className={bottomNavLink}>
+                <span className="text-base">🏡</span>
+                <span>Properties</span>
+              </NavLink>
+              <button
+                type="button"
+                onClick={() => setMobileMenuOpen(true)}
+                className="flex flex-col items-center py-1 px-1.5 text-[10px] font-semibold text-slate-500 hover:text-slate-900 transition"
+              >
+                <span className="text-base">☰</span>
+                <span>More</span>
+              </button>
             </>
           ) : isSeller ? (
             <>
-              <NavLink
-                to="/properties"
-                className={({ isActive }) =>
-                  `flex flex-col items-center py-1 px-1.5 text-[10px] font-bold transition ${
-                    isActive ? "text-pink-600" : "text-slate-600 hover:text-slate-900"
-                  }`
-                }
-              >
-                <span className="text-base">🔍</span>
-                <span>Buy</span>
-              </NavLink>
-              <NavLink
-                to="/rentals"
-                className={({ isActive }) =>
-                  `flex flex-col items-center py-1 px-1.5 text-[10px] font-bold transition ${
-                    isActive ? "text-pink-600" : "text-slate-600 hover:text-slate-900"
-                  }`
-                }
-              >
-                <span className="text-base">🔑</span>
-                <span>Rent</span>
-              </NavLink>
-              <NavLink
-                to="/seller/dashboard"
-                className={({ isActive }) =>
-                  `flex flex-col items-center py-1 px-1.5 text-[10px] font-bold transition ${
-                    isActive ? "text-pink-600" : "text-slate-600 hover:text-slate-900"
-                  }`
-                }
-              >
+              <NavLink to="/seller/dashboard" className={bottomNavLink}>
                 <span className="text-base">📊</span>
-                <span>Dashboard</span>
+                <span>Home</span>
               </NavLink>
-              <NavLink
-                to="/seller/properties"
-                className={({ isActive }) =>
-                  `flex flex-col items-center py-1 px-1.5 text-[10px] font-bold transition ${
-                    isActive ? "text-pink-600" : "text-slate-600 hover:text-slate-900"
-                  }`
-                }
-              >
+              <NavLink to="/seller/properties" className={bottomNavLink}>
                 <span className="text-base">🏡</span>
                 <span>Listings</span>
               </NavLink>
-              <NavLink
-                to="/seller/clients"
-                className={({ isActive }) =>
-                  `flex flex-col items-center py-1 px-1.5 text-[10px] font-bold transition ${
-                    isActive ? "text-pink-600" : "text-slate-600 hover:text-slate-900"
-                  }`
-                }
-              >
+              <NavLink to="/seller/clients" className={bottomNavLink}>
                 <span className="text-base">👥</span>
                 <span>Leads</span>
               </NavLink>
-              <NavLink
-                to="/customer/profile"
-                className={({ isActive }) =>
-                  `flex flex-col items-center py-1 px-1.5 text-[10px] font-bold transition ${
-                    isActive ? "text-pink-600" : "text-slate-600 hover:text-slate-900"
-                  }`
-                }
-              >
+              <NavLink to="/insights" className={bottomNavLink}>
+                <span className="text-base">📈</span>
+                <span>Insights</span>
+              </NavLink>
+              <NavLink to="/customer/profile" className={bottomNavLink}>
+                <span className="text-base">👤</span>
+                <span>Profile</span>
+              </NavLink>
+            </>
+          ) : isCustomer ? (
+            // Customer (Buy, Rent, Saved, Orders, Profile)
+            <>
+              <NavLink to="/properties" className={bottomNavLink}>
+                <span className="text-base">🔍</span>
+                <span>Buy</span>
+              </NavLink>
+              <NavLink to="/rentals" className={bottomNavLink}>
+                <span className="text-base">🏠</span>
+                <span>Rent</span>
+              </NavLink>
+              <NavLink to="/customer/favourites" className={bottomNavLink}>
+                <span className="relative inline-block text-base">
+                  ♡
+                  {favCount > 0 && (
+                    <span className="absolute -top-1 -right-2 rounded-full bg-pink-600 text-white text-[8px] font-bold h-3.5 w-3.5 flex items-center justify-center">
+                      {favCount}
+                    </span>
+                  )}
+                </span>
+                <span>Saved</span>
+              </NavLink>
+              <NavLink to="/customer/orders" className={bottomNavLink}>
+                <span className="text-base">📦</span>
+                <span>Orders</span>
+              </NavLink>
+              <NavLink to="/customer/profile" className={bottomNavLink}>
                 <span className="text-base">👤</span>
                 <span>Profile</span>
               </NavLink>
             </>
           ) : (
-            // Customer & Guest
+            // Guest (Home, Buy, Rent, Saved, Sign In)
             <>
-              <NavLink
-                to="/"
-                end
-                className={({ isActive }) =>
-                  `flex flex-col items-center py-1 px-2 text-[10px] font-semibold transition ${
-                    isActive ? "text-pink-600 font-bold" : "text-slate-500"
-                  }`
-                }
-              >
+              <NavLink to="/" end className={bottomNavLink}>
                 <span className="text-base">🏠</span>
                 <span>Home</span>
               </NavLink>
-              <NavLink
-                to="/properties"
-                className={({ isActive }) =>
-                  `flex flex-col items-center py-1 px-2 text-[10px] font-semibold transition ${
-                    isActive ? "text-pink-600 font-bold" : "text-slate-500"
-                  }`
-                }
-              >
+              <NavLink to="/properties" className={bottomNavLink}>
                 <span className="text-base">🔍</span>
                 <span>Buy</span>
               </NavLink>
-              <NavLink
-                to="/rentals"
-                className={({ isActive }) =>
-                  `flex flex-col items-center py-1 px-2 text-[10px] font-semibold transition ${
-                    isActive ? "text-pink-600 font-bold" : "text-slate-500"
-                  }`
-                }
-              >
+              <NavLink to="/rentals" className={bottomNavLink}>
                 <span className="text-base">🔑</span>
                 <span>Rent</span>
               </NavLink>
-              <NavLink
-                to="/customer/favourites"
-                className={({ isActive }) =>
-                  `relative flex flex-col items-center py-1 px-2 text-[10px] font-semibold transition ${
-                    isActive ? "text-pink-600 font-bold" : "text-slate-500"
-                  }`
-                }
-              >
-                <span className="text-base">❤️</span>
+              <NavLink to="/customer/favourites" className={bottomNavLink}>
+                <span className="text-base">♡</span>
                 <span>Saved</span>
-                {favCount > 0 && (
-                  <span className="absolute top-0 right-1 rounded-full bg-pink-600 text-white text-[8px] font-bold h-3.5 w-3.5 flex items-center justify-center">
-                    {favCount}
-                  </span>
-                )}
               </NavLink>
-              <NavLink
-                to={user ? "/customer/profile" : "/login"}
-                className={({ isActive }) =>
-                  `flex flex-col items-center py-1 px-2 text-[10px] font-semibold transition ${
-                    isActive ? "text-pink-600 font-bold" : "text-slate-500"
-                  }`
-                }
-              >
+              <NavLink to="/login" className={bottomNavLink}>
                 <span className="text-base">👤</span>
-                <span>{user ? "Account" : "Sign In"}</span>
+                <span>Sign In</span>
               </NavLink>
             </>
           )}

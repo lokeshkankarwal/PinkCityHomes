@@ -157,7 +157,7 @@ export default function ProfilePage() {
       </div>
 
       {/* Profile Overview Card */}
-      <div className="rounded-4xl border border-slate-200/80 bg-white p-6 sm:p-8 shadow-card space-y-6">
+      <div className="rounded-3xl border border-slate-200/80 bg-white p-4 sm:p-8 shadow-card space-y-6">
         <div className="flex flex-col sm:flex-row items-center gap-6 text-center sm:text-left">
           {/* Avatar with Preview & Edit */}
           <div className="relative group">
@@ -252,7 +252,7 @@ export default function ProfilePage() {
       </div>
 
       {/* Personal Information Form / View */}
-      <div className="rounded-4xl border border-slate-200/80 bg-white p-6 sm:p-8 shadow-card space-y-6">
+      <div className="rounded-3xl border border-slate-200/80 bg-white p-4 sm:p-8 shadow-card space-y-6">
         <h3 className="font-display text-xl font-bold text-navy">Personal Information</h3>
 
         {isEditing ? (
@@ -330,53 +330,16 @@ export default function ProfilePage() {
         )}
       </div>
 
-      {/* Quick Navigation Links */}
-      <div className="rounded-4xl border border-slate-200/80 bg-white p-6 sm:p-8 shadow-card space-y-4">
-        <h3 className="font-display text-xl font-bold text-navy">Quick Access</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <Link
-            to="/customer/favourites"
-            className="flex items-center gap-3 p-4 rounded-2xl border border-slate-100 bg-slate-50/60 hover:bg-slate-100 transition"
-          >
-            <span className="text-2xl">❤️</span>
-            <div>
-              <p className="font-bold text-xs text-navy">Saved Homes</p>
-              <p className="text-[11px] text-slate-500">Your shortlisted properties</p>
-            </div>
-          </Link>
-          <Link
-            to="/customer/orders"
-            className="flex items-center gap-3 p-4 rounded-2xl border border-slate-100 bg-slate-50/60 hover:bg-slate-100 transition"
-          >
-            <span className="text-2xl">📦</span>
-            <div>
-              <p className="font-bold text-xs text-navy">Orders &amp; History</p>
-              <p className="text-[11px] text-slate-500">Past property transactions</p>
-            </div>
-          </Link>
-          <Link
-            to="/properties"
-            className="flex items-center gap-3 p-4 rounded-2xl border border-slate-100 bg-slate-50/60 hover:bg-slate-100 transition"
-          >
-            <span className="text-2xl">🔍</span>
-            <div>
-              <p className="font-bold text-xs text-navy">Browse Marketplace</p>
-              <p className="text-[11px] text-slate-500">Explore verified listings</p>
-            </div>
-          </Link>
-        </div>
-      </div>
-
       {/* Account Security & Sign Out */}
-      <div className="rounded-4xl border border-slate-200/80 bg-white p-6 sm:p-8 shadow-card flex items-center justify-between">
+      <div className="rounded-3xl border border-slate-200/80 bg-white p-4 sm:p-6 shadow-card flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h3 className="font-display text-lg font-bold text-navy">Session &amp; Security</h3>
+          <h3 className="font-display text-base sm:text-lg font-bold text-navy">Session &amp; Security</h3>
           <p className="text-xs text-slate-500">Signed in securely on this device</p>
         </div>
         <button
           type="button"
           onClick={handleSignOut}
-          className="rounded-2xl border border-rose-200 bg-rose-50/60 px-5 py-2.5 text-xs font-semibold text-rose-700 hover:bg-rose-100 transition active:scale-95"
+          className="rounded-2xl border border-rose-200 bg-rose-50/60 px-5 py-2.5 text-xs font-semibold text-rose-700 hover:bg-rose-100 transition active:scale-95 self-start sm:self-auto"
         >
           Sign Out of Account
         </button>
