@@ -11,7 +11,7 @@ A modern, full-stack real-estate discovery, CRM, and property transaction platfo
 The platform provides:
 - **Verified Property Discovery**: Accurate carpet area, super built-up measurements, furnishing status, and verified seller listings with photo galleries.
 - **Role-Based Portals**: Dedicated workspaces for Customers (buyers/tenants), Vetted Sellers (agencies/brokers), and Super-Administrators (platform governance).
-- **Secure Authentication & Email Verification**: Industry-standard cryptographic email verification via Nodemailer with rate-limited OTP challenge/response flows.
+- **Secure Authentication & Email Verification**: Industry-standard cryptographic email verification via Resend HTTPS REST API with rate-limited OTP challenge/response flows.
 - **Granular IP Rate Limiting**: Multi-tiered rate limiters protecting against credential stuffing, OTP flooding, and registration spam.
 - **Seller CRM**: Complete lead pipeline, interaction logging (calls, visits, notes), tour scheduling, and portfolio analytics.
 - **Purchase Closings**: Strict transaction workflow where only authorized platform super-administrators can transition inventory to official `SOLD` status.
@@ -31,7 +31,7 @@ The platform provides:
 - **Runtime**: Node.js (ESM) + Express 5 + TypeScript
 - **Database**: MongoDB (Primary Application, Relational & 2dsphere Geospatial Search)
 - **Authentication**: JWT with HTTP-only cookies (`token`) or Authorization Bearer header
-- **Email Service**: Nodemailer (supporting Gmail SMTP, custom SMTP relays, or dev-console logging)
+- **Email Service**: Resend (HTTPS REST API over port 443 — Render Free compatible)
 - **Security**: Helmet, CORS origin restriction, Bcrypt password hashing, and Express Rate Limit
 - **File Uploads**: Multer with localized storage validation
 
@@ -49,9 +49,9 @@ The platform provides:
    ┌────┴──────────────────────────┐
    ▼                               ▼
 [ Auth & Verification ]     [ Property & CRM Engine ]
-   │ (Nodemailer / Bcrypt)         │ (Native MongoDB Driver)
+   │ (Resend HTTPS / Bcrypt)       │ (Native MongoDB Driver)
    ▼                               ▼
-[ SMTP Mailer ]             [ MongoDB Database ]
+[ Resend API (Port 443) ]   [ MongoDB Database ]
 ```
 
 ---
@@ -110,13 +110,13 @@ MONGODB_URI=mongodb://127.0.0.1:27017/pinkcityhomes
 SUPERADMIN_EMAIL=lokeshkankarwal456@gmail.com
 SUPERADMIN_PASSWORD=your-superadmin-password
 
-# ── SMTP (Nodemailer) ────────────────────────────────────────
-# Leave SMTP_HOST blank in development to log OTPs to server console
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USER=lokeshkankarwal456@gmail.com
-SMTP_PASS=your-gmail-app-password
-SMTP_FROM=PinkCityHomes <lokeshkankarwal456@gmail.com>
+# ── EMAIL (HTTPS API / Resend) ────────────────────────────────
+# Render Free blocks outbound SMTP ports 25, 465, 587.
+# Resend uses HTTPS port 443 with high deliverability.
+EMAIL_API_KEY=re_your_resend_api_key_here
+EMAIL_FROM=PinkCityHomes <onboarding@resend.dev>
+# Or with your custom verified domain:
+# EMAIL_FROM=PinkCityHomes <noreply@yourdomain.com>
 EMAIL_VERIFICATION_URL=http://localhost:5173
 
 # ── RATE LIMITING CONFIGURATION ──────────────────────────────

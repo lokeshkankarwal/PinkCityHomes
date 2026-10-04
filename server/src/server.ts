@@ -2,7 +2,7 @@ import { createApp } from "./app.js";
 import { env } from "./config/env.js";
 import { prisma, initMongoPrisma } from "./config/prisma.js";
 import { connectMongo } from "./config/mongo.js";
-import { verifySmtpConnection } from "./services/email.service.js";
+import { checkEmailServiceConfigured } from "./services/emailService.js";
 import bcrypt from "bcryptjs";
 
 /**
@@ -88,7 +88,11 @@ async function main() {
   await initMongoPrisma();
   await seedSuperadmin();
   await syncExistingSellers();
-  await verifySmtpConnection();
+  if (checkEmailServiceConfigured()) {
+    console.log(`[EMAIL] HTTPS email service ready (Resend API, sender: ${env.emailFrom})`);
+  } else {
+    console.log(`[EMAIL] No EMAIL_API_KEY configured. Running in local development mode.`);
+  }
 
   const app = createApp();
   const port = Number(process.env.PORT || env.port || 4000);

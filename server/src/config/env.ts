@@ -20,13 +20,11 @@ export const env = {
     .filter(Boolean),
   superadminEmail: process.env.SUPERADMIN_EMAIL ?? "pinkcityhomes456@gmail.com",
   superadminPassword: process.env.SUPERADMIN_PASSWORD ?? "",
-  smtpHost: process.env.SMTP_HOST ?? "",
-  smtpPort: Number(process.env.SMTP_PORT ?? 587),
-  smtpUser: process.env.SMTP_USER ?? "",
-  smtpPass: process.env.SMTP_PASS ?? "",
-  smtpFrom:
-    process.env.SMTP_FROM ||
-    (process.env.SMTP_USER ? `PinkCityHomes <${process.env.SMTP_USER}>` : "PinkCityHomes <noreply@pinkcityhomes.com>"),
+  emailApiKey: process.env.RESEND_API_KEY || process.env.EMAIL_API_KEY || "",
+  emailFrom:
+    process.env.EMAIL_FROM ||
+    process.env.RESEND_FROM ||
+    "PinkCityHomes <onboarding@resend.dev>",
   emailVerificationUrl: (process.env.EMAIL_VERIFICATION_URL ?? "http://localhost:5173").replace(/\/+$/, ""),
   // MongoDB Geospatial Discovery
   mongoUri: process.env.MONGODB_URI ?? "mongodb://127.0.0.1:27017/pinkcityhomes",
