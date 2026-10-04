@@ -62,7 +62,19 @@ function readToken(req: Request) {
 
 async function hydrate(token: string): Promise<AuthUser> {
   const payload = jwt.verify(token, env.jwtSecret) as AuthUser;
-  const user = await prisma.user.findUnique({ where: { id: payload.id } });
+  const user = await prisma.user.findUnique({
+    where: { id: payload.id },
+    include: { sellerProfile: true },
+  });
   if (!user) throw new HttpError(401, "Invalid session");
+  if ((user as any).isDisabled) {
+    throw new HttpError(403, "Your account has been disabled by PinkCityHomes administration.");
+  }
+  if (user.role === "SELLER") {
+    const sp = user.sellerProfile;
+    if (!sp || sp.status !== "APPROVED" || (sp as any).isDisabled || sp.status === "DISABLED" || sp.status === "SUSPENDED") {
+      throw new HttpError(403, "Your seller account has been disabled by PinkCityHomes administration.");
+    }
+  }
   return { id: user.id, email: user.email, role: user.role, name: user.name };
 }

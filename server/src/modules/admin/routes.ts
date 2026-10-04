@@ -14,6 +14,8 @@ adminRouter.get("/seller-requests", c.sellerRequests); // alias
 adminRouter.get("/sellers", c.sellers);
 adminRouter.get("/sellers/:id", c.getSellerDetails);
 adminRouter.post("/sellers/:id/review", c.reviewSeller);
+adminRouter.post("/sellers/:id/approve", c.approveSeller);
+adminRouter.post("/sellers/:id/reject", c.rejectSeller);
 adminRouter.patch("/sellers/:id/disable", c.disableSeller);
 adminRouter.patch("/sellers/:id/enable", c.enableSeller);
 

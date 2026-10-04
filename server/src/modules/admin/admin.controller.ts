@@ -109,9 +109,13 @@ export async function sellers(req: Request, res: Response) {
   // Filter by status if specified
   if (statusFilter && statusFilter !== "ALL") {
     if (statusFilter === "PENDING") {
-      all = all.filter((s) => s.status === "PENDING_APPROVAL" || s.status === "PENDING_VERIFICATION");
+      all = all.filter((s) => s.status === "PENDING" || s.status === "PENDING_APPROVAL" || s.status === "PENDING_VERIFICATION");
     } else if (statusFilter === "DISABLED" || statusFilter === "SUSPENDED") {
-      all = all.filter((s) => s.status === "SUSPENDED" || (s as any).isDisabled || s.user?.isDisabled);
+      all = all.filter((s) => s.status === "DISABLED" || s.status === "SUSPENDED" || (s as any).isDisabled || s.user?.isDisabled);
+    } else if (statusFilter === "APPROVED") {
+      all = all.filter((s) => s.status === "APPROVED" && !(s as any).isDisabled && !s.user?.isDisabled);
+    } else if (statusFilter === "REJECTED") {
+      all = all.filter((s) => s.status === "REJECTED");
     } else {
       all = all.filter((s) => s.status === statusFilter);
     }
@@ -197,7 +201,7 @@ export async function reviewSeller(req: Request, res: Response) {
   const id = String(req.params.id);
   const { action, reason } = z
     .object({
-      action: z.enum(["APPROVE", "REJECT", "SUSPEND"]),
+      action: z.enum(["APPROVE", "REJECT", "SUSPEND", "DISABLE", "ENABLE"]),
       reason: z.string().optional(),
     })
     .parse(req.body);
@@ -207,27 +211,44 @@ export async function reviewSeller(req: Request, res: Response) {
   });
   if (!profile) throw new HttpError(404, "Seller not found");
 
-  const status = action === "APPROVE" ? "APPROVED" : action === "REJECT" ? "REJECTED" : "SUSPENDED";
+  const isApprove = action === "APPROVE" || action === "ENABLE";
+  const isReject = action === "REJECT";
+  const status = isApprove ? "APPROVED" : isReject ? "REJECTED" : "DISABLED";
+  const isDisabled = !isApprove && !isReject;
+
   const updated = await prisma.sellerProfile.update({
     where: { id: profile.id },
     data: {
       status,
-      rejectionReason: reason,
-      approvedAt: action === "APPROVE" ? new Date() : profile.approvedAt,
-      approvedById: req.user?.id,
+      isDisabled,
+      rejectionReason: isReject ? reason : null,
+      approvedAt: isApprove ? new Date() : profile.approvedAt,
+      approvedById: isApprove ? req.user?.id : profile.approvedById,
+      disabledAt: isDisabled ? new Date() : null,
+      disabledBy: isDisabled ? req.user?.id : null,
     },
   });
 
-  // If suspended, mark properties as sellerDisabled
   const col = getPropertiesCollection();
-  if (action === "SUSPEND") {
+  if (status === "DISABLED" || status === "REJECTED") {
     await col.updateMany({ sellerId: profile.userId }, { $set: { sellerDisabled: true } });
-  } else if (action === "APPROVE") {
+  } else if (status === "APPROVED") {
     await col.updateMany({ sellerId: profile.userId }, { $unset: { sellerDisabled: "" } });
   }
 
   await audit(req, `SELLER_${action}`, "SellerProfile", profile.id, { reason });
   res.json(updated);
+}
+
+export async function approveSeller(req: Request, res: Response) {
+  req.body = { action: "APPROVE" };
+  return reviewSeller(req, res);
+}
+
+export async function rejectSeller(req: Request, res: Response) {
+  const { reason } = z.object({ reason: z.string().optional() }).parse(req.body ?? {});
+  req.body = { action: "REJECT", reason };
+  return reviewSeller(req, res);
 }
 
 export async function disableSeller(req: Request, res: Response) {

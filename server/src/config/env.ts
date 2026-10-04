@@ -35,9 +35,9 @@ export const env = {
   awsS3Bucket: process.env.AWS_S3_BUCKET ?? "",
   // Rate limiting (configurable via env)
   authRateLimitWindowMs: Number(process.env.AUTH_RATE_LIMIT_WINDOW_MS ?? 15 * 60 * 1000),
-  authRateLimitMax: Number(process.env.AUTH_RATE_LIMIT_MAX ?? 30),
-  loginRateLimitMax: Number(process.env.LOGIN_RATE_LIMIT_MAX ?? 10),
-  registrationRateLimitMax: Number(process.env.REGISTRATION_RATE_LIMIT_MAX ?? 5),
-  verificationRateLimitMax: Number(process.env.VERIFICATION_RATE_LIMIT_MAX ?? 3),
-  passwordResetRateLimitMax: Number(process.env.PASSWORD_RESET_RATE_LIMIT_MAX ?? 5),
+  authRateLimitMax: Number(process.env.AUTH_RATE_LIMIT_MAX ?? (process.env.NODE_ENV === "development" ? 500 : 30)),
+  loginRateLimitMax: Number(process.env.LOGIN_RATE_LIMIT_MAX ?? (process.env.NODE_ENV === "development" ? 200 : 10)),
+  registrationRateLimitMax: Number(process.env.REGISTRATION_RATE_LIMIT_MAX ?? (process.env.NODE_ENV === "development" ? 200 : 5)),
+  verificationRateLimitMax: Number(process.env.VERIFICATION_RATE_LIMIT_MAX ?? (process.env.NODE_ENV === "development" ? 50 : 3)),
+  passwordResetRateLimitMax: Number(process.env.PASSWORD_RESET_RATE_LIMIT_MAX ?? 10),
 };

@@ -48,6 +48,8 @@ export default function AdminSellerDetailPage() {
   const [deletePropTarget, setDeletePropTarget] = useState<Property | null>(null);
   const [togglePropTarget, setTogglePropTarget] = useState<Property | null>(null);
   const [sellerStatusTarget, setSellerStatusTarget] = useState<"DISABLE" | "ENABLE" | null>(null);
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [rejectReason, setRejectReason] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
 
   const fetchSellerDetails = useCallback(async () => {
@@ -67,6 +69,37 @@ export default function AdminSellerDetailPage() {
   useEffect(() => {
     void fetchSellerDetails();
   }, [fetchSellerDetails]);
+
+  const handleApproveSeller = async () => {
+    if (!data) return;
+    if (!confirm(`Are you sure you want to approve "${data.user.name}" (${data.seller.companyName || "Direct Seller"}) as an active seller?`)) {
+      return;
+    }
+    setActionLoading(true);
+    try {
+      await api.post(`/admin/sellers/${data.seller.id}/approve`);
+      void fetchSellerDetails();
+    } catch (e: unknown) {
+      alert(e instanceof Error ? e.message : "Approval failed");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleRejectSeller = async () => {
+    if (!data) return;
+    setActionLoading(true);
+    try {
+      await api.post(`/admin/sellers/${data.seller.id}/reject`, { reason: rejectReason });
+      setShowRejectModal(false);
+      setRejectReason("");
+      void fetchSellerDetails();
+    } catch (e: unknown) {
+      alert(e instanceof Error ? e.message : "Rejection failed");
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
   const handleTogglePropertyStatus = async () => {
     if (!togglePropTarget) return;
@@ -135,7 +168,10 @@ export default function AdminSellerDetailPage() {
   }
 
   const { seller, user, stats, properties } = data;
-  const isSuspended = seller.status === "SUSPENDED" || seller.isDisabled || user.isDisabled;
+  const isSuspended = seller.status === "SUSPENDED" || seller.status === "DISABLED" || seller.isDisabled || user.isDisabled;
+  const isPending = seller.status === "PENDING" || seller.status === "PENDING_APPROVAL" || seller.status === "PENDING_VERIFICATION";
+  const isRejected = seller.status === "REJECTED";
+  const isApproved = seller.status === "APPROVED" && !isSuspended;
 
   return (
     <div className="space-y-8 pb-16">
@@ -167,12 +203,20 @@ export default function AdminSellerDetailPage() {
                   className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider ${
                     isSuspended
                       ? "bg-red-100 text-red-800 border border-red-300"
-                      : seller.status === "APPROVED"
-                      ? "bg-moss/10 text-moss border border-moss/30"
-                      : "bg-amber-100 text-amber-900 border border-amber-300"
+                      : isPending
+                      ? "bg-amber-100 text-amber-900 border border-amber-300"
+                      : isRejected
+                      ? "bg-stone-100 text-stone-700 border border-stone-300"
+                      : "bg-moss/10 text-moss border border-moss/30"
                   }`}
                 >
-                  {isSuspended ? "SUSPENDED / DISABLED" : seller.status}
+                  {isSuspended
+                    ? "Disabled"
+                    : isPending
+                    ? "Pending Approval"
+                    : isRejected
+                    ? "Rejected"
+                    : "Approved"}
                 </span>
                 {user.emailVerifiedAt && (
                   <span className="rounded-full bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 text-[10px] font-semibold">
@@ -194,21 +238,54 @@ export default function AdminSellerDetailPage() {
             </div>
           </div>
 
-          {/* Quick Actions */}
+          {/* Superadmin Controls: Approve, Reject, Disable, Enable */}
           <div className="flex flex-wrap items-center gap-2">
-            {isSuspended ? (
-              <button
-                onClick={() => setSellerStatusTarget("ENABLE")}
-                className="rounded-xl bg-moss px-4 py-2 text-xs font-semibold text-white shadow hover:bg-moss/90 transition"
-              >
-                Re-enable / Restore Seller
-              </button>
-            ) : (
+            {isPending && (
+              <>
+                <button
+                  onClick={() => void handleApproveSeller()}
+                  disabled={actionLoading}
+                  className="rounded-xl bg-moss px-4 py-2 text-xs font-semibold text-white shadow hover:bg-moss/90 transition disabled:opacity-50"
+                >
+                  Approve Seller
+                </button>
+                <button
+                  onClick={() => setShowRejectModal(true)}
+                  disabled={actionLoading}
+                  className="rounded-xl border border-red-200 bg-red-50 text-red-700 px-4 py-2 text-xs font-semibold hover:bg-red-100 transition disabled:opacity-50"
+                >
+                  Reject Seller
+                </button>
+              </>
+            )}
+
+            {isApproved && (
               <button
                 onClick={() => setSellerStatusTarget("DISABLE")}
-                className="rounded-xl border border-red-200 bg-red-50 text-red-700 px-4 py-2 text-xs font-semibold hover:bg-red-100 transition"
+                disabled={actionLoading}
+                className="rounded-xl border border-red-200 bg-red-50 text-red-700 px-4 py-2 text-xs font-semibold hover:bg-red-100 transition disabled:opacity-50"
               >
-                Suspend / Disable Seller
+                Disable Seller
+              </button>
+            )}
+
+            {isSuspended && (
+              <button
+                onClick={() => setSellerStatusTarget("ENABLE")}
+                disabled={actionLoading}
+                className="rounded-xl bg-moss px-4 py-2 text-xs font-semibold text-white shadow hover:bg-moss/90 transition disabled:opacity-50"
+              >
+                Enable Seller
+              </button>
+            )}
+
+            {isRejected && (
+              <button
+                onClick={() => void handleApproveSeller()}
+                disabled={actionLoading}
+                className="rounded-xl bg-moss px-4 py-2 text-xs font-semibold text-white shadow hover:bg-moss/90 transition disabled:opacity-50"
+              >
+                Approve Seller
               </button>
             )}
           </div>
@@ -369,18 +446,64 @@ export default function AdminSellerDetailPage() {
 
       <ConfirmModal
         isOpen={Boolean(sellerStatusTarget)}
-        title={sellerStatusTarget === "DISABLE" ? "Suspend Seller Account" : "Re-enable Seller Account"}
+        title={sellerStatusTarget === "DISABLE" ? "Disable Seller Account" : "Enable Seller Account"}
         message={
           sellerStatusTarget === "DISABLE"
-            ? `Suspending "${user.name}" will immediately prevent this seller from authenticating and will automatically hide all their properties from public search results.`
-            : `Re-enabling "${user.name}" will restore seller login access and restore their active properties to public search results.`
+            ? `Disabling "${user.name}" will immediately prevent this seller from authenticating and will automatically hide all their properties from public search results.`
+            : `Enabling "${user.name}" will restore seller login access and restore their active properties to public search results.`
         }
-        confirmLabel={sellerStatusTarget === "DISABLE" ? "Suspend Account" : "Restore Account"}
+        confirmLabel={sellerStatusTarget === "DISABLE" ? "Disable Seller" : "Enable Seller"}
         variant={sellerStatusTarget === "DISABLE" ? "danger" : "primary"}
         loading={actionLoading}
         onConfirm={handleSellerStatus}
         onCancel={() => setSellerStatusTarget(null)}
       />
+
+      {/* Reject Modal with Reason */}
+      {showRejectModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-xl space-y-4">
+            <h3 className="font-serif text-lg font-bold text-ink">
+              Reject Seller Application
+            </h3>
+            <p className="text-xs text-ink/70">
+              Rejecting <span className="font-bold">{user.name}</span> ({seller.companyName || "Direct Seller"}).
+            </p>
+            <div>
+              <label className="block text-xs font-semibold text-ink/70 mb-1">
+                Reason for Rejection (Optional)
+              </label>
+              <textarea
+                rows={3}
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+                placeholder="e.g., Incomplete broker license or documentation..."
+                className="w-full rounded-xl border border-ink/20 p-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-brass"
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowRejectModal(false);
+                  setRejectReason("");
+                }}
+                className="rounded-xl border border-ink/20 px-4 py-2 text-xs font-semibold text-ink/70 hover:bg-sand transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={actionLoading}
+                onClick={handleRejectSeller}
+                className="rounded-xl bg-red-600 px-4 py-2 text-xs font-semibold text-white hover:bg-red-700 transition disabled:opacity-50"
+              >
+                {actionLoading ? "Rejecting..." : "Confirm Rejection"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

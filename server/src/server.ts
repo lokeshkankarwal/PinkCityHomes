@@ -60,11 +60,33 @@ async function seedSuperadmin() {
   }
 }
 
+async function syncExistingSellers() {
+  try {
+    const sellers = await prisma.user.findMany({ where: { role: "SELLER" } });
+    for (const seller of sellers) {
+      const profile = await prisma.sellerProfile.findUnique({ where: { userId: seller.id } });
+      if (!profile) {
+        await prisma.sellerProfile.create({
+          data: {
+            userId: seller.id,
+            companyName: (seller as any).companyName || "Direct Seller / Agency",
+            status: "PENDING",
+          },
+        });
+        console.log(`[startup] Created missing PENDING seller profile for ${seller.email}`);
+      }
+    }
+  } catch (err) {
+    console.warn("[startup] Could not sync existing sellers:", err);
+  }
+}
+
 async function main() {
   // Connect to MongoDB as exclusive application database
   await connectMongo();
   await initMongoPrisma();
   await seedSuperadmin();
+  await syncExistingSellers();
 
   const app = createApp();
   const port = Number(process.env.PORT || env.port || 4000);

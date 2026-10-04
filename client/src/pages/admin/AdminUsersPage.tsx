@@ -11,7 +11,7 @@ type UserItem = {
   emailVerifiedAt?: string | null;
   createdAt: string;
   isDisabled?: boolean;
-  sellerProfile?: { status: string; companyName?: string | null } | null;
+  sellerProfile?: { status: string; companyName?: string | null; isDisabled?: boolean } | null;
 };
 
 export default function AdminUsersPage() {
@@ -177,7 +177,29 @@ export default function AdminUsersPage() {
                       )}
                     </td>
                     <td className="py-3 px-4 text-xs">
-                      {u.emailVerifiedAt ? (
+                      {u.role === "SELLER" ? (
+                        <span
+                          className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                            u.sellerProfile?.status === "APPROVED"
+                              ? "bg-moss/10 text-moss border border-moss/30"
+                              : u.sellerProfile?.status === "REJECTED"
+                              ? "bg-red-100 text-red-800 border border-red-200"
+                              : u.sellerProfile?.status === "SUSPENDED" || u.sellerProfile?.isDisabled
+                              ? "bg-red-100 text-red-800 border border-red-200"
+                              : "bg-amber-100 text-amber-900 border border-amber-300"
+                          }`}
+                        >
+                          {u.sellerProfile?.status === "APPROVED"
+                            ? "Approved"
+                            : u.sellerProfile?.status === "REJECTED"
+                            ? "Rejected"
+                            : u.sellerProfile?.status === "SUSPENDED" || u.sellerProfile?.isDisabled
+                            ? "Disabled"
+                            : "Pending Approval"}
+                        </span>
+                      ) : u.role === "SUPERADMIN" ? (
+                        <span className="text-ink/40 text-[11px]">System Superadmin</span>
+                      ) : u.emailVerifiedAt ? (
                         <span className="font-semibold text-moss">Verified ✓</span>
                       ) : (
                         <span className="text-amber-800 font-medium">Pending OTP</span>
