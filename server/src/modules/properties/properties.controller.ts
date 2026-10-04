@@ -59,6 +59,10 @@ export async function listPublic(req: Request, res: Response) {
     sellerDisabled: { $ne: true },
   };
 
+  if (q.sellerId) {
+    filter.sellerId = q.sellerId;
+  }
+
   if (q.listingType) {
     filter.listingType = q.listingType.toUpperCase();
   }
@@ -199,18 +203,48 @@ export async function getPublic(req: Request, res: Response) {
   // Increment views in MongoDB
   await col.updateOne({ propertyId: id }, { $inc: { views: 1 } });
 
-  // Hydrate seller info from MongoDB
-  const seller = doc.sellerId
-    ? await prisma.user.findUnique({
-        where: { id: doc.sellerId },
-        select: { id: true, name: true, phone: true, email: true },
-      })
-    : null;
+  // Hydrate full seller info from MongoDB & Prisma
+  let sellerInfo: any = undefined;
+  if (doc.sellerId) {
+    const sellerUser = await prisma.user.findUnique({
+      where: { id: doc.sellerId },
+      select: {
+        id: true,
+        name: true,
+        phone: true,
+        email: true,
+        createdAt: true,
+        avatarUrl: true,
+      },
+      include: { sellerProfile: true },
+    });
+
+    if (sellerUser) {
+      const sellerPropsCount = await col.countDocuments({
+        sellerId: doc.sellerId,
+        status: "ACTIVE",
+        sellerDisabled: { $ne: true },
+      });
+
+      sellerInfo = {
+        id: sellerUser.id,
+        sellerProfileId: sellerUser.sellerProfile?.id || sellerUser.id,
+        name: sellerUser.name,
+        companyName: sellerUser.sellerProfile?.companyName || sellerUser.name,
+        phone: sellerUser.phone,
+        email: sellerUser.email,
+        avatarUrl: sellerUser.avatarUrl,
+        status: sellerUser.sellerProfile?.status || "APPROVED",
+        memberSince: sellerUser.createdAt,
+        totalProperties: sellerPropsCount,
+      };
+    }
+  }
 
   const formatted = formatMongoProperty({ ...doc, views: (doc.views || 0) + 1 });
   res.json({
     ...formatted,
-    seller: seller ? { name: seller.name, phone: seller.phone, email: seller.email } : undefined,
+    seller: sellerInfo,
   });
 }
 

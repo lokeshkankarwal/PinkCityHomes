@@ -234,6 +234,22 @@ export const prisma = {
       const col = getDb().collection("users");
       return col.countDocuments(transformWhere(args?.where));
     },
+
+    async delete(args: { where: { id?: string; email?: string } }): Promise<any> {
+      const col = getDb().collection("users");
+      const where: any = {};
+      if (args.where.id) where.id = args.where.id;
+      if (args.where.email) where.email = args.where.email.toLowerCase();
+      const existing = await col.findOne(where);
+      await col.deleteOne(where);
+      return sanitizeDoc(existing);
+    },
+
+    async deleteMany(args?: { where?: any }): Promise<{ count: number }> {
+      const col = getDb().collection("users");
+      const res = await col.deleteMany(transformWhere(args?.where));
+      return { count: res.deletedCount };
+    },
   },
 
   sellerProfile: {
@@ -342,6 +358,22 @@ export const prisma = {
     async count(args?: { where?: any }): Promise<number> {
       const col = getDb().collection("seller_profiles");
       return col.countDocuments(transformWhere(args?.where));
+    },
+
+    async delete(args: { where: { id?: string; userId?: string } }): Promise<any> {
+      const col = getDb().collection("seller_profiles");
+      const where: any = {};
+      if (args.where.id) where.id = args.where.id;
+      if (args.where.userId) where.userId = args.where.userId;
+      const existing = await col.findOne(where);
+      await col.deleteOne(where);
+      return sanitizeDoc(existing);
+    },
+
+    async deleteMany(args?: { where?: any }): Promise<{ count: number }> {
+      const col = getDb().collection("seller_profiles");
+      const res = await col.deleteMany(transformWhere(args?.where));
+      return { count: res.deletedCount };
     },
   },
 

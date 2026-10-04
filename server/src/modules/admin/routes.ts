@@ -18,6 +18,7 @@ adminRouter.post("/sellers/:id/approve", c.approveSeller);
 adminRouter.post("/sellers/:id/reject", c.rejectSeller);
 adminRouter.patch("/sellers/:id/disable", c.disableSeller);
 adminRouter.patch("/sellers/:id/enable", c.enableSeller);
+adminRouter.delete("/sellers/:id", c.deleteSeller);
 
 // User Management
 adminRouter.get("/users", c.users);

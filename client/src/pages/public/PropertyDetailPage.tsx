@@ -15,6 +15,7 @@ export default function PropertyDetailPage() {
   const [property, setProperty] = useState<Property | null>(null);
   const [activeImage, setActiveImage] = useState<string>("");
   const [similar, setSimilar] = useState<Property[]>([]);
+  const [sellerOthers, setSellerOthers] = useState<Property[]>([]);
   const [actionMsg, setActionMsg] = useState<string | null>(null);
 
   // Visit modal state
@@ -35,11 +36,22 @@ export default function PropertyDetailPage() {
         const primary = p.images?.length ? p.images[0].path : p.primaryImage;
         setActiveImage(primary ? imgSrc(primary) : "/defaults/apartment.svg");
 
+        // Fetch other properties by this seller
+        if (p.sellerId) {
+          api
+            .get<{ results: Property[] }>(`/properties?sellerId=${p.sellerId}&limit=4`)
+            .then((res) => {
+              const others = (res.results || []).filter((item) => item.id !== id);
+              setSellerOthers(others.slice(0, 3));
+            })
+            .catch(() => {});
+        }
+
         // Fetch similar properties from same locality or general catalogue
         api
           .get<{ results: Property[] }>(`/properties?limit=4`)
           .then((res) => {
-            const others = (res.results || []).filter((item) => item.id !== id);
+            const others = (res.results || []).filter((item) => item.id !== id && item.sellerId !== p.sellerId);
             setSimilar(others.slice(0, 3));
           })
           .catch(() => {});
@@ -298,21 +310,90 @@ export default function PropertyDetailPage() {
               </div>
             )}
 
-            {/* Contact Details Card */}
-            <div className="rounded-2xl bg-sand/40 p-4 space-y-2 border border-ink/5">
-              <p className="text-xs uppercase tracking-wider text-ink/60 font-semibold">Contact Representative</p>
-              <p className="font-bold text-sm text-ink">{property.contactName || property.seller?.name || "PinkCityHomes Representative"}</p>
-              {(property.contactPhone || property.seller?.phone) && (
-                <p className="text-sm text-ink/80 flex items-center gap-2">
-                  <span>📞</span> <a href={`tel:${property.contactPhone || property.seller?.phone}`} className="hover:underline font-semibold">{property.contactPhone || property.seller?.phone}</a>
-                </p>
-              )}
-              {property.seller?.email && (
-                <p className="text-sm text-ink/80 flex items-center gap-2">
-                  <span>✉️</span> <a href={`mailto:${property.seller.email}`} className="hover:underline">{property.seller.email}</a>
-                </p>
-              )}
-            </div>
+            {/* Seller & Agency Profile Card */}
+            {(() => {
+              const sellerTargetId = property.seller?.sellerProfileId || property.seller?.id || property.sellerId;
+              return (
+                <div className="rounded-2xl border border-ink/10 bg-sand/20 p-4 space-y-3.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] uppercase tracking-wider text-ink/50 font-bold">
+                      Property Listed By
+                    </span>
+                    <span className="rounded-full bg-moss/10 text-moss border border-moss/30 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider flex items-center gap-1">
+                      <span>✓</span> Verified Seller
+                    </span>
+                  </div>
+
+                  {/* Clickable Seller Header */}
+                  {sellerTargetId ? (
+                    <Link
+                      to={`/sellers/${sellerTargetId}`}
+                      className="group flex items-start gap-3 p-1.5 -m-1.5 rounded-xl hover:bg-white/80 transition"
+                    >
+                      <div className="h-11 w-11 rounded-xl bg-gradient-to-tr from-pink-600 to-amber-500 flex items-center justify-center text-white font-bold font-serif text-base shadow-sm flex-shrink-0">
+                        {(property.seller?.companyName || property.seller?.name || "S").charAt(0).toUpperCase()}
+                      </div>
+                      <div className="space-y-0.5 flex-1 min-w-0">
+                        <p className="font-serif font-bold text-sm text-ink group-hover:text-pink-600 transition truncate">
+                          {property.seller?.companyName || property.contactName || property.seller?.name || "Direct Seller"}
+                        </p>
+                        {property.seller?.companyName && property.seller?.name && (
+                          <p className="text-xs text-ink/60 truncate">Agent: {property.seller.name}</p>
+                        )}
+                        {property.seller?.totalProperties !== undefined && (
+                          <p className="text-[11px] font-semibold text-brass">
+                            🏡 {property.seller.totalProperties} Active Listing{property.seller.totalProperties === 1 ? "" : "s"}
+                          </p>
+                        )}
+                      </div>
+                      <span className="text-xs text-ink/40 group-hover:text-pink-600 group-hover:translate-x-0.5 transition">
+                        &rarr;
+                      </span>
+                    </Link>
+                  ) : (
+                    <div className="flex items-start gap-3">
+                      <div className="h-10 w-10 rounded-xl bg-ink/5 flex items-center justify-center text-ink font-bold font-serif text-base">
+                        🏢
+                      </div>
+                      <div>
+                        <p className="font-bold text-sm text-ink">{property.contactName || "Direct Seller"}</p>
+                        <p className="text-xs text-ink/60">Jaipur Property Partner</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Direct Communication Buttons */}
+                  <div className="space-y-1.5 pt-1 border-t border-ink/5 text-xs">
+                    {(property.contactPhone || property.seller?.phone) && (
+                      <a
+                        href={`tel:${property.contactPhone || property.seller?.phone}`}
+                        className="flex items-center gap-2 p-1.5 rounded-lg text-ink/80 hover:bg-white hover:text-pink-600 transition font-medium"
+                      >
+                        <span>📞</span> <span>{property.contactPhone || property.seller?.phone}</span>
+                      </a>
+                    )}
+                    {property.seller?.email && (
+                      <a
+                        href={`mailto:${property.seller.email}?subject=Inquiry about ${property.title}`}
+                        className="flex items-center gap-2 p-1.5 rounded-lg text-ink/80 hover:bg-white hover:text-pink-600 transition truncate"
+                      >
+                        <span>✉️</span> <span className="truncate">{property.seller.email}</span>
+                      </a>
+                    )}
+                  </div>
+
+                  {/* View Full Seller Profile Link Button */}
+                  {sellerTargetId && (
+                    <Link
+                      to={`/sellers/${sellerTargetId}`}
+                      className="block w-full text-center rounded-xl bg-white border border-ink/15 py-2 text-xs font-bold text-ink hover:bg-ink hover:text-sand hover:border-ink transition shadow-sm"
+                    >
+                      View Seller Profile &amp; All Listings &rarr;
+                    </Link>
+                  )}
+                </div>
+              );
+            })()}
           </div>
 
           {/* Location Details */}
@@ -385,6 +466,64 @@ export default function PropertyDetailPage() {
             </form>
           </div>
         </div>
+      )}
+
+      {/* More Properties from this Seller */}
+      {sellerOthers.length > 0 && (
+        <section className="space-y-4 pt-8 border-t border-ink/10">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div>
+              <h3 className="font-serif text-2xl font-bold text-ink">
+                More Properties from {property.seller?.companyName || property.seller?.name || "this Seller"}
+              </h3>
+              <p className="text-xs text-ink/60">Other active listings in Jaipur by this partner</p>
+            </div>
+            {(() => {
+              const targetId = property.seller?.sellerProfileId || property.seller?.id || property.sellerId;
+              if (!targetId) return null;
+              return (
+                <Link
+                  to={`/sellers/${targetId}`}
+                  className="text-xs font-bold text-pink-600 hover:text-pink-700 underline"
+                >
+                  View All Listings by this Seller &rarr;
+                </Link>
+              );
+            })()}
+          </div>
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {sellerOthers.map((item) => {
+              const primary = item.primaryImage || item.images?.[0]?.path;
+              return (
+                <Link
+                  key={item.id}
+                  to={`/properties/${item.id}`}
+                  className="group block overflow-hidden rounded-2xl border border-ink/10 bg-white p-4 shadow-sm transition hover:shadow-md"
+                >
+                  <div className="flex gap-3">
+                    <img
+                      src={imgSrc(primary)}
+                      alt=""
+                      className="h-20 w-24 rounded-xl object-cover flex-shrink-0 bg-sand/30"
+                    />
+                    <div className="space-y-1 min-w-0">
+                      <span className="text-[10px] uppercase font-bold text-moss">
+                        {item.listingType === "RENT" ? "For Rent" : "For Sale"} · {item.bhk} BHK
+                      </span>
+                      <h4 className="font-serif text-sm font-bold text-ink line-clamp-1 group-hover:text-pink-600 transition">
+                        {item.title}
+                      </h4>
+                      <p className="text-sm font-bold text-brass">
+                        {item.listingType === "RENT" ? `${inr(item.price)}/mo` : inr(item.price)}
+                      </p>
+                      <p className="text-[11px] text-ink/50 truncate">📍 {item.locality}</p>
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
       )}
 
       {/* Similar Listings */}

@@ -12,6 +12,7 @@ import ProjectDetailPage from "./pages/public/ProjectDetailPage";
 import InsightsPage from "./pages/public/InsightsPage";
 import LoginPage from "./pages/public/LoginPage";
 import RegisterPage from "./pages/public/RegisterPage";
+import SellerProfilePage from "./pages/public/SellerProfilePage";
 
 // Customer pages
 import FavouritesPage from "./pages/customer/FavouritesPage";
@@ -47,6 +48,7 @@ export default function App() {
         <Route path="insights" element={<InsightsPage />} />
         <Route path="login" element={<LoginPage />} />
         <Route path="register" element={<RegisterPage />} />
+        <Route path="sellers/:sellerId" element={<SellerProfilePage />} />
 
         {/* Customer area */}
         <Route path="customer/favourites" element={<FavouritesPage />} />

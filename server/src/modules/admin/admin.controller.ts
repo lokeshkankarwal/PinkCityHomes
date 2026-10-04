@@ -268,16 +268,40 @@ export async function disableSeller(req: Request, res: Response) {
     },
   });
 
-  // Hide seller's properties from public search
+  // Also disable seller's user record
+  await prisma.user.update({
+    where: { id: profile.userId },
+    data: { isDisabled: true },
+  });
+
+  // Automatically disable all properties listed by this seller
   const col = getPropertiesCollection();
-  await col.updateMany({ sellerId: profile.userId }, { $set: { sellerDisabled: true } });
+  const result = await col.updateMany(
+    { sellerId: profile.userId },
+    {
+      $set: {
+        status: "INACTIVE",
+        isDisabled: true,
+        sellerDisabled: true,
+        disabledAt: new Date(),
+        disabledBy: req.user?.id,
+        updatedAt: new Date(),
+      },
+    }
+  );
 
   await audit(req, "SELLER_DISABLED", "SellerProfile", profile.id, {
     userId: profile.userId,
     companyName: profile.companyName,
+    propertiesDisabledCount: result.modifiedCount,
   });
 
-  res.json({ ok: true, message: "Seller suspended/disabled successfully", seller: updated });
+  res.json({
+    ok: true,
+    message: `Seller and ${result.modifiedCount} property listing(s) disabled successfully`,
+    seller: updated,
+    propertiesDisabledCount: result.modifiedCount,
+  });
 }
 
 export async function enableSeller(req: Request, res: Response) {
@@ -297,16 +321,95 @@ export async function enableSeller(req: Request, res: Response) {
     },
   });
 
-  // Restore seller's properties to public search
+  // Re-enable seller's user record
+  await prisma.user.update({
+    where: { id: profile.userId },
+    data: { isDisabled: false },
+  });
+
+  // Automatically restore seller's properties to active status
   const col = getPropertiesCollection();
-  await col.updateMany({ sellerId: profile.userId }, { $unset: { sellerDisabled: "" } });
+  const result = await col.updateMany(
+    { sellerId: profile.userId },
+    {
+      $set: {
+        status: "ACTIVE",
+        isDisabled: false,
+        updatedAt: new Date(),
+      },
+      $unset: {
+        sellerDisabled: "",
+        disabledAt: "",
+        disabledBy: "",
+      },
+    }
+  );
 
   await audit(req, "SELLER_ENABLED", "SellerProfile", profile.id, {
     userId: profile.userId,
     companyName: profile.companyName,
+    propertiesRestoredCount: result.modifiedCount,
   });
 
-  res.json({ ok: true, message: "Seller enabled/restored successfully", seller: updated });
+  res.json({
+    ok: true,
+    message: `Seller and ${result.modifiedCount} property listing(s) enabled successfully`,
+    seller: updated,
+    propertiesRestoredCount: result.modifiedCount,
+  });
+}
+
+export async function deleteSeller(req: Request, res: Response) {
+  const id = String(req.params.id);
+  const profile = await prisma.sellerProfile.findFirst({
+    where: { OR: [{ id }, { userId: id }] },
+  });
+  if (!profile) throw new HttpError(404, "Seller not found");
+
+  const col = getPropertiesCollection();
+  // Find all properties belonging to this seller
+  const sellerProps = await col.find({ sellerId: profile.userId }).toArray();
+
+  // Cascade delete all property image files and relational records
+  for (const prop of sellerProps) {
+    if (Array.isArray(prop.images)) {
+      for (const img of prop.images) {
+        if (img.path && typeof img.path === "string") {
+          try {
+            await deleteLocalFile(img.path);
+          } catch {
+            // Ignore missing files
+          }
+        }
+      }
+    }
+    const propId = prop.propertyId || String(prop._id);
+    await Promise.all([
+      prisma.favourite.deleteMany({ where: { propertyId: propId } }),
+      prisma.cartItem.deleteMany({ where: { propertyId: propId } }),
+      prisma.clientPropertyInterest.deleteMany({ where: { propertyId: propId } }),
+      prisma.propertyVisit.deleteMany({ where: { propertyId: propId } }),
+    ]);
+  }
+
+  // Delete all properties belonging to this seller from MongoDB
+  await col.deleteMany({ sellerId: profile.userId });
+
+  // Delete seller profile and user account
+  await prisma.sellerProfile.delete({ where: { id: profile.id } });
+  await prisma.user.delete({ where: { id: profile.userId } });
+
+  await audit(req, "SELLER_DELETED", "SellerProfile", profile.id, {
+    userId: profile.userId,
+    companyName: profile.companyName,
+    deletedPropertiesCount: sellerProps.length,
+  });
+
+  res.json({
+    ok: true,
+    message: `Seller "${profile.companyName || "Direct Seller"}" and all ${sellerProps.length} associated properties permanently deleted.`,
+    deletedPropertiesCount: sellerProps.length,
+  });
 }
 
 export async function users(req: Request, res: Response) {

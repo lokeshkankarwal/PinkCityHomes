@@ -119,6 +119,7 @@ export function createApp() {
   app.use("/api/orders", ordersRouter);
   app.use("/api/admin", adminRouter);
   app.use("/api/seller", sellersRouter);
+  app.use("/api/sellers", sellersRouter);
   app.use("/api/projects", projectsRouter);
 
   app.use(errorHandler);

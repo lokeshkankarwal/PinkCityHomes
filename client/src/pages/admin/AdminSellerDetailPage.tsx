@@ -22,6 +22,7 @@ type SellerData = {
     name: string;
     phone?: string | null;
     avatar?: string | null;
+    avatarUrl?: string | null;
     createdAt: string;
     emailVerifiedAt?: string | null;
     isDisabled?: boolean;
@@ -48,6 +49,7 @@ export default function AdminSellerDetailPage() {
   const [deletePropTarget, setDeletePropTarget] = useState<Property | null>(null);
   const [togglePropTarget, setTogglePropTarget] = useState<Property | null>(null);
   const [sellerStatusTarget, setSellerStatusTarget] = useState<"DISABLE" | "ENABLE" | null>(null);
+  const [showDeleteSellerModal, setShowDeleteSellerModal] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
@@ -151,6 +153,20 @@ export default function AdminSellerDetailPage() {
     }
   };
 
+  const handleDeleteSeller = async () => {
+    if (!data) return;
+    setActionLoading(true);
+    try {
+      const res = await api.delete<{ ok: boolean; message: string }>(`/admin/sellers/${data.seller.id}`);
+      alert(res.message || "Seller and properties permanently deleted.");
+      navigate("/admin/sellers");
+    } catch (e: unknown) {
+      alert(e instanceof Error ? e.message : "Failed to delete seller");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   if (loading) return <div className="py-24 text-center text-ink/60">Loading seller profile &amp; inventory...</div>;
   if (error || !data) {
     return (
@@ -189,8 +205,8 @@ export default function AdminSellerDetailPage() {
         <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
           <div className="flex items-start gap-5">
             <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-2xl bg-gradient-to-tr from-pink-500 to-amber-500 flex items-center justify-center text-white text-2xl sm:text-3xl font-bold font-serif shadow-sm overflow-hidden flex-shrink-0">
-              {user.avatar ? (
-                <img src={imgSrc(user.avatar)} alt="" className="h-full w-full object-cover" />
+              {(user.avatarUrl || user.avatar) ? (
+                <img src={imgSrc(user.avatarUrl || user.avatar)} alt="" className="h-full w-full object-cover" />
               ) : (
                 user.name.charAt(0).toUpperCase()
               )}
@@ -288,6 +304,24 @@ export default function AdminSellerDetailPage() {
                 Approve Seller
               </button>
             )}
+
+            <Link
+              to={`/sellers/${seller.id}`}
+              target="_blank"
+              rel="noreferrer"
+              className="rounded-xl border border-ink/20 px-3.5 py-2 text-xs font-semibold text-ink hover:bg-sand transition"
+            >
+              Public Profile ↗
+            </Link>
+
+            <button
+              onClick={() => setShowDeleteSellerModal(true)}
+              disabled={actionLoading}
+              className="rounded-xl border border-red-300 bg-red-50 text-red-700 px-3.5 py-2 text-xs font-semibold hover:bg-red-100 transition disabled:opacity-50"
+              title="Permanently delete seller and all their properties"
+            >
+              Delete Seller
+            </button>
           </div>
         </div>
 
@@ -504,6 +538,18 @@ export default function AdminSellerDetailPage() {
           </div>
         </div>
       )}
+
+      {/* Permanently Delete Seller & Properties Confirmation Modal */}
+      <ConfirmModal
+        isOpen={showDeleteSellerModal}
+        title="Permanently Delete Seller & All Properties"
+        message={`Are you sure you want to permanently delete seller "${user.name}" (${seller.companyName || "Direct Seller"})? This will permanently delete their account and ALL ${stats.totalProperties} properties listed by them from the database. This action cannot be undone.`}
+        confirmLabel="Delete Seller & Properties"
+        variant="danger"
+        loading={actionLoading}
+        onConfirm={handleDeleteSeller}
+        onCancel={() => setShowDeleteSellerModal(false)}
+      />
     </div>
   );
 }

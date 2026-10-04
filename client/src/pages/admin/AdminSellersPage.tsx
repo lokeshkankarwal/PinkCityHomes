@@ -34,6 +34,7 @@ export default function AdminSellersPage() {
   // Modal actions
   const [rejectTarget, setRejectTarget] = useState<SellerItem | null>(null);
   const [rejectReason, setRejectReason] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState<SellerItem | null>(null);
   const [statusModalTarget, setStatusModalTarget] = useState<{
     seller: SellerItem;
     action: "DISABLE" | "ENABLE";
@@ -130,6 +131,21 @@ export default function AdminSellersPage() {
       void fetchSellers();
     } catch (e: unknown) {
       alert(e instanceof Error ? e.message : "Failed to update seller status");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleDeleteSeller = async () => {
+    if (!deleteTarget) return;
+    setActionLoading(true);
+    try {
+      const res = await api.delete<{ ok: boolean; message: string }>(`/admin/sellers/${deleteTarget.id}`);
+      alert(res.message || "Seller and properties permanently deleted.");
+      setDeleteTarget(null);
+      void fetchSellers();
+    } catch (e: unknown) {
+      alert(e instanceof Error ? e.message : "Failed to delete seller");
     } finally {
       setActionLoading(false);
     }
@@ -328,6 +344,15 @@ export default function AdminSellersPage() {
                             Approve
                           </button>
                         )}
+
+                        <button
+                          onClick={() => setDeleteTarget(s)}
+                          disabled={actionLoading}
+                          className="rounded-lg border border-red-200 bg-white text-red-600 px-2.5 py-1 text-xs font-semibold hover:bg-red-50 transition"
+                          title="Permanently delete seller and all their properties"
+                        >
+                          Delete
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -398,6 +423,18 @@ export default function AdminSellersPage() {
         loading={actionLoading}
         onConfirm={handleToggleSellerStatus}
         onCancel={() => setStatusModalTarget(null)}
+      />
+
+      {/* Delete Seller & Properties Confirmation Modal */}
+      <ConfirmModal
+        isOpen={Boolean(deleteTarget)}
+        title="Permanently Delete Seller & All Properties"
+        message={`Are you sure you want to permanently delete seller "${deleteTarget?.user?.name}" (${deleteTarget?.companyName || "Direct Seller"})? This will permanently delete their account AND all properties listed by them from the database. This action cannot be undone.`}
+        confirmLabel="Delete Seller & Properties"
+        variant="danger"
+        loading={actionLoading}
+        onConfirm={handleDeleteSeller}
+        onCancel={() => setDeleteTarget(null)}
       />
     </div>
   );

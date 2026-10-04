@@ -27,7 +27,18 @@ export interface Property {
   createdAt?: string;
   images?: { id: string; path: string; isPrimary: boolean; sortOrder: number }[];
   primaryImage?: string;
-  seller?: { name: string; email?: string; phone?: string };
+  seller?: {
+    id?: string;
+    sellerProfileId?: string;
+    name: string;
+    companyName?: string;
+    email?: string;
+    phone?: string;
+    avatarUrl?: string;
+    status?: string;
+    memberSince?: string;
+    totalProperties?: number;
+  };
 }
 
 export interface Project {
