@@ -6,6 +6,9 @@ import type { Property } from "../../types";
 import { LocationPickerMap } from "../../components/LocationPickerMap";
 import { searchJaipurLocations, type JaipurLocation } from "../../services/jaipurLocations";
 import { ConfirmModal } from "../../components/ConfirmModal";
+import { Badge } from "../../components/Badge";
+import { EmptyState } from "../../components/EmptyState";
+import { toast } from "../../components/Toast";
 
 export default function SellerPropertiesPage() {
   const [searchParams] = useSearchParams();
@@ -240,10 +243,11 @@ export default function SellerPropertiesPage() {
     setActionLoading(true);
     try {
       await api.patch(`/properties/${deactivateTarget.id}/status`);
+      toast.success("Property status updated successfully");
       setDeactivateTarget(null);
       void fetchMine();
     } catch (e: unknown) {
-      alert(e instanceof Error ? e.message : "Failed to update status");
+      toast.error(e instanceof Error ? e.message : "Failed to update status");
     } finally {
       setActionLoading(false);
     }
@@ -254,10 +258,11 @@ export default function SellerPropertiesPage() {
     setActionLoading(true);
     try {
       await api.delete(`/properties/${deleteTarget.id}`);
+      toast.success("Property permanently deleted");
       setDeleteTarget(null);
       void fetchMine();
     } catch (e: unknown) {
-      alert(e instanceof Error ? e.message : "Failed to delete property");
+      toast.error(e instanceof Error ? e.message : "Failed to delete property");
     } finally {
       setActionLoading(false);
     }
@@ -269,11 +274,12 @@ export default function SellerPropertiesPage() {
     setUploading(true);
     try {
       await api.upload(`/properties/${showUploadModal.id}/images`, selectedFiles);
+      toast.success("Photos uploaded successfully!");
       setSelectedFiles(null);
       void fetchMine();
       setShowUploadModal(null);
     } catch (e: unknown) {
-      alert(e instanceof Error ? e.message : "Failed to upload photos");
+      toast.error(e instanceof Error ? e.message : "Failed to upload photos");
     } finally {
       setUploading(false);
     }
@@ -282,18 +288,20 @@ export default function SellerPropertiesPage() {
   const handleSetPrimary = async (imageId: string) => {
     try {
       await api.post(`/properties/images/${imageId}/primary`);
+      toast.success("Primary cover photo updated!");
       void fetchMine();
     } catch (e: unknown) {
-      alert(e instanceof Error ? e.message : "Failed to set primary image");
+      toast.error(e instanceof Error ? e.message : "Failed to set primary image");
     }
   };
 
   const handleDeleteImage = async (imageId: string) => {
     try {
       await api.del(`/properties/images/${imageId}`);
+      toast.success("Photo removed");
       void fetchMine();
     } catch (e: unknown) {
-      alert(e instanceof Error ? e.message : "Failed to delete image");
+      toast.error(e instanceof Error ? e.message : "Failed to delete image");
     }
   };
 

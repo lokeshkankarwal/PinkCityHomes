@@ -2,6 +2,9 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../../api/client";
 import { inr, imgSrc } from "../../lib/format";
+import { EmptyState } from "../../components/EmptyState";
+import { SkeletonCard } from "../../components/Skeleton";
+import { toast } from "../../components/Toast";
 import type { Property } from "../../types";
 
 type FavItem = {
@@ -33,40 +36,41 @@ export default function FavouritesPage() {
     void fetchFavs();
   }, []);
 
-  const handleRemove = async (favId: string) => {
+  const handleRemove = async (favId: string, title?: string) => {
     try {
       await api.del(`/favourites/${favId}`);
       setItems((prev) => prev.filter((i) => i.id !== favId));
       window.dispatchEvent(new Event("favourites-updated"));
+      toast.success(`Removed "${title || "Property"}" from saved homes`);
     } catch (e: unknown) {
-      alert(e instanceof Error ? e.message : "Failed to remove favourite");
+      toast.error(e instanceof Error ? e.message : "Failed to remove favourite");
     }
   };
 
   return (
-    <div className="space-y-6 pb-16">
+    <div className="space-y-6 pb-16 animate-fade-in">
       <div>
-        <h1 className="font-serif text-3xl font-bold">Saved Favourites</h1>
-        <p className="text-sm text-ink/70">
-          Your bookmarked homes and properties for future reference
+        <span className="text-xs font-bold uppercase tracking-wider text-pink-600">Saved Shortlist</span>
+        <h1 className="font-display text-3xl font-bold text-navy mt-1">Saved Properties</h1>
+        <p className="text-xs sm:text-sm text-slate-500">
+          Your shortlisted homes and luxury residences for quick comparison and site visits
         </p>
       </div>
 
       {loading ? (
-        <div className="py-20 text-center text-ink/60">Loading saved properties...</div>
-      ) : items.length === 0 ? (
-        <div className="rounded-3xl border border-ink/10 bg-white p-12 text-center space-y-4">
-          <p className="font-serif text-xl font-bold">No saved properties yet</p>
-          <p className="text-sm text-ink/70">
-            Click the ♥ Save button on any listing to build your shortlist.
-          </p>
-          <Link
-            to="/properties"
-            className="inline-block rounded-xl bg-ink px-5 py-2.5 text-sm font-semibold text-sand hover:bg-ink/90"
-          >
-            Explore Properties &rarr;
-          </Link>
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <SkeletonCard count={3} />
         </div>
+      ) : items.length === 0 ? (
+        <EmptyState
+          icon="❤️"
+          title="Your shortlist is empty"
+          body="Click the heart icon on any listing to save properties for future review and easy comparison."
+          action={{
+            label: "Explore Jaipur Properties",
+            href: "/properties",
+          }}
+        />
       ) : (
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {items.map((fav) => {
@@ -80,39 +84,50 @@ export default function FavouritesPage() {
             return (
               <article
                 key={fav.id}
-                className="overflow-hidden rounded-2xl border border-ink/10 bg-white shadow-sm flex flex-col justify-between"
+                className="overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-card hover:shadow-card-hover transition-all duration-200 flex flex-col justify-between"
               >
-                <Link to={`/properties/${targetId}`} className="block">
-                  <img
-                    src={imgSrc(image)}
-                    alt=""
-                    className="h-44 w-full object-cover"
-                  />
-                  <div className="p-4 space-y-1">
-                    <p className="text-xs uppercase tracking-wider text-moss font-bold">
-                      {p?.bhk ? `${p.bhk} BHK` : "Saved Home"}
-                    </p>
-                    <h3 className="font-serif text-lg font-bold line-clamp-1">{title}</h3>
+                <div>
+                  <Link to={`/properties/${targetId}`} className="block relative aspect-[16/10] overflow-hidden bg-slate-100">
+                    <img
+                      src={imgSrc(image)}
+                      alt=""
+                      className="h-full w-full object-cover hover:scale-105 transition-transform duration-300"
+                    />
+                    <div className="absolute top-3 left-3">
+                      <span className="rounded-full bg-navy-950/80 text-white text-[10px] font-bold px-2.5 py-0.5 tracking-wider uppercase backdrop-blur-sm">
+                        {p?.bhk ? `${p.bhk} BHK` : "Saved Home"}
+                      </span>
+                    </div>
+                  </Link>
+
+                  <div className="p-4 space-y-1.5">
+                    <Link to={`/properties/${targetId}`}>
+                      <h3 className="font-display text-base font-bold text-navy line-clamp-1 hover:text-pink-600 transition">
+                        {title}
+                      </h3>
+                    </Link>
                     {price != null && (
-                      <p className="font-serif text-xl font-bold text-brass">{inr(price)}</p>
+                      <p className="font-display text-xl font-bold text-navy">{inr(price)}</p>
                     )}
                     {locality && (
-                      <p className="text-xs text-ink/60 capitalize">📍 {locality}, Jaipur</p>
+                      <p className="text-xs text-slate-500 capitalize flex items-center gap-1">
+                        <span>📍</span> {locality}, Jaipur
+                      </p>
                     )}
                   </div>
-                </Link>
+                </div>
 
-                <div className="border-t border-ink/5 p-3 flex justify-between items-center bg-sand/10">
+                <div className="border-t border-slate-100 p-3.5 flex justify-between items-center bg-slate-50/60">
                   <Link
                     to={`/properties/${targetId}`}
-                    className="text-xs font-semibold text-moss hover:underline"
+                    className="text-xs font-bold text-pink-600 hover:text-pink-700 transition"
                   >
-                    View Details
+                    View Details &rarr;
                   </Link>
                   <button
                     type="button"
-                    onClick={() => void handleRemove(fav.id)}
-                    className="text-xs font-semibold text-red-700 hover:underline"
+                    onClick={() => void handleRemove(fav.id, title)}
+                    className="text-xs font-semibold text-rose-600 hover:text-rose-800 transition"
                   >
                     Remove
                   </button>

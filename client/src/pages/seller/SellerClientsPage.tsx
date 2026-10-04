@@ -3,6 +3,9 @@ import { useSearchParams } from "react-router-dom";
 import { api } from "../../api/client";
 import { inr } from "../../lib/format";
 import type { Property } from "../../types";
+import { Badge } from "../../components/Badge";
+import { EmptyState } from "../../components/EmptyState";
+import { toast } from "../../components/Toast";
 
 type Client = {
   id: string;
@@ -81,11 +84,12 @@ export default function SellerClientsPage() {
     e.preventDefault();
     try {
       await api.post("/clients", newClient);
+      toast.success("Client created successfully!");
       setShowAddClient(false);
       setNewClient({ name: "", phone: "", email: "", notes: "", interestLevel: "MEDIUM" });
       void fetchClients();
     } catch (e: unknown) {
-      alert(e instanceof Error ? e.message : "Failed to add client");
+      toast.error(e instanceof Error ? e.message : "Failed to add client");
     }
   };
 
@@ -98,6 +102,7 @@ export default function SellerClientsPage() {
         type: interactionForm.type,
         notes: interactionForm.notes,
       });
+      toast.success("Interaction logged successfully!");
       setShowLogInteraction(false);
       setInteractionForm({ type: "CALL", notes: "" });
       // Refresh active client
@@ -105,7 +110,7 @@ export default function SellerClientsPage() {
       setSelectedClient(fresh);
       void fetchClients();
     } catch (e: unknown) {
-      alert(e instanceof Error ? e.message : "Failed to log interaction");
+      toast.error(e instanceof Error ? e.message : "Failed to log interaction");
     }
   };
 
@@ -119,13 +124,14 @@ export default function SellerClientsPage() {
         scheduledAt: new Date(visitForm.scheduledAt).toISOString(),
         notes: visitForm.notes,
       });
+      toast.success("Property visit scheduled successfully!");
       setShowScheduleVisit(false);
       setVisitForm({ propertyId: "", scheduledAt: "", notes: "" });
       const fresh = await api.get<Client>(`/clients/${selectedClient.id}`);
       setSelectedClient(fresh);
       void fetchClients();
     } catch (e: unknown) {
-      alert(e instanceof Error ? e.message : "Failed to schedule visit");
+      toast.error(e instanceof Error ? e.message : "Failed to schedule visit");
     }
   };
 

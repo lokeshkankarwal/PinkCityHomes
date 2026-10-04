@@ -1,24 +1,37 @@
 import { useState, useRef } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../auth";
 import { api } from "../../api/client";
 import { imgSrc } from "../../lib/format";
+import { Badge } from "../../components/Badge";
+import { ConfirmModal } from "../../components/ConfirmModal";
+import { toast } from "../../components/Toast";
 
 export default function ProfilePage() {
-  const { user, refresh } = useAuth();
+  const { user, refresh, logout } = useAuth();
+  const navigate = useNavigate();
+
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(user?.name || "");
   const [phone, setPhone] = useState(user?.phone || "");
   const [loading, setLoading] = useState(false);
   const [avatarLoading, setAvatarLoading] = useState(false);
-  const [msg, setMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+  // Modal
+  const [showRemovePhotoModal, setShowRemovePhotoModal] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!user) {
     return (
       <div className="py-24 text-center space-y-4">
-        <p className="font-serif text-2xl font-bold text-ink">Account Profile</p>
-        <p className="text-sm text-ink/60">Please log in to view and manage your profile.</p>
+        <p className="font-display text-2xl font-bold text-navy">Account Profile</p>
+        <p className="text-xs text-slate-500">Please log in to view and manage your profile.</p>
+        <Link to="/login" className="inline-block rounded-2xl bg-navy px-5 py-2.5 text-xs font-semibold text-white shadow">
+          Sign In
+        </Link>
       </div>
     );
   }
@@ -26,52 +39,54 @@ export default function ProfilePage() {
   const handleStartEdit = () => {
     setName(user.name);
     setPhone(user.phone || "");
-    setMsg(null);
     setIsEditing(true);
   };
 
   const handleCancelEdit = () => {
     setName(user.name);
     setPhone(user.phone || "");
-    setMsg(null);
     setIsEditing(false);
   };
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setMsg(null);
     try {
       await api.patch("/auth/profile", { name: name.trim(), phone: phone.trim() || undefined });
       await refresh();
-      setMsg({ type: "success", text: "Profile updated successfully!" });
+      toast.success("Profile information updated successfully!");
       setIsEditing(false);
     } catch (e: unknown) {
-      setMsg({ type: "error", text: e instanceof Error ? e.message : "Failed to update profile" });
+      toast.error(e instanceof Error ? e.message : "Failed to update profile");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleAvatarFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
-      setMsg({ type: "error", text: "Please select a JPEG, PNG, or WebP image." });
+      toast.error("Please select a JPEG, PNG, or WebP image.");
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      setMsg({ type: "error", text: "Profile image must be less than 5MB." });
+      toast.error("Profile image must be less than 5MB.");
       return;
     }
 
+    setSelectedFile(file);
+    setPreviewUrl(URL.createObjectURL(file));
+  };
+
+  const handleUploadPhoto = async () => {
+    if (!selectedFile) return;
     setAvatarLoading(true);
-    setMsg(null);
 
     const formData = new FormData();
-    formData.append("avatar", file);
+    formData.append("avatar", selectedFile);
 
     try {
       const token = localStorage.getItem("pch_jwt");
@@ -87,36 +102,40 @@ export default function ProfilePage() {
       }
 
       await refresh();
-      setMsg({ type: "success", text: "Profile photo updated!" });
+      toast.success("Profile photo updated successfully!");
+      setSelectedFile(null);
+      setPreviewUrl(null);
     } catch (err: unknown) {
-      setMsg({ type: "error", text: err instanceof Error ? err.message : "Failed to upload photo" });
+      toast.error(err instanceof Error ? err.message : "Failed to upload photo");
     } finally {
       setAvatarLoading(false);
     }
+  };
+
+  const handleCancelPhotoUpload = () => {
+    setSelectedFile(null);
+    setPreviewUrl(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const handleRemoveAvatar = async () => {
-    if (!confirm("Are you sure you want to remove your profile photo?")) return;
     setAvatarLoading(true);
-    setMsg(null);
     try {
       await api.del("/auth/profile/avatar");
       await refresh();
-      setMsg({ type: "success", text: "Profile photo removed." });
+      toast.success("Profile photo removed.");
+      setShowRemovePhotoModal(false);
     } catch (err: unknown) {
-      setMsg({ type: "error", text: err instanceof Error ? err.message : "Failed to remove photo" });
+      toast.error(err instanceof Error ? err.message : "Failed to remove photo");
     } finally {
       setAvatarLoading(false);
     }
   };
 
-  // Helper for role label
-  const roleLabel =
-    user.role === "SUPERADMIN"
-      ? "Platform Administrator"
-      : user.role === "SELLER"
-        ? "Verified Seller"
-        : "Registered Buyer";
+  const handleSignOut = async () => {
+    await logout();
+    navigate("/login");
+  };
 
   const initials = user.name
     .split(" ")
@@ -127,272 +146,253 @@ export default function ProfilePage() {
     .toUpperCase();
 
   return (
-    <div className="mx-auto max-w-2xl py-10 space-y-6">
-      {/* Header */}
+    <div className="mx-auto max-w-3xl py-8 space-y-8 animate-fade-in">
+      {/* Page Header */}
       <div>
-        <h1 className="font-serif text-3xl font-bold sm:text-4xl text-ink">Account Profile</h1>
-        <p className="text-sm text-ink/70 mt-1">
-          {isEditing
-            ? "Update your personal details and profile photo"
-            : "View your personal account information and platform privileges"}
+        <span className="text-xs font-bold uppercase tracking-wider text-pink-600">Account Management</span>
+        <h1 className="font-display text-3xl font-bold text-navy mt-1">Profile &amp; Settings</h1>
+        <p className="text-xs sm:text-sm text-slate-500">
+          Manage your personal details, profile image, and review account permissions
         </p>
       </div>
 
-      {/* Notifications */}
-      {msg && (
-        <div
-          className={`rounded-2xl p-4 text-sm font-semibold flex items-center justify-between animate-fade-in ${
-            msg.type === "success"
-              ? "bg-moss/10 border border-moss/20 text-moss"
-              : "bg-red-50 border border-red-200 text-red-700"
-          }`}
-        >
-          <span>{msg.text}</span>
-          <button type="button" onClick={() => setMsg(null)} className="text-xs hover:opacity-75">
-            &times;
-          </button>
-        </div>
-      )}
-
-      {/* READ-ONLY VIEW */}
-      {!isEditing && (
-        <div className="space-y-6">
-          {/* Hero Profile Card */}
-          <div className="rounded-3xl border border-ink/10 bg-white p-8 shadow-sm flex flex-col items-center text-center space-y-4">
-            <div className="relative">
-              {user.avatarUrl ? (
-                <img
-                  src={imgSrc(user.avatarUrl)}
-                  alt={user.name}
-                  className="h-28 w-28 rounded-full object-cover border-4 border-white shadow-lg ring-2 ring-pink-200"
-                />
+      {/* Profile Overview Card */}
+      <div className="rounded-4xl border border-slate-200/80 bg-white p-6 sm:p-8 shadow-card space-y-6">
+        <div className="flex flex-col sm:flex-row items-center gap-6 text-center sm:text-left">
+          {/* Avatar with Preview & Edit */}
+          <div className="relative group">
+            <div className="h-24 w-24 sm:h-28 sm:w-28 rounded-full overflow-hidden border-4 border-slate-100 bg-gradient-to-tr from-pink-600 via-rose-500 to-amber-500 flex items-center justify-center text-white font-display text-3xl font-bold shadow-md">
+              {previewUrl ? (
+                <img src={previewUrl} alt="Preview" className="h-full w-full object-cover" />
+              ) : user.avatarUrl ? (
+                <img src={imgSrc(user.avatarUrl)} alt={user.name} className="h-full w-full object-cover" />
               ) : (
-                <div className="h-28 w-28 rounded-full bg-gradient-to-tr from-ink to-pink-700 text-white font-serif text-3xl font-bold flex items-center justify-center border-4 border-white shadow-lg ring-2 ring-pink-200">
-                  {initials || "P"}
-                </div>
+                initials
               )}
             </div>
 
-            <div>
-              <h2 className="font-serif text-2xl font-bold text-ink">{user.name}</h2>
-              <p className="text-sm text-ink/60 font-mono mt-0.5">{user.email}</p>
-            </div>
-
-            <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
-              <span className="rounded-full bg-ink px-3.5 py-1 text-xs font-bold text-sand shadow-sm">
-                {roleLabel}
-              </span>
-
-              {user.role === "SELLER" && (
-                <span
-                  className={`rounded-full px-3 py-1 text-xs font-bold border shadow-sm ${
-                    user.sellerStatus === "APPROVED"
-                      ? "bg-emerald-50 text-emerald-800 border-emerald-200"
-                      : "bg-amber-50 text-amber-800 border-amber-200"
-                  }`}
-                >
-                  {user.sellerStatus === "APPROVED" ? "✓ Approved Seller" : "⏳ Pending Approval"}
-                </span>
-              )}
-
-              <span className="rounded-full bg-pink-50 text-pink-800 border border-pink-200 px-3 py-1 text-xs font-bold shadow-sm">
-                ✓ Verified Account
-              </span>
-            </div>
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="absolute bottom-0 right-0 h-8 w-8 rounded-full bg-navy text-white flex items-center justify-center shadow-md hover:bg-pink-600 transition"
+              title="Change profile photo"
+            >
+              📷
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={handleFileSelect}
+              className="hidden"
+            />
           </div>
 
-          {/* Contact Information */}
-          <div className="rounded-3xl border border-ink/10 bg-white p-6 shadow-sm space-y-4">
-            <h3 className="font-serif text-lg font-bold text-ink border-b border-ink/5 pb-2">
-              Contact Information
-            </h3>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-              <div className="rounded-2xl bg-sand/30 p-4 border border-ink/5 space-y-1">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-ink/50">Email Address</span>
-                <p className="font-semibold text-ink break-all">{user.email}</p>
-              </div>
-
-              <div className="rounded-2xl bg-sand/30 p-4 border border-ink/5 space-y-1">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-ink/50">Phone Number</span>
-                <p className="font-semibold text-ink">
-                  {user.phone ? user.phone : <span className="text-ink/40 font-normal italic">Not provided</span>}
-                </p>
-              </div>
+          <div className="space-y-1.5 flex-1 min-w-0">
+            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+              <h2 className="font-display text-2xl font-bold text-navy truncate">{user.name}</h2>
+              <Badge status={user.role} />
             </div>
+            <p className="text-xs text-slate-500">{user.email}</p>
+            {user.companyName && (
+              <p className="text-xs font-semibold text-pink-600">🏢 {user.companyName}</p>
+            )}
           </div>
 
-          {/* Account Details */}
-          <div className="rounded-3xl border border-ink/10 bg-white p-6 shadow-sm space-y-4">
-            <h3 className="font-serif text-lg font-bold text-ink border-b border-ink/5 pb-2">
-              Account Privileges
-            </h3>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-              <div className="space-y-1">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-ink/50">Account Role</span>
-                <p className="font-medium text-ink">{roleLabel}</p>
-              </div>
-
-              {user.companyName && (
-                <div className="space-y-1">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-ink/50">Agency / Business</span>
-                  <p className="font-medium text-ink">{user.companyName}</p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Action Button */}
-          <div className="pt-2 text-center">
+          {!isEditing && (
             <button
               type="button"
               onClick={handleStartEdit}
-              className="inline-flex items-center gap-2 rounded-2xl bg-pink-600 px-8 py-3 font-serif text-sm font-bold text-white shadow-md hover:bg-pink-700 transition"
+              className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition active:scale-95 shadow-xs"
             >
-              <span>✏️</span>
-              <span>Update Profile</span>
+              Edit Details
+            </button>
+          )}
+        </div>
+
+        {/* Photo Upload Confirmation Ribbon if a file is selected */}
+        {selectedFile && (
+          <div className="rounded-3xl border border-pink-200 bg-pink-50/70 p-4 flex flex-col sm:flex-row items-center justify-between gap-3 animate-slide-in-up">
+            <div className="text-xs text-pink-900 font-medium">
+              New profile image selected: <span className="font-bold">{selectedFile.name}</span>
+            </div>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={handleCancelPhotoUpload}
+                disabled={avatarLoading}
+                className="rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleUploadPhoto}
+                disabled={avatarLoading}
+                className="rounded-xl bg-pink-600 px-4 py-1.5 text-xs font-semibold text-white shadow hover:bg-pink-700 disabled:opacity-50"
+              >
+                {avatarLoading ? "Uploading..." : "Save Photo"}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Remove photo action if photo exists and not previewing */}
+        {user.avatarUrl && !selectedFile && (
+          <div className="pt-2 border-t border-slate-100 flex justify-end">
+            <button
+              type="button"
+              onClick={() => setShowRemovePhotoModal(true)}
+              className="text-[11px] font-semibold text-rose-600 hover:text-rose-800 transition"
+            >
+              Remove profile photo
             </button>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
-      {/* EDIT MODE VIEW */}
-      {isEditing && (
-        <div className="rounded-3xl border border-ink/10 bg-white p-8 shadow-sm space-y-6">
-          <div className="border-b border-ink/5 pb-4">
-            <h2 className="font-serif text-xl font-bold text-ink">Edit Profile</h2>
-            <p className="text-xs text-ink/60 mt-0.5">
-              Make changes to your profile picture and contact details below
-            </p>
-          </div>
+      {/* Personal Information Form / View */}
+      <div className="rounded-4xl border border-slate-200/80 bg-white p-6 sm:p-8 shadow-card space-y-6">
+        <h3 className="font-display text-xl font-bold text-navy">Personal Information</h3>
 
-          {/* Profile Photo Uploader */}
-          <div className="rounded-2xl bg-sand/30 p-5 border border-ink/5 flex flex-col sm:flex-row items-center gap-5">
-            <div className="relative flex-none">
-              {user.avatarUrl ? (
-                <img
-                  src={imgSrc(user.avatarUrl)}
-                  alt={user.name}
-                  className="h-20 w-20 rounded-full object-cover border-2 border-white shadow-md"
-                />
-              ) : (
-                <div className="h-20 w-20 rounded-full bg-gradient-to-tr from-ink to-pink-700 text-white font-serif text-xl font-bold flex items-center justify-center border-2 border-white shadow-md">
-                  {initials || "P"}
-                </div>
-              )}
-              {avatarLoading && (
-                <div className="absolute inset-0 bg-ink/60 rounded-full flex items-center justify-center">
-                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-r-transparent"></div>
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-2 text-center sm:text-left flex-1">
-              <div>
-                <p className="font-serif font-bold text-sm text-ink">Profile Picture</p>
-                <p className="text-xs text-ink/60">JPEG, PNG, or WebP under 5MB.</p>
-              </div>
-
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                onChange={handleAvatarFileChange}
-                className="hidden"
-              />
-
-              <div className="flex flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  disabled={avatarLoading}
-                  onClick={() => fileInputRef.current?.click()}
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-white border border-ink/20 px-4 py-2 text-xs font-bold text-ink shadow-sm hover:bg-sand transition disabled:opacity-50"
-                >
-                  <span>📷</span>
-                  <span>{user.avatarUrl ? "Change Photo" : "Upload Photo"}</span>
-                </button>
-
-                {user.avatarUrl && (
-                  <button
-                    type="button"
-                    disabled={avatarLoading}
-                    onClick={handleRemoveAvatar}
-                    className="inline-flex items-center gap-1.5 rounded-xl bg-red-50 border border-red-200 px-3 py-2 text-xs font-bold text-red-700 hover:bg-red-100 transition disabled:opacity-50"
-                  >
-                    <span>🗑️</span>
-                    <span>Remove Photo</span>
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Edit Form */}
+        {isEditing ? (
           <form onSubmit={handleUpdate} className="space-y-4">
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-ink/70 mb-1">
-                Email Address (Read-only)
-              </label>
-              <input
-                type="email"
-                disabled
-                value={user.email}
-                className="w-full rounded-2xl border border-ink/10 bg-sand/40 px-4 py-2.5 text-sm text-ink/60 cursor-not-allowed"
-              />
-              <p className="text-[11px] text-ink/50 mt-1">
-                Your email is verified and serves as your account login identifier.
-              </p>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-ink/70 mb-1">
-                Full Name
-              </label>
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5">Full Name</label>
               <input
                 type="text"
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Enter your full name"
-                className="w-full rounded-2xl border border-ink/20 px-4 py-2.5 text-sm font-medium text-ink focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-200 transition"
+                className="w-full rounded-2xl border border-slate-200 px-4 py-2.5 text-sm text-navy focus:outline-none focus:ring-2 focus:ring-pink-500 shadow-xs"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-ink/70 mb-1">
-                Phone Number
-              </label>
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5">Phone Number</label>
               <input
                 type="tel"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="+91 98000 00000"
-                className="w-full rounded-2xl border border-ink/20 px-4 py-2.5 text-sm font-medium text-ink focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-200 transition"
+                className="w-full rounded-2xl border border-slate-200 px-4 py-2.5 text-sm text-navy focus:outline-none focus:ring-2 focus:ring-pink-500 shadow-xs"
               />
             </div>
 
-            {/* Buttons */}
-            <div className="flex items-center justify-end gap-3 pt-4 border-t border-ink/5">
+            <div>
+              <label className="block text-xs font-semibold text-slate-400 mb-1.5">Email Address</label>
+              <input
+                type="email"
+                disabled
+                value={user.email}
+                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-500 cursor-not-allowed"
+              />
+              <span className="text-[10px] text-slate-400 mt-1 block">Account email cannot be modified directly.</span>
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <button
+                type="submit"
+                disabled={loading}
+                className="rounded-2xl bg-navy px-5 py-2.5 text-xs font-semibold text-white shadow-md hover:bg-navy-800 disabled:opacity-50 transition active:scale-95"
+              >
+                {loading ? "Saving Changes..." : "Save Changes"}
+              </button>
               <button
                 type="button"
                 onClick={handleCancelEdit}
                 disabled={loading}
-                className="rounded-2xl border border-ink/20 px-5 py-2.5 text-xs font-bold text-ink/80 hover:bg-sand transition"
+                className="rounded-2xl border border-slate-200 px-4 py-2.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition"
               >
                 Cancel
               </button>
-              <button
-                type="submit"
-                disabled={loading}
-                className="rounded-2xl bg-pink-600 px-6 py-2.5 text-xs font-bold text-white shadow hover:bg-pink-700 transition disabled:opacity-50"
-              >
-                {loading ? "Saving Changes..." : "Save Changes"}
-              </button>
             </div>
           </form>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs sm:text-sm">
+            <div className="space-y-1 rounded-2xl bg-slate-50/70 p-4 border border-slate-100">
+              <span className="text-slate-400 text-xs">Full Name</span>
+              <p className="font-semibold text-navy">{user.name}</p>
+            </div>
+            <div className="space-y-1 rounded-2xl bg-slate-50/70 p-4 border border-slate-100">
+              <span className="text-slate-400 text-xs">Email Address</span>
+              <p className="font-semibold text-navy">{user.email}</p>
+            </div>
+            <div className="space-y-1 rounded-2xl bg-slate-50/70 p-4 border border-slate-100">
+              <span className="text-slate-400 text-xs">Phone Number</span>
+              <p className="font-semibold text-navy">{user.phone || "Not specified"}</p>
+            </div>
+            <div className="space-y-1 rounded-2xl bg-slate-50/70 p-4 border border-slate-100">
+              <span className="text-slate-400 text-xs">Account Role</span>
+              <p className="font-semibold text-navy uppercase tracking-wider">{user.role}</p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Quick Navigation Links */}
+      <div className="rounded-4xl border border-slate-200/80 bg-white p-6 sm:p-8 shadow-card space-y-4">
+        <h3 className="font-display text-xl font-bold text-navy">Quick Access</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <Link
+            to="/customer/favourites"
+            className="flex items-center gap-3 p-4 rounded-2xl border border-slate-100 bg-slate-50/60 hover:bg-slate-100 transition"
+          >
+            <span className="text-2xl">❤️</span>
+            <div>
+              <p className="font-bold text-xs text-navy">Saved Homes</p>
+              <p className="text-[11px] text-slate-500">Your shortlisted properties</p>
+            </div>
+          </Link>
+          <Link
+            to="/customer/orders"
+            className="flex items-center gap-3 p-4 rounded-2xl border border-slate-100 bg-slate-50/60 hover:bg-slate-100 transition"
+          >
+            <span className="text-2xl">📦</span>
+            <div>
+              <p className="font-bold text-xs text-navy">Orders &amp; History</p>
+              <p className="text-[11px] text-slate-500">Past property transactions</p>
+            </div>
+          </Link>
+          <Link
+            to="/properties"
+            className="flex items-center gap-3 p-4 rounded-2xl border border-slate-100 bg-slate-50/60 hover:bg-slate-100 transition"
+          >
+            <span className="text-2xl">🔍</span>
+            <div>
+              <p className="font-bold text-xs text-navy">Browse Marketplace</p>
+              <p className="text-[11px] text-slate-500">Explore verified listings</p>
+            </div>
+          </Link>
         </div>
-      )}
+      </div>
+
+      {/* Account Security & Sign Out */}
+      <div className="rounded-4xl border border-slate-200/80 bg-white p-6 sm:p-8 shadow-card flex items-center justify-between">
+        <div>
+          <h3 className="font-display text-lg font-bold text-navy">Session &amp; Security</h3>
+          <p className="text-xs text-slate-500">Signed in securely on this device</p>
+        </div>
+        <button
+          type="button"
+          onClick={handleSignOut}
+          className="rounded-2xl border border-rose-200 bg-rose-50/60 px-5 py-2.5 text-xs font-semibold text-rose-700 hover:bg-rose-100 transition active:scale-95"
+        >
+          Sign Out of Account
+        </button>
+      </div>
+
+      {/* Remove Avatar Confirmation Modal */}
+      <ConfirmModal
+        isOpen={showRemovePhotoModal}
+        title="Remove Profile Photo"
+        message="Are you sure you want to remove your profile photo? Your avatar will revert to your initials."
+        confirmLabel="Remove Photo"
+        variant="danger"
+        loading={avatarLoading}
+        onConfirm={handleRemoveAvatar}
+        onCancel={() => setShowRemovePhotoModal(false)}
+      />
     </div>
   );
 }

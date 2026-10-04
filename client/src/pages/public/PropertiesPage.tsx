@@ -4,6 +4,9 @@ import { api } from "../../api/client";
 import { PropertyCard } from "../../components/PropertyCard";
 import { LocationSearchBar } from "../../components/LocationSearchBar";
 import { PropertyFilterBar, type FilterState } from "../../components/PropertyFilterBar";
+import { SkeletonCard } from "../../components/Skeleton";
+import { EmptyState } from "../../components/EmptyState";
+import { toast } from "../../components/Toast";
 import { useAuth } from "../../auth";
 import type { Property } from "../../types";
 
@@ -27,7 +30,6 @@ export default function PropertiesPage() {
   const [properties, setProperties] = useState<Property[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [actionMsg, setActionMsg] = useState<string | null>(null);
 
   // Pagination
   const [page, setPage] = useState(1);
@@ -93,52 +95,46 @@ export default function PropertiesPage() {
 
   const handleFav = async (propertyId: string, title: string) => {
     if (!user) {
-      setActionMsg("Please log in to save favourites.");
-      setTimeout(() => setActionMsg(null), 3000);
+      toast.info("Please log in to save properties.");
       return;
     }
     try {
       await api.post("/favourites", { propertyId });
       window.dispatchEvent(new Event("favourites-updated"));
-      setActionMsg(`Saved "${title}" to favourites!`);
-      setTimeout(() => setActionMsg(null), 3000);
+      toast.success(`Saved "${title}" to favourites!`);
     } catch (e: unknown) {
-      setActionMsg(e instanceof Error ? e.message : "Failed to save favourite");
-      setTimeout(() => setActionMsg(null), 3000);
+      toast.error(e instanceof Error ? e.message : "Failed to save favourite");
     }
   };
 
   const handleCart = async (propertyId: string, title: string) => {
     if (!user) {
-      setActionMsg("Please log in to add to cart.");
-      setTimeout(() => setActionMsg(null), 3000);
+      toast.info("Please log in to add to cart.");
       return;
     }
     try {
       await api.post("/cart", { propertyId });
       window.dispatchEvent(new Event("cart-updated"));
-      setActionMsg(`Added "${title}" to your cart!`);
-      setTimeout(() => setActionMsg(null), 3000);
+      toast.success(`Added "${title}" to your cart!`);
     } catch (e: unknown) {
-      setActionMsg(e instanceof Error ? e.message : "Failed to add to cart");
-      setTimeout(() => setActionMsg(null), 3000);
+      toast.error(e instanceof Error ? e.message : "Failed to add to cart");
     }
   };
 
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
   return (
-    <div className="space-y-6 pb-16">
+    <div className="space-y-6 pb-16 animate-fade-in">
       {/* Header & Location Search */}
       <div className="space-y-4">
         <div>
           <div className="inline-flex items-center gap-2 rounded-full border border-pink-200 bg-pink-50 px-3 py-1 text-xs font-bold text-pink-700">
             🏙️ Properties for Sale in Jaipur
           </div>
-          <h1 className="font-serif text-3xl font-bold mt-2 sm:text-4xl text-ink">
+          <h1 className="font-display text-3xl font-bold mt-2 sm:text-4xl text-navy">
             Find Your Dream Home in the Pink City
           </h1>
-          <p className="text-sm text-ink/70 max-w-2xl mt-1">
+          <p className="text-xs sm:text-sm text-slate-500 max-w-2xl mt-1">
             Explore verified residential apartments, luxury villas, and independent houses across Jaipur's top micro-markets.
           </p>
         </div>
@@ -149,13 +145,7 @@ export default function PropertiesPage() {
         />
       </div>
 
-      {actionMsg && (
-        <div className="rounded-2xl bg-moss/10 border border-moss/20 px-4 py-2.5 text-sm text-moss font-semibold animate-fade-in">
-          {actionMsg}
-        </div>
-      )}
-
-      {/* Filter Bar (Card- & Filter-first) */}
+      {/* Filter Bar */}
       <PropertyFilterBar
         filters={filters}
         onChange={updateFilters}
@@ -166,26 +156,17 @@ export default function PropertiesPage() {
 
       {/* Properties Grid */}
       {loading ? (
-        <div className="py-24 text-center space-y-3">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-pink-600 border-r-transparent"></div>
-          <p className="text-sm font-semibold text-ink/60">Searching verified Jaipur homes...</p>
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 pt-4">
+          <SkeletonCard count={8} />
         </div>
       ) : properties.length === 0 ? (
-        /* Friendly Empty State */
-        <div className="rounded-3xl border border-ink/10 bg-white p-8 sm:p-12 text-center space-y-4 shadow-sm max-w-2xl mx-auto">
-          <span className="text-4xl">🏡</span>
-          <h3 className="font-serif text-2xl font-bold text-ink">No homes found with these filters</h3>
-          <div className="text-sm text-ink/70 text-left space-y-2 bg-sand/40 p-5 rounded-2xl border border-ink/5">
-            <p className="font-semibold text-ink">Helpful suggestions:</p>
-            <ul className="list-disc list-inside text-xs space-y-1.5 text-ink/70">
-              <li>Try broadening your budget range or choosing fewer bedrooms</li>
-              <li>Search nearby localities like Malviya Nagar, Mansarovar, or Jagatpura</li>
-              <li>Clear some filters to see all available listings in Jaipur</li>
-            </ul>
-          </div>
-          <button
-            type="button"
-            onClick={() =>
+        <EmptyState
+          icon="🏡"
+          title="No homes found with these filters"
+          body="Try broadening your budget range, clearing some filters, or exploring nearby localities like Mansarovar, Jagatpura, or Vaishali Nagar."
+          action={{
+            label: "Clear Filters & Show All Homes",
+            onClick: () =>
               updateFilters({
                 locality: "",
                 minPrice: "",
@@ -196,16 +177,12 @@ export default function PropertiesPage() {
                 bathrooms: "",
                 minArea: "",
                 sort: "recommended",
-              })
-            }
-            className="inline-block rounded-xl bg-pink-600 px-6 py-2.5 text-xs font-bold text-white hover:bg-pink-700 transition shadow"
-          >
-            Clear Filters & Show All Homes
-          </button>
-        </div>
+              }),
+          }}
+        />
       ) : (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pt-2">
             {properties.map((item) => (
               <PropertyCard
                 key={item.id}
@@ -235,18 +212,18 @@ export default function PropertiesPage() {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-center gap-2 pt-6">
+            <div className="flex items-center justify-center gap-2 pt-8">
               <button
                 disabled={page <= 1}
                 onClick={() => {
                   setPage((p) => Math.max(1, p - 1));
                   window.scrollTo({ top: 120, behavior: "smooth" });
                 }}
-                className="rounded-xl border border-ink/20 bg-white px-4 py-2 text-xs font-bold disabled:opacity-40 hover:bg-sand transition shadow-sm"
+                className="rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-700 disabled:opacity-40 hover:bg-slate-50 transition shadow-xs active:scale-95"
               >
                 &larr; Previous
               </button>
-              <span className="text-xs font-bold text-ink/70 px-3">
+              <span className="text-xs font-bold text-slate-600 px-3">
                 Page {page} of {totalPages}
               </span>
               <button
@@ -255,7 +232,7 @@ export default function PropertiesPage() {
                   setPage((p) => Math.min(totalPages, p + 1));
                   window.scrollTo({ top: 120, behavior: "smooth" });
                 }}
-                className="rounded-xl border border-ink/20 bg-white px-4 py-2 text-xs font-bold disabled:opacity-40 hover:bg-sand transition shadow-sm"
+                className="rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-700 disabled:opacity-40 hover:bg-slate-50 transition shadow-xs active:scale-95"
               >
                 Next &rarr;
               </button>

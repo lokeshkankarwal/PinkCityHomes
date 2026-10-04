@@ -36,21 +36,26 @@ export function ConfirmModal({
   if (!isOpen) return null;
 
   const btnColors = {
-    danger: "bg-red-600 hover:bg-red-700 text-white focus:ring-red-500",
+    danger: "bg-rose-600 hover:bg-rose-700 text-white focus:ring-rose-500",
     warning: "bg-amber-600 hover:bg-amber-700 text-white focus:ring-amber-500",
-    primary: "bg-ink hover:bg-ink/90 text-sand focus:ring-ink",
+    primary: "bg-navy hover:bg-navy-800 text-white focus:ring-navy",
   };
 
   const iconColors = {
-    danger: "bg-red-100 text-red-600",
-    warning: "bg-amber-100 text-amber-600",
-    primary: "bg-sand text-ink",
+    danger: "bg-rose-50 text-rose-600",
+    warning: "bg-amber-50 text-amber-600",
+    primary: "bg-navy-50 text-navy",
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/60 p-4 backdrop-blur-sm transition-opacity">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-navy-950/70 p-4 backdrop-blur-sm transition-opacity animate-fade-in"
+      onClick={(e) => {
+        if (e.target === e.currentTarget && !loading) onCancel();
+      }}
+    >
       <div
-        className="w-full max-w-md transform overflow-hidden rounded-3xl bg-white p-6 shadow-2xl transition-all border border-ink/10"
+        className="w-full max-w-md transform overflow-hidden rounded-3xl bg-white p-6 shadow-modal transition-all border border-slate-200/80 animate-scale-in"
         role="dialog"
         aria-modal="true"
       >
@@ -71,17 +76,17 @@ export function ConfirmModal({
             )}
           </div>
           <div className="flex-1">
-            <h3 className="font-serif text-lg font-bold text-ink">{title}</h3>
-            <p className="mt-2 text-xs leading-relaxed text-ink/70">{message}</p>
+            <h3 className="font-display text-lg font-bold text-navy">{title}</h3>
+            <p className="mt-1.5 text-xs md:text-sm leading-relaxed text-slate-500">{message}</p>
           </div>
         </div>
 
-        <div className="mt-6 flex justify-end gap-3 pt-3 border-t border-ink/5">
+        <div className="mt-6 flex justify-end gap-2.5 pt-4 border-t border-slate-100">
           <button
             type="button"
             disabled={loading}
             onClick={onCancel}
-            className="rounded-xl border border-ink/20 px-4 py-2 text-xs font-semibold text-ink/80 hover:bg-sand focus:outline-none disabled:opacity-50 transition"
+            className="rounded-2xl border border-slate-200 px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 focus:outline-none disabled:opacity-50 transition active:scale-95"
           >
             {cancelLabel}
           </button>
@@ -89,7 +94,7 @@ export function ConfirmModal({
             type="button"
             disabled={loading}
             onClick={() => void onConfirm()}
-            className={`rounded-xl px-4 py-2 text-xs font-semibold shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 transition flex items-center gap-1.5 ${btnColors[variant]}`}
+            className={`rounded-2xl px-5 py-2.5 text-xs font-semibold shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 transition flex items-center gap-2 active:scale-95 ${btnColors[variant]}`}
           >
             {loading && (
               <svg className="h-3.5 w-3.5 animate-spin" fill="none" viewBox="0 0 24 24">

@@ -141,22 +141,22 @@ export function PropertyFilterBar({
   }
 
   return (
-    <div className="space-y-4 rounded-3xl border border-ink/10 bg-white p-5 shadow-sm">
+    <div className="space-y-4 rounded-4xl border border-slate-200/80 bg-white p-5 sm:p-6 shadow-card">
       {/* Top row: Results count & Sorting */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-ink/5 pb-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
         <div>
-          <h2 className="font-serif text-lg font-bold text-ink flex items-center gap-2">
+          <h2 className="font-display text-lg font-bold text-navy flex items-center gap-2">
             <span>{loading ? "Searching..." : `${totalCount} ${listingType === "RENT" ? "rental homes" : "homes"} found`}</span>
-            {totalCount > 0 && <span className="text-xs font-semibold text-pink-700 bg-pink-50 px-2 py-0.5 rounded-full border border-pink-200">Jaipur</span>}
+            {totalCount > 0 && <span className="text-xs font-bold text-pink-700 bg-pink-50 px-2.5 py-0.5 rounded-full border border-pink-200">Jaipur</span>}
           </h2>
         </div>
 
         <div className="flex items-center gap-2 text-xs">
-          <span className="text-ink/60 font-medium">Sort by:</span>
+          <span className="text-slate-400 font-semibold">Sort by:</span>
           <select
             value={filters.sort}
             onChange={(e) => onChange({ ...filters, sort: e.target.value })}
-            className="rounded-xl border border-ink/15 bg-sand/30 px-3 py-1.5 font-semibold text-ink focus:outline-none focus:ring-2 focus:ring-pink-300"
+            className="rounded-2xl border border-slate-200 bg-slate-50 px-3.5 py-1.5 font-semibold text-navy focus:outline-none focus:ring-2 focus:ring-pink-500"
           >
             <option value="recommended">Recommended</option>
             <option value="newest">Newest First</option>
@@ -170,7 +170,7 @@ export function PropertyFilterBar({
 
       {/* Quick Budget Presets */}
       <div>
-        <label className="text-[11px] font-bold uppercase tracking-wider text-ink/50">
+        <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
           {listingType === "RENT" ? "Monthly Rent Budget" : "Price Range"}
         </label>
         <div className="mt-1.5 flex flex-wrap gap-1.5">
@@ -181,10 +181,10 @@ export function PropertyFilterBar({
                 key={preset.label}
                 type="button"
                 onClick={() => handlePresetClick(preset.min, preset.max)}
-                className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition border ${
+                className={`rounded-2xl px-3.5 py-1.5 text-xs font-semibold transition-all border active:scale-95 ${
                   isActive
                     ? "bg-pink-600 text-white border-pink-600 shadow-sm"
-                    : "bg-sand/30 text-ink/80 border-ink/10 hover:border-pink-300 hover:bg-pink-50/50 hover:text-pink-700"
+                    : "bg-slate-50 text-slate-700 border-slate-200 hover:border-pink-300 hover:bg-pink-50/50 hover:text-pink-700"
                 }`}
               >
                 {preset.label}
@@ -196,7 +196,7 @@ export function PropertyFilterBar({
 
       {/* BHK Selector Chips */}
       <div>
-        <label className="text-[11px] font-bold uppercase tracking-wider text-ink/50">Bedrooms (BHK)</label>
+        <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Bedrooms (BHK)</label>
         <div className="mt-1.5 flex flex-wrap gap-1.5">
           {[
             { label: "Any", val: "" },
@@ -212,10 +212,10 @@ export function PropertyFilterBar({
                 key={item.label}
                 type="button"
                 onClick={() => handleBhkClick(item.val)}
-                className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition border ${
+                className={`rounded-2xl px-3.5 py-1.5 text-xs font-semibold transition-all border active:scale-95 ${
                   isActive
-                    ? "bg-ink text-sand border-ink shadow-sm"
-                    : "bg-sand/30 text-ink/80 border-ink/10 hover:border-ink/30 hover:bg-sand/60"
+                    ? "bg-navy text-white border-navy shadow-sm"
+                    : "bg-slate-50 text-slate-700 border-slate-200 hover:border-slate-300 hover:bg-slate-100"
                 }`}
               >
                 {item.label}

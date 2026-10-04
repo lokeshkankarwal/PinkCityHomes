@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { api } from "../../api/client";
 import { ConfirmModal } from "../../components/ConfirmModal";
+import { Badge } from "../../components/Badge";
+import { toast } from "../../components/Toast";
 
 type SellerItem = {
   id: string;
@@ -89,15 +91,13 @@ export default function AdminSellersPage() {
   };
 
   const handleApprove = async (seller: SellerItem) => {
-    if (!confirm(`Are you sure you want to approve "${seller.user.name}" (${seller.companyName || "Direct Seller"})?`)) {
-      return;
-    }
     setActionLoading(true);
     try {
       await api.post(`/admin/sellers/${seller.id}/approve`);
+      toast.success(`Approved seller "${seller.user.name}" successfully!`);
       void fetchSellers();
     } catch (e: unknown) {
-      alert(e instanceof Error ? e.message : "Approval failed");
+      toast.error(e instanceof Error ? e.message : "Approval failed");
     } finally {
       setActionLoading(false);
     }
@@ -108,11 +108,12 @@ export default function AdminSellersPage() {
     setActionLoading(true);
     try {
       await api.post(`/admin/sellers/${rejectTarget.id}/reject`, { reason: rejectReason });
+      toast.success("Seller application rejected.");
       setRejectTarget(null);
       setRejectReason("");
       void fetchSellers();
     } catch (e: unknown) {
-      alert(e instanceof Error ? e.message : "Rejection failed");
+      toast.error(e instanceof Error ? e.message : "Rejection failed");
     } finally {
       setActionLoading(false);
     }
@@ -124,13 +125,15 @@ export default function AdminSellersPage() {
     try {
       if (statusModalTarget.action === "DISABLE") {
         await api.patch(`/admin/sellers/${statusModalTarget.seller.id}/disable`);
+        toast.success("Seller account disabled.");
       } else {
         await api.patch(`/admin/sellers/${statusModalTarget.seller.id}/enable`);
+        toast.success("Seller account re-enabled.");
       }
       setStatusModalTarget(null);
       void fetchSellers();
     } catch (e: unknown) {
-      alert(e instanceof Error ? e.message : "Failed to update seller status");
+      toast.error(e instanceof Error ? e.message : "Failed to update seller status");
     } finally {
       setActionLoading(false);
     }
@@ -141,11 +144,11 @@ export default function AdminSellersPage() {
     setActionLoading(true);
     try {
       const res = await api.delete<{ ok: boolean; message: string }>(`/admin/sellers/${deleteTarget.id}`);
-      alert(res.message || "Seller and properties permanently deleted.");
+      toast.success(res.message || "Seller and properties permanently deleted.");
       setDeleteTarget(null);
       void fetchSellers();
     } catch (e: unknown) {
-      alert(e instanceof Error ? e.message : "Failed to delete seller");
+      toast.error(e instanceof Error ? e.message : "Failed to delete seller");
     } finally {
       setActionLoading(false);
     }

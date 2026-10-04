@@ -4,6 +4,8 @@ import { api } from "../../api/client";
 import { inr, imgSrc } from "../../lib/format";
 import type { Property } from "../../types";
 import { ConfirmModal } from "../../components/ConfirmModal";
+import { Badge } from "../../components/Badge";
+import { toast } from "../../components/Toast";
 
 type SellerData = {
   seller: {
@@ -74,15 +76,13 @@ export default function AdminSellerDetailPage() {
 
   const handleApproveSeller = async () => {
     if (!data) return;
-    if (!confirm(`Are you sure you want to approve "${data.user.name}" (${data.seller.companyName || "Direct Seller"}) as an active seller?`)) {
-      return;
-    }
     setActionLoading(true);
     try {
       await api.post(`/admin/sellers/${data.seller.id}/approve`);
+      toast.success(`Approved "${data.user.name}" as an active seller!`);
       void fetchSellerDetails();
     } catch (e: unknown) {
-      alert(e instanceof Error ? e.message : "Approval failed");
+      toast.error(e instanceof Error ? e.message : "Approval failed");
     } finally {
       setActionLoading(false);
     }
@@ -93,11 +93,12 @@ export default function AdminSellerDetailPage() {
     setActionLoading(true);
     try {
       await api.post(`/admin/sellers/${data.seller.id}/reject`, { reason: rejectReason });
+      toast.success("Seller application rejected.");
       setShowRejectModal(false);
       setRejectReason("");
       void fetchSellerDetails();
     } catch (e: unknown) {
-      alert(e instanceof Error ? e.message : "Rejection failed");
+      toast.error(e instanceof Error ? e.message : "Rejection failed");
     } finally {
       setActionLoading(false);
     }
@@ -112,10 +113,11 @@ export default function AdminSellerDetailPage() {
           ? `/admin/properties/${togglePropTarget.id}/disable`
           : `/admin/properties/${togglePropTarget.id}/enable`;
       await api.patch(endpoint);
+      toast.success("Property status updated successfully");
       setTogglePropTarget(null);
       void fetchSellerDetails();
     } catch (e: unknown) {
-      alert(e instanceof Error ? e.message : "Failed to update property status");
+      toast.error(e instanceof Error ? e.message : "Failed to update property status");
     } finally {
       setActionLoading(false);
     }
@@ -126,10 +128,11 @@ export default function AdminSellerDetailPage() {
     setActionLoading(true);
     try {
       await api.delete(`/admin/properties/${deletePropTarget.id}`);
+      toast.success("Property permanently deleted");
       setDeletePropTarget(null);
       void fetchSellerDetails();
     } catch (e: unknown) {
-      alert(e instanceof Error ? e.message : "Failed to delete property");
+      toast.error(e instanceof Error ? e.message : "Failed to delete property");
     } finally {
       setActionLoading(false);
     }
@@ -141,13 +144,15 @@ export default function AdminSellerDetailPage() {
     try {
       if (sellerStatusTarget === "DISABLE") {
         await api.patch(`/admin/sellers/${data.seller.id}/disable`);
+        toast.success("Seller and all listings disabled.");
       } else {
         await api.patch(`/admin/sellers/${data.seller.id}/enable`);
+        toast.success("Seller account re-enabled.");
       }
       setSellerStatusTarget(null);
       void fetchSellerDetails();
     } catch (e: unknown) {
-      alert(e instanceof Error ? e.message : "Failed to update seller status");
+      toast.error(e instanceof Error ? e.message : "Failed to update seller status");
     } finally {
       setActionLoading(false);
     }
@@ -158,10 +163,10 @@ export default function AdminSellerDetailPage() {
     setActionLoading(true);
     try {
       const res = await api.delete<{ ok: boolean; message: string }>(`/admin/sellers/${data.seller.id}`);
-      alert(res.message || "Seller and properties permanently deleted.");
+      toast.success(res.message || "Seller and properties permanently deleted.");
       navigate("/admin/sellers");
     } catch (e: unknown) {
-      alert(e instanceof Error ? e.message : "Failed to delete seller");
+      toast.error(e instanceof Error ? e.message : "Failed to delete seller");
     } finally {
       setActionLoading(false);
     }

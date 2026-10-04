@@ -1,18 +1,21 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../auth";
 import { api } from "../api/client";
+import { ToastContainer } from "./Toast";
 
-const desktopLink = ({ isActive }: { isActive: boolean }) =>
-  `relative px-3 py-1.5 rounded-xl text-sm font-medium transition ${
+const navLink = ({ isActive }: { isActive: boolean }) =>
+  `relative px-3.5 py-2 rounded-2xl text-xs font-semibold tracking-wide transition-all duration-200 ${
     isActive
-      ? "text-pink-600 font-bold bg-pink-50/80 shadow-xs"
-      : "text-ink/75 hover:text-ink hover:bg-ink/5"
+      ? "text-pink-600 bg-pink-50/80 shadow-xs font-bold"
+      : "text-slate-600 hover:text-navy hover:bg-slate-100/70"
   }`;
 
-const adminLink = ({ isActive }: { isActive: boolean }) =>
-  `text-xs font-semibold px-3 py-1.5 rounded-xl transition ${
-    isActive ? "bg-ink text-sand shadow-sm" : "text-ink/80 hover:bg-ink/5 hover:text-ink"
+const adminNavLink = ({ isActive }: { isActive: boolean }) =>
+  `relative px-3 py-1.5 rounded-xl text-xs font-semibold tracking-wide transition-all duration-200 ${
+    isActive
+      ? "bg-pink-600 text-white shadow-sm font-bold"
+      : "text-slate-300 hover:text-white hover:bg-navy-800"
   }`;
 
 export default function Layout() {
@@ -21,19 +24,34 @@ export default function Layout() {
   const location = useLocation();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [cartCount, setCartCount] = useState<number>(0);
   const [favCount, setFavCount] = useState<number>(0);
+
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const isSuperAdmin = user?.role === "SUPERADMIN";
   const isSeller = user?.role === "SELLER";
   const isCustomer = user?.role === "CUSTOMER";
 
-  // Close mobile drawer on route change
+  // Close menus on route navigation
   useEffect(() => {
     setMobileMenuOpen(false);
+    setProfileDropdownOpen(false);
   }, [location.pathname]);
 
-  // Load cart & fav counts for logged in customers
+  // Click outside to close profile dropdown
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setProfileDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Sync cart & fav counts
   useEffect(() => {
     const refreshCounts = () => {
       if (isCustomer) {
@@ -61,207 +79,267 @@ export default function Layout() {
     };
   }, [isCustomer, location.pathname]);
 
+  const handleLogout = async () => {
+    await logout();
+    navigate("/login");
+  };
+
   return (
-    <div className="min-h-screen flex flex-col bg-sand/20 text-ink antialiased">
-      {/* ── Top Sticky Header (Desktop + Mobile) ── */}
-      <header className="sticky top-0 z-40 border-b border-ink/10 bg-white/90 backdrop-blur-md transition-all">
+    <div className="min-h-screen flex flex-col bg-cream text-navy antialiased">
+      {/* Toast Notification Container */}
+      <ToastContainer />
+
+      {/* ── Top Header ────────────────────────────────────────────── */}
+      <header
+        className={`sticky top-0 z-40 border-b backdrop-blur-md transition-colors ${
+          isSuperAdmin
+            ? "bg-navy-950/95 border-navy-800 text-white"
+            : "bg-white/95 border-slate-200/80 shadow-nav text-navy"
+        }`}
+      >
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
-          {/* Logo & Platform Tag */}
+          {/* Brand Logo */}
           <div className="flex items-center gap-3">
             <Link
               to={isSuperAdmin ? "/admin/dashboard" : isSeller ? "/seller/dashboard" : "/"}
-              className="flex items-center gap-2 group"
+              className="flex items-center gap-2.5 group"
             >
-              <div className="h-9 w-9 rounded-xl bg-gradient-to-tr from-pink-600 via-rose-500 to-amber-500 flex items-center justify-center text-white font-serif font-black text-lg shadow-sm group-hover:scale-105 transition">
+              <div className="h-9 w-9 rounded-2xl bg-gradient-to-tr from-pink-600 via-rose-500 to-amber-500 flex items-center justify-center text-white font-display font-black text-lg shadow-md group-hover:scale-105 transition-transform duration-200">
                 P
               </div>
-              <span className="font-serif text-2xl font-bold tracking-tight text-ink">
-                <span className="text-pink-600">Pink</span>CityHomes
+              <span className="font-display text-2xl font-bold tracking-tight">
+                <span className="text-pink-600">Pink</span>
+                <span className={isSuperAdmin ? "text-white" : "text-navy"}>CityHomes</span>
               </span>
             </Link>
 
             {isSuperAdmin && (
-              <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-amber-100 text-amber-900 border border-amber-300 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider">
+              <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/30 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider">
                 👑 Superadmin
               </span>
             )}
             {isSeller && (
-              <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-pink-100 text-pink-800 border border-pink-200 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider">
-                🏢 Seller Partner
+              <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-pink-50 text-pink-700 border border-pink-200 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider">
+                🏢 Partner
               </span>
             )}
           </div>
 
-          {/* ── Desktop Navigation Bar (md and above) ── */}
-          <nav className="hidden md:flex items-center gap-1.5 lg:gap-2">
+          {/* ── Desktop Navigation ── */}
+          <nav className="hidden md:flex items-center gap-1 lg:gap-2">
             {isSuperAdmin ? (
-              // Superadmin Navigation
+              // Superadmin Navigation (strictly platform control, no consumer links)
               <>
-                <NavLink to="/admin/dashboard" className={adminLink}>
+                <NavLink to="/admin/dashboard" className={adminNavLink}>
                   Dashboard
                 </NavLink>
-                <NavLink to="/admin/sellers" className={adminLink}>
+                <NavLink to="/admin/sellers" className={adminNavLink}>
                   Sellers
                 </NavLink>
-                <NavLink to="/admin/users" className={adminLink}>
+                <NavLink to="/admin/users" className={adminNavLink}>
                   Users
                 </NavLink>
-                <NavLink to="/admin/properties" className={adminLink}>
+                <NavLink to="/admin/properties" className={adminNavLink}>
                   Properties
                 </NavLink>
-                <NavLink to="/admin/disabled" className={adminLink}>
+                <NavLink to="/admin/disabled" className={adminNavLink}>
                   Disabled
                 </NavLink>
-                <NavLink to="/admin/audit" className={adminLink}>
+                <NavLink to="/admin/audit" className={adminNavLink}>
                   Audit Log
                 </NavLink>
 
-                <div className="h-4 w-[1px] bg-ink/20 mx-1.5" />
+                <div className="h-4 w-[1px] bg-navy-800 mx-2" />
 
                 <button
-                  onClick={async () => {
-                    await logout();
-                    navigate("/login");
-                  }}
-                  className="rounded-xl border border-ink/20 px-3 py-1.5 text-xs font-semibold text-ink hover:bg-sand transition active:scale-95"
+                  type="button"
+                  onClick={handleLogout}
+                  className="rounded-2xl border border-navy-700 bg-navy-900 px-3.5 py-1.5 text-xs font-semibold text-slate-300 hover:text-white hover:bg-navy-800 transition active:scale-95"
                 >
                   Logout
                 </button>
               </>
             ) : (
-              // Customer / Seller / Guest Navigation (NO Projects!)
+              // Consumer / Seller Navigation
               <>
-                <NavLink to="/properties" className={desktopLink}>
+                <NavLink to="/properties" className={navLink}>
                   Buy
                 </NavLink>
-                <NavLink to="/rentals" className={desktopLink}>
+                <NavLink to="/rentals" className={navLink}>
                   Rent
                 </NavLink>
-                <NavLink to="/insights" className={desktopLink}>
+                <NavLink to="/insights" className={navLink}>
                   Market
                 </NavLink>
 
-                {/* Customer specific links */}
+                {/* Customer Links */}
                 {isCustomer && (
                   <>
-                    <NavLink to="/customer/favourites" className={desktopLink}>
-                      <span className="flex items-center gap-1">
-                        <span>❤️</span>
+                    <NavLink to="/customer/favourites" className={navLink}>
+                      <span className="flex items-center gap-1.5">
+                        <svg className="w-3.5 h-3.5 text-pink-600" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                        </svg>
                         <span>Saved</span>
                         {favCount > 0 && (
-                          <span className="ml-0.5 rounded-full bg-pink-600 px-1.5 py-0.2 text-[10px] font-bold text-white">
+                          <span className="rounded-full bg-pink-600 px-1.5 py-0.2 text-[10px] font-bold text-white">
                             {favCount}
                           </span>
                         )}
                       </span>
                     </NavLink>
-                    <NavLink to="/customer/cart" className={desktopLink}>
-                      <span className="flex items-center gap-1">
-                        <span>🛒</span>
+                    <NavLink to="/customer/cart" className={navLink}>
+                      <span className="flex items-center gap-1.5">
+                        <svg className="w-3.5 h-3.5 text-navy" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                        </svg>
                         <span>Cart</span>
                         {cartCount > 0 && (
-                          <span className="ml-0.5 rounded-full bg-ink px-1.5 py-0.2 text-[10px] font-bold text-sand">
+                          <span className="rounded-full bg-navy px-1.5 py-0.2 text-[10px] font-bold text-white">
                             {cartCount}
                           </span>
                         )}
                       </span>
                     </NavLink>
-                    <NavLink to="/customer/orders" className={desktopLink}>
+                    <NavLink to="/customer/orders" className={navLink}>
                       Orders
                     </NavLink>
                   </>
                 )}
 
-                {/* Seller specific links */}
+                {/* Seller Links */}
                 {isSeller && (
                   <>
-                    <NavLink to="/seller/dashboard" className={desktopLink}>
-                      📊 Dashboard
+                    <NavLink to="/seller/dashboard" className={navLink}>
+                      Dashboard
                     </NavLink>
-                    <NavLink to="/seller/properties" className={desktopLink}>
-                      🏡 Properties
+                    <NavLink to="/seller/properties" className={navLink}>
+                      Properties
                     </NavLink>
-                    <NavLink to="/seller/clients" className={desktopLink}>
-                      👥 CRM Leads
+                    <NavLink to="/seller/clients" className={navLink}>
+                      CRM Leads
                     </NavLink>
                   </>
                 )}
 
-                <div className="h-4 w-[1px] bg-ink/15 mx-1" />
+                <div className="h-4 w-[1px] bg-slate-200 mx-1.5" />
 
+                {/* User Dropdown / Login CTA */}
                 {user ? (
-                  <div className="flex items-center gap-2 pl-1">
-                    <Link
-                      to="/customer/profile"
-                      className="flex items-center gap-2 rounded-xl border border-ink/10 bg-sand/40 px-3 py-1.5 text-xs font-semibold text-ink hover:bg-sand transition"
+                  <div className="relative" ref={dropdownRef}>
+                    <button
+                      type="button"
+                      onClick={() => setProfileDropdownOpen((prev) => !prev)}
+                      className="flex items-center gap-2 rounded-2xl border border-slate-200/80 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-navy hover:bg-slate-100 transition active:scale-95"
                     >
                       <div className="h-6 w-6 rounded-full bg-pink-600 text-white flex items-center justify-center text-[11px] font-bold">
                         {user.name.charAt(0).toUpperCase()}
                       </div>
-                      <span className="max-w-[120px] truncate">{user.name}</span>
-                    </Link>
-                    <button
-                      onClick={async () => {
-                        await logout();
-                        navigate("/login");
-                      }}
-                      className="rounded-xl border border-ink/15 px-3 py-1.5 text-xs font-semibold text-ink/70 hover:text-ink hover:bg-sand transition active:scale-95"
-                    >
-                      Logout
+                      <span className="max-w-[100px] truncate">{user.name}</span>
+                      <svg className="w-3 h-3 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
                     </button>
+
+                    {/* Popover Menu */}
+                    {profileDropdownOpen && (
+                      <div className="absolute right-0 mt-2 w-56 rounded-3xl border border-slate-200/80 bg-white p-2 shadow-xl animate-scale-in z-50">
+                        <div className="px-3 py-2 border-b border-slate-100">
+                          <p className="text-xs font-bold text-navy truncate">{user.name}</p>
+                          <p className="text-[11px] text-slate-500 truncate">{user.email}</p>
+                        </div>
+
+                        <div className="py-1 text-xs">
+                          <Link
+                            to="/customer/profile"
+                            className="flex items-center gap-2 px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-50 hover:text-navy transition font-medium"
+                          >
+                            <span>👤</span> Profile & Settings
+                          </Link>
+                          {isCustomer && (
+                            <>
+                              <Link
+                                to="/customer/favourites"
+                                className="flex items-center gap-2 px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-50 hover:text-navy transition font-medium"
+                              >
+                                <span>❤️</span> Saved Homes
+                              </Link>
+                              <Link
+                                to="/customer/orders"
+                                className="flex items-center gap-2 px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-50 hover:text-navy transition font-medium"
+                              >
+                                <span>📦</span> Orders & Purchases
+                              </Link>
+                            </>
+                          )}
+                          {isSeller && (
+                            <Link
+                              to="/seller/properties?new=1"
+                              className="flex items-center gap-2 px-3 py-2 rounded-xl text-pink-600 hover:bg-pink-50 transition font-bold"
+                            >
+                              <span>+</span> Add Property
+                            </Link>
+                          )}
+                        </div>
+
+                        <div className="pt-1 border-t border-slate-100">
+                          <button
+                            type="button"
+                            onClick={handleLogout}
+                            className="w-full text-left flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-rose-600 hover:bg-rose-50 transition font-semibold"
+                          >
+                            <span>🚪</span> Sign Out
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ) : (
-                  <div className="flex items-center gap-2 pl-1">
-                    <NavLink
+                  <div className="flex items-center gap-2">
+                    <Link
                       to="/login"
-                      className="rounded-xl px-3.5 py-1.5 text-xs font-semibold text-ink/80 hover:text-ink hover:bg-ink/5 transition"
+                      className="rounded-2xl px-4 py-2 text-xs font-semibold text-navy hover:text-pink-600 transition"
                     >
-                      Login
-                    </NavLink>
-                    <NavLink
+                      Log in
+                    </Link>
+                    <Link
                       to="/register"
-                      className="rounded-xl bg-pink-600 px-4 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-pink-700 transition active:scale-95"
+                      className="rounded-2xl bg-navy px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-navy-800 transition active:scale-95"
                     >
-                      Register
-                    </NavLink>
+                      Sign up
+                    </Link>
                   </div>
                 )}
               </>
             )}
           </nav>
 
-          {/* ── Mobile Right Actions (Cart shortcut + Hamburger button) ── */}
+          {/* ── Mobile Hamburger Button ── */}
           <div className="flex items-center gap-2 md:hidden">
-            {isCustomer && (
-              <Link
-                to="/customer/cart"
-                className="relative rounded-xl border border-ink/10 bg-white p-2 text-ink shadow-xs"
-                title="Cart"
-              >
-                🛒
-                {cartCount > 0 && (
-                  <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-pink-600 text-[9px] font-bold text-white">
-                    {cartCount}
-                  </span>
-                )}
+            {isCustomer && cartCount > 0 && (
+              <Link to="/customer/cart" className="relative p-2 text-navy">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                </svg>
+                <span className="absolute top-1 right-1 rounded-full bg-pink-600 text-white text-[9px] font-bold h-4 w-4 flex items-center justify-center">
+                  {cartCount}
+                </span>
               </Link>
             )}
 
             <button
               type="button"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="rounded-xl border border-ink/15 bg-white p-2 text-ink shadow-xs hover:bg-sand focus:outline-none transition active:scale-95"
-              aria-label="Toggle mobile menu"
+              onClick={() => setMobileMenuOpen(true)}
+              className={`p-2 rounded-2xl transition active:scale-95 ${
+                isSuperAdmin
+                  ? "text-slate-300 hover:text-white bg-navy-900 border border-navy-800"
+                  : "text-navy hover:bg-slate-100 border border-slate-200"
+              }`}
+              aria-label="Open navigation menu"
             >
-              {mobileMenuOpen ? (
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              ) : (
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              )}
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16m-7 6h7" />
+              </svg>
             </button>
           </div>
         </div>
@@ -269,179 +347,189 @@ export default function Layout() {
 
       {/* ── Mobile Slide-Over Drawer ── */}
       {mobileMenuOpen && (
-        <div className="fixed inset-0 z-50 flex md:hidden">
-          {/* Backdrop blur overlay */}
+        <div className="fixed inset-0 z-50 md:hidden">
+          {/* Backdrop */}
           <div
-            className="fixed inset-0 bg-ink/50 backdrop-blur-xs transition-opacity"
+            className="fixed inset-0 bg-navy-950/60 backdrop-blur-sm transition-opacity"
             onClick={() => setMobileMenuOpen(false)}
           />
 
-          {/* Drawer content */}
-          <div className="relative ml-auto flex h-full w-full max-w-xs flex-col overflow-y-auto bg-white p-6 shadow-2xl">
-            {/* Drawer Header */}
-            <div className="flex items-center justify-between pb-4 border-b border-ink/10">
-              <span className="font-serif text-xl font-bold text-ink">
-                <span className="text-pink-600">Pink</span>CityHomes
-              </span>
-              <button
-                onClick={() => setMobileMenuOpen(false)}
-                className="rounded-xl p-1.5 text-ink/60 hover:bg-ink/5"
-              >
-                ✕
-              </button>
-            </div>
-
-            {/* User Profile Banner (if logged in) */}
-            {user && (
-              <div className="mt-4 rounded-2xl bg-sand/40 p-4 border border-ink/10 space-y-1">
+          {/* Drawer panel */}
+          <div className="fixed inset-y-0 right-0 max-w-xs w-full bg-white shadow-2xl p-6 flex flex-col justify-between overflow-y-auto z-10 animate-slide-in-right">
+            <div className="space-y-6">
+              {/* Drawer Header */}
+              <div className="flex items-center justify-between pb-4 border-b border-slate-100">
                 <div className="flex items-center gap-2">
-                  <div className="h-8 w-8 rounded-full bg-pink-600 text-white flex items-center justify-center font-bold text-sm">
-                    {user.name.charAt(0).toUpperCase()}
+                  <div className="h-7 w-7 rounded-xl bg-gradient-to-tr from-pink-600 to-amber-500 flex items-center justify-center text-white font-display font-bold text-xs">
+                    P
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="font-serif font-bold text-sm text-ink truncate">{user.name}</p>
-                    <span className="rounded-full bg-pink-100 text-pink-700 px-2 py-0.2 text-[10px] font-bold uppercase tracking-wider">
+                  <span className="font-display text-lg font-bold text-navy">
+                    <span className="text-pink-600">Pink</span>CityHomes
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="rounded-xl p-1.5 text-slate-400 hover:text-navy hover:bg-slate-100 transition"
+                  aria-label="Close menu"
+                >
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* User Profile Summary */}
+              {user ? (
+                <div className="rounded-2xl border border-slate-200/80 bg-slate-50 p-4 space-y-1">
+                  <div className="flex items-center gap-3">
+                    <div className="h-9 w-9 rounded-full bg-pink-600 text-white font-bold flex items-center justify-center text-sm">
+                      {user.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-bold text-xs text-navy truncate">{user.name}</p>
+                      <p className="text-[11px] text-slate-500 truncate">{user.email}</p>
+                    </div>
+                  </div>
+                  <div className="pt-2">
+                    <span className="inline-block rounded-full bg-navy-100 text-navy-800 text-[10px] font-bold px-2 py-0.5 uppercase tracking-wider">
                       {user.role}
                     </span>
                   </div>
                 </div>
-                <p className="text-[11px] text-ink/60 truncate pt-1">{user.email}</p>
-              </div>
-            )}
-
-            {/* Navigation Links list */}
-            <div className="mt-6 flex-1 space-y-1.5">
-              {isSuperAdmin ? (
-                <>
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-ink/40 px-3 mb-1">Superadmin Console</p>
-                  <NavLink to="/admin/dashboard" className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold ${isActive ? "bg-ink text-sand" : "text-ink hover:bg-sand"}`}>
-                    📊 Dashboard
-                  </NavLink>
-                  <NavLink to="/admin/sellers" className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold ${isActive ? "bg-ink text-sand" : "text-ink hover:bg-sand"}`}>
-                    🏢 Seller Accounts
-                  </NavLink>
-                  <NavLink to="/admin/users" className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold ${isActive ? "bg-ink text-sand" : "text-ink hover:bg-sand"}`}>
-                    👥 User Directory
-                  </NavLink>
-                  <NavLink to="/admin/properties" className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold ${isActive ? "bg-ink text-sand" : "text-ink hover:bg-sand"}`}>
-                    🏡 All Properties
-                  </NavLink>
-                  <NavLink to="/admin/disabled" className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold ${isActive ? "bg-ink text-sand" : "text-ink hover:bg-sand"}`}>
-                    ⛔ Disabled Inventory
-                  </NavLink>
-                  <NavLink to="/admin/audit" className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold ${isActive ? "bg-ink text-sand" : "text-ink hover:bg-sand"}`}>
-                    📜 Audit Logs
-                  </NavLink>
-                </>
               ) : (
-                <>
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-ink/40 px-3 mb-1">Explore Jaipur</p>
-                  <NavLink to="/properties" className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold ${isActive ? "bg-pink-50 text-pink-600 font-bold" : "text-ink hover:bg-sand"}`}>
-                    🔍 Buy Properties
-                  </NavLink>
-                  <NavLink to="/rentals" className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold ${isActive ? "bg-pink-50 text-pink-600 font-bold" : "text-ink hover:bg-sand"}`}>
-                    🔑 Rent Homes
-                  </NavLink>
-                  <NavLink to="/insights" className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold ${isActive ? "bg-pink-50 text-pink-600 font-bold" : "text-ink hover:bg-sand"}`}>
-                    📈 Market Intelligence
-                  </NavLink>
-
-                  {isCustomer && (
-                    <>
-                      <div className="pt-3 pb-1 border-t border-ink/10">
-                        <p className="text-[10px] font-bold uppercase tracking-wider text-ink/40 px-3">Buyer Account</p>
-                      </div>
-                      <NavLink to="/customer/favourites" className={({ isActive }) => `flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-semibold ${isActive ? "bg-pink-50 text-pink-600 font-bold" : "text-ink hover:bg-sand"}`}>
-                        <span className="flex items-center gap-3">❤️ Saved Properties</span>
-                        {favCount > 0 && <span className="rounded-full bg-pink-600 text-white text-[10px] font-bold px-2 py-0.2">{favCount}</span>}
-                      </NavLink>
-                      <NavLink to="/customer/cart" className={({ isActive }) => `flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-semibold ${isActive ? "bg-pink-50 text-pink-600 font-bold" : "text-ink hover:bg-sand"}`}>
-                        <span className="flex items-center gap-3">🛒 Property Cart</span>
-                        {cartCount > 0 && <span className="rounded-full bg-ink text-sand text-[10px] font-bold px-2 py-0.2">{cartCount}</span>}
-                      </NavLink>
-                      <NavLink to="/customer/orders" className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold ${isActive ? "bg-pink-50 text-pink-600 font-bold" : "text-ink hover:bg-sand"}`}>
-                        📜 Purchase Orders
-                      </NavLink>
-                      <NavLink to="/customer/profile" className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold ${isActive ? "bg-pink-50 text-pink-600 font-bold" : "text-ink hover:bg-sand"}`}>
-                        👤 Account Profile
-                      </NavLink>
-                    </>
-                  )}
-
-                  {isSeller && (
-                    <>
-                      <div className="pt-3 pb-1 border-t border-ink/10">
-                        <p className="text-[10px] font-bold uppercase tracking-wider text-pink-600 px-3">Seller Portal</p>
-                      </div>
-                      <NavLink to="/seller/dashboard" className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold ${isActive ? "bg-pink-50 text-pink-600 font-bold" : "text-ink hover:bg-sand"}`}>
-                        📊 CRM Dashboard
-                      </NavLink>
-                      <NavLink to="/seller/properties" className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold ${isActive ? "bg-pink-50 text-pink-600 font-bold" : "text-ink hover:bg-sand"}`}>
-                        🏡 Manage Listings
-                      </NavLink>
-                      <NavLink to="/seller/clients" className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold ${isActive ? "bg-pink-50 text-pink-600 font-bold" : "text-ink hover:bg-sand"}`}>
-                        👥 Clients &amp; Leads
-                      </NavLink>
-                      <NavLink to="/customer/profile" className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold ${isActive ? "bg-pink-50 text-pink-600 font-bold" : "text-ink hover:bg-sand"}`}>
-                        🏢 Seller Profile
-                      </NavLink>
-                    </>
-                  )}
-                </>
-              )}
-            </div>
-
-            {/* Drawer Bottom Actions */}
-            <div className="pt-4 border-t border-ink/10 space-y-2">
-              {user ? (
-                <button
-                  onClick={async () => {
-                    await logout();
-                    setMobileMenuOpen(false);
-                    navigate("/login");
-                  }}
-                  className="w-full rounded-xl border border-red-200 bg-red-50 py-2.5 text-xs font-bold text-red-700 hover:bg-red-100 transition active:scale-95"
-                >
-                  Logout from PinkCityHomes
-                </button>
-              ) : (
-                <div className="space-y-2">
+                <div className="grid grid-cols-2 gap-2">
                   <Link
                     to="/login"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="block w-full text-center rounded-xl border border-ink/20 py-2.5 text-xs font-bold text-ink hover:bg-sand"
+                    className="rounded-2xl border border-slate-200 px-3 py-2 text-center text-xs font-semibold text-navy hover:bg-slate-50 transition"
                   >
-                    Login
+                    Log In
                   </Link>
                   <Link
                     to="/register"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="block w-full text-center rounded-xl bg-pink-600 py-2.5 text-xs font-bold text-white hover:bg-pink-700 shadow-sm"
+                    className="rounded-2xl bg-navy px-3 py-2 text-center text-xs font-semibold text-white shadow hover:bg-navy-800 transition"
                   >
-                    Register Account
+                    Register
                   </Link>
                 </div>
               )}
+
+              {/* Navigation Links */}
+              <div className="space-y-1 text-xs font-semibold">
+                {isSuperAdmin ? (
+                  <>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3 pt-2">
+                      Administration
+                    </p>
+                    <NavLink to="/admin/dashboard" className={navLink}>
+                      📊 Dashboard
+                    </NavLink>
+                    <NavLink to="/admin/sellers" className={navLink}>
+                      🏢 Sellers Management
+                    </NavLink>
+                    <NavLink to="/admin/users" className={navLink}>
+                      👥 Users Directory
+                    </NavLink>
+                    <NavLink to="/admin/properties" className={navLink}>
+                      🏡 Inventory Governance
+                    </NavLink>
+                    <NavLink to="/admin/disabled" className={navLink}>
+                      ⛔ Disabled Records
+                    </NavLink>
+                    <NavLink to="/admin/audit" className={navLink}>
+                      📜 Audit Logs
+                    </NavLink>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3 pt-2">
+                      Explore Properties
+                    </p>
+                    <NavLink to="/properties" className={navLink}>
+                      🔍 Buy Properties
+                    </NavLink>
+                    <NavLink to="/rentals" className={navLink}>
+                      🔑 Rental Homes
+                    </NavLink>
+                    <NavLink to="/insights" className={navLink}>
+                      📈 Market Insights
+                    </NavLink>
+
+                    {isCustomer && (
+                      <>
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3 pt-4">
+                          Buyer Account
+                        </p>
+                        <NavLink to="/customer/favourites" className={navLink}>
+                          ❤️ Saved Properties ({favCount})
+                        </NavLink>
+                        <NavLink to="/customer/cart" className={navLink}>
+                          🛒 Purchase Cart ({cartCount})
+                        </NavLink>
+                        <NavLink to="/customer/orders" className={navLink}>
+                          📦 Orders & Purchases
+                        </NavLink>
+                        <NavLink to="/customer/profile" className={navLink}>
+                          👤 My Profile
+                        </NavLink>
+                      </>
+                    )}
+
+                    {isSeller && (
+                      <>
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3 pt-4">
+                          Seller Workspace
+                        </p>
+                        <NavLink to="/seller/dashboard" className={navLink}>
+                          📊 Dashboard
+                        </NavLink>
+                        <NavLink to="/seller/properties" className={navLink}>
+                          🏡 Manage Listings
+                        </NavLink>
+                        <NavLink to="/seller/clients" className={navLink}>
+                          👥 CRM Leads & Clients
+                        </NavLink>
+                        <NavLink to="/customer/profile" className={navLink}>
+                          👤 Seller Profile
+                        </NavLink>
+                      </>
+                    )}
+                  </>
+                )}
+              </div>
             </div>
+
+            {/* Drawer Logout */}
+            {user && (
+              <div className="pt-6 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="w-full rounded-2xl border border-rose-200 bg-rose-50/50 py-2.5 text-center text-xs font-semibold text-rose-700 hover:bg-rose-100 transition active:scale-95"
+                >
+                  Sign Out
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
 
-      {/* ── Main Page Content ── */}
-      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 pb-24 md:pb-12">
+      {/* ── Main Content ──────────────────────────────────────────── */}
+      <main className="flex-1 mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8 pb-24 md:pb-8">
         <Outlet />
       </main>
 
-      {/* ── Fixed Mobile Bottom Navigation Bar (Phone Only) ── */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-ink/10 bg-white/95 backdrop-blur-md px-2 py-1.5 md:hidden shadow-lg">
-        <div className="mx-auto flex max-w-md items-center justify-around text-center">
+      {/* ── Mobile Bottom App Bar (Fixed at bottom on phones) ───────── */}
+      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 border-t border-slate-200/80 backdrop-blur-md md:hidden px-2 py-1 shadow-lg">
+        <div className="flex items-center justify-around text-center">
           {isSuperAdmin ? (
             <>
               <NavLink
                 to="/admin/dashboard"
                 className={({ isActive }) =>
                   `flex flex-col items-center py-1 px-2 text-[10px] font-semibold transition ${
-                    isActive ? "text-pink-600 font-bold" : "text-ink/60 hover:text-ink"
+                    isActive ? "text-pink-600 font-bold" : "text-slate-500"
                   }`
                 }
               >
@@ -452,7 +540,7 @@ export default function Layout() {
                 to="/admin/sellers"
                 className={({ isActive }) =>
                   `flex flex-col items-center py-1 px-2 text-[10px] font-semibold transition ${
-                    isActive ? "text-pink-600 font-bold" : "text-ink/60 hover:text-ink"
+                    isActive ? "text-pink-600 font-bold" : "text-slate-500"
                   }`
                 }
               >
@@ -463,7 +551,7 @@ export default function Layout() {
                 to="/admin/properties"
                 className={({ isActive }) =>
                   `flex flex-col items-center py-1 px-2 text-[10px] font-semibold transition ${
-                    isActive ? "text-pink-600 font-bold" : "text-ink/60 hover:text-ink"
+                    isActive ? "text-pink-600 font-bold" : "text-slate-500"
                   }`
                 }
               >
@@ -474,7 +562,7 @@ export default function Layout() {
                 to="/admin/users"
                 className={({ isActive }) =>
                   `flex flex-col items-center py-1 px-2 text-[10px] font-semibold transition ${
-                    isActive ? "text-pink-600 font-bold" : "text-ink/60 hover:text-ink"
+                    isActive ? "text-pink-600 font-bold" : "text-slate-500"
                   }`
                 }
               >
@@ -485,7 +573,7 @@ export default function Layout() {
                 to="/admin/disabled"
                 className={({ isActive }) =>
                   `flex flex-col items-center py-1 px-2 text-[10px] font-semibold transition ${
-                    isActive ? "text-pink-600 font-bold" : "text-ink/60 hover:text-ink"
+                    isActive ? "text-pink-600 font-bold" : "text-slate-500"
                   }`
                 }
               >
@@ -499,7 +587,7 @@ export default function Layout() {
                 to="/seller/dashboard"
                 className={({ isActive }) =>
                   `flex flex-col items-center py-1 px-2 text-[10px] font-semibold transition ${
-                    isActive ? "text-pink-600 font-bold" : "text-ink/60 hover:text-ink"
+                    isActive ? "text-pink-600 font-bold" : "text-slate-500"
                   }`
                 }
               >
@@ -510,7 +598,7 @@ export default function Layout() {
                 to="/seller/properties"
                 className={({ isActive }) =>
                   `flex flex-col items-center py-1 px-2 text-[10px] font-semibold transition ${
-                    isActive ? "text-pink-600 font-bold" : "text-ink/60 hover:text-ink"
+                    isActive ? "text-pink-600 font-bold" : "text-slate-500"
                   }`
                 }
               >
@@ -521,7 +609,7 @@ export default function Layout() {
                 to="/seller/clients"
                 className={({ isActive }) =>
                   `flex flex-col items-center py-1 px-2 text-[10px] font-semibold transition ${
-                    isActive ? "text-pink-600 font-bold" : "text-ink/60 hover:text-ink"
+                    isActive ? "text-pink-600 font-bold" : "text-slate-500"
                   }`
                 }
               >
@@ -529,21 +617,21 @@ export default function Layout() {
                 <span>Leads</span>
               </NavLink>
               <NavLink
-                to="/properties"
+                to="/insights"
                 className={({ isActive }) =>
                   `flex flex-col items-center py-1 px-2 text-[10px] font-semibold transition ${
-                    isActive ? "text-pink-600 font-bold" : "text-ink/60 hover:text-ink"
+                    isActive ? "text-pink-600 font-bold" : "text-slate-500"
                   }`
                 }
               >
-                <span className="text-base">🔍</span>
+                <span className="text-base">📈</span>
                 <span>Market</span>
               </NavLink>
               <NavLink
                 to="/customer/profile"
                 className={({ isActive }) =>
                   `flex flex-col items-center py-1 px-2 text-[10px] font-semibold transition ${
-                    isActive ? "text-pink-600 font-bold" : "text-ink/60 hover:text-ink"
+                    isActive ? "text-pink-600 font-bold" : "text-slate-500"
                   }`
                 }
               >
@@ -552,13 +640,14 @@ export default function Layout() {
               </NavLink>
             </>
           ) : (
+            // Customer & Guest
             <>
               <NavLink
                 to="/"
                 end
                 className={({ isActive }) =>
                   `flex flex-col items-center py-1 px-2 text-[10px] font-semibold transition ${
-                    isActive ? "text-pink-600 font-bold" : "text-ink/60 hover:text-ink"
+                    isActive ? "text-pink-600 font-bold" : "text-slate-500"
                   }`
                 }
               >
@@ -569,7 +658,7 @@ export default function Layout() {
                 to="/properties"
                 className={({ isActive }) =>
                   `flex flex-col items-center py-1 px-2 text-[10px] font-semibold transition ${
-                    isActive ? "text-pink-600 font-bold" : "text-ink/60 hover:text-ink"
+                    isActive ? "text-pink-600 font-bold" : "text-slate-500"
                   }`
                 }
               >
@@ -580,7 +669,7 @@ export default function Layout() {
                 to="/rentals"
                 className={({ isActive }) =>
                   `flex flex-col items-center py-1 px-2 text-[10px] font-semibold transition ${
-                    isActive ? "text-pink-600 font-bold" : "text-ink/60 hover:text-ink"
+                    isActive ? "text-pink-600 font-bold" : "text-slate-500"
                   }`
                 }
               >
@@ -588,60 +677,125 @@ export default function Layout() {
                 <span>Rent</span>
               </NavLink>
               <NavLink
-                to={user ? "/customer/favourites" : "/login"}
+                to="/customer/favourites"
                 className={({ isActive }) =>
-                  `flex flex-col items-center py-1 px-2 text-[10px] font-semibold transition ${
-                    isActive ? "text-pink-600 font-bold" : "text-ink/60 hover:text-ink"
+                  `relative flex flex-col items-center py-1 px-2 text-[10px] font-semibold transition ${
+                    isActive ? "text-pink-600 font-bold" : "text-slate-500"
                   }`
                 }
               >
-                <span className="text-base relative">
-                  ❤️
-                  {favCount > 0 && (
-                    <span className="absolute -top-1 -right-2 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-pink-600 text-[8px] font-bold text-white">
-                      {favCount}
-                    </span>
-                  )}
-                </span>
+                <span className="text-base">❤️</span>
                 <span>Saved</span>
+                {favCount > 0 && (
+                  <span className="absolute top-0 right-1 rounded-full bg-pink-600 text-white text-[8px] font-bold h-3.5 w-3.5 flex items-center justify-center">
+                    {favCount}
+                  </span>
+                )}
               </NavLink>
               <NavLink
                 to={user ? "/customer/profile" : "/login"}
                 className={({ isActive }) =>
                   `flex flex-col items-center py-1 px-2 text-[10px] font-semibold transition ${
-                    isActive ? "text-pink-600 font-bold" : "text-ink/60 hover:text-ink"
+                    isActive ? "text-pink-600 font-bold" : "text-slate-500"
                   }`
                 }
               >
                 <span className="text-base">👤</span>
-                <span>{user ? "Profile" : "Login"}</span>
+                <span>{user ? "Account" : "Sign In"}</span>
               </NavLink>
             </>
           )}
         </div>
       </nav>
 
-      {/* ── Footer (NO Projects Link!) ── */}
-      <footer className="border-t border-ink/10 bg-white/70 py-8 mt-auto hidden md:block">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="space-y-0.5 text-center sm:text-left">
-              <span className="font-serif text-lg font-bold text-ink">
-                <span className="text-pink-600">Pink</span>CityHomes
-              </span>
-              <p className="text-xs text-ink/60">Curated residential properties and verified sellers across Jaipur, Rajasthan</p>
+      {/* ── Footer ────────────────────────────────────────────────── */}
+      <footer className="bg-navy-950 text-slate-300 border-t border-navy-900 mt-auto">
+        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 pb-8 border-b border-navy-800">
+            {/* Brand column */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <div className="h-8 w-8 rounded-xl bg-gradient-to-tr from-pink-600 via-rose-500 to-amber-500 flex items-center justify-center text-white font-display font-bold text-sm shadow">
+                  P
+                </div>
+                <span className="font-display text-xl font-bold tracking-tight text-white">
+                  <span className="text-pink-600">Pink</span>CityHomes
+                </span>
+              </div>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                The premier verified PropTech real-estate marketplace for Jaipur, Rajasthan. Discover luxury villas, apartments, and independent residences.
+              </p>
+              <p className="text-xs font-semibold text-slate-500 flex items-center gap-1.5">
+                <span>📍</span> Jaipur, Rajasthan, India
+              </p>
             </div>
 
-            {!isSuperAdmin && (
-              <div className="flex flex-wrap items-center justify-center gap-5 text-xs text-ink/70 font-medium">
-                <Link to="/properties" className="hover:text-pink-600 transition">Buy Homes</Link>
-                <Link to="/rentals" className="hover:text-pink-600 transition">Rentals</Link>
-                <Link to="/insights" className="hover:text-pink-600 transition">Market Insights</Link>
-                {!user && <Link to="/register" className="hover:text-pink-600 transition">Join Platform</Link>}
-              </div>
-            )}
+            {/* Explore column */}
+            <div className="space-y-2">
+              <p className="text-xs font-bold uppercase tracking-wider text-white">Explore Homes</p>
+              <ul className="space-y-1.5 text-xs text-slate-400">
+                <li>
+                  <Link to="/properties" className="hover:text-pink-400 transition">
+                    Buy Properties in Jaipur
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/rentals" className="hover:text-pink-400 transition">
+                    Rental Apartments & Flats
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/insights" className="hover:text-pink-400 transition">
+                    Locality Price Trends & Insights
+                  </Link>
+                </li>
+              </ul>
+            </div>
 
-            <p className="text-xs text-ink/40">© {new Date().getFullYear()} PinkCityHomes. All rights reserved.</p>
+            {/* Sellers column */}
+            <div className="space-y-2">
+              <p className="text-xs font-bold uppercase tracking-wider text-white">For Sellers & Agencies</p>
+              <ul className="space-y-1.5 text-xs text-slate-400">
+                <li>
+                  <Link to="/register" className="hover:text-pink-400 transition">
+                    Apply as Verified Seller Partner
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/seller/dashboard" className="hover:text-pink-400 transition">
+                    Seller CRM & Inventory Portal
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/login" className="hover:text-pink-400 transition">
+                    Partner Access Sign In
+                  </Link>
+                </li>
+              </ul>
+            </div>
+
+            {/* Company & Support column */}
+            <div className="space-y-2">
+              <p className="text-xs font-bold uppercase tracking-wider text-white">Platform & Trust</p>
+              <ul className="space-y-1.5 text-xs text-slate-400">
+                <li className="flex items-center gap-1.5 text-emerald-400">
+                  <span>✓</span> 100% Verified Jaipur Inventory
+                </li>
+                <li className="flex items-center gap-1.5 text-emerald-400">
+                  <span>✓</span> Direct Seller Contacts & Tours
+                </li>
+                <li className="flex items-center gap-1.5 text-emerald-400">
+                  <span>✓</span> Legal Title Verification Assistance
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="pt-6 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-3">
+            <p>© {new Date().getFullYear()} PinkCityHomes. All rights reserved.</p>
+            <div className="flex items-center gap-4">
+              <span className="text-[11px] text-slate-400">Jaipur Verified Real Estate Marketplace</span>
+            </div>
           </div>
         </div>
       </footer>

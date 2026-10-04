@@ -4,6 +4,8 @@ import { api } from "../../api/client";
 import { inr, imgSrc } from "../../lib/format";
 import type { Property } from "../../types";
 import { ConfirmModal } from "../../components/ConfirmModal";
+import { Badge } from "../../components/Badge";
+import { toast } from "../../components/Toast";
 
 export default function AdminPropertiesPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -81,11 +83,12 @@ export default function AdminPropertiesPage() {
       await api.post(`/admin/properties/${soldModalProp.id}/sold`, {
         customerId: customerId || undefined,
       });
+      toast.success("Property marked as SOLD successfully!");
       setSoldModalProp(null);
       setCustomerId("");
       void fetchProperties();
     } catch (e: unknown) {
-      alert(e instanceof Error ? e.message : "Failed to mark as SOLD");
+      toast.error(e instanceof Error ? e.message : "Failed to mark as SOLD");
     } finally {
       setActionLoading(false);
     }
@@ -100,10 +103,11 @@ export default function AdminPropertiesPage() {
           ? `/admin/properties/${statusTarget.id}/disable`
           : `/admin/properties/${statusTarget.id}/enable`;
       await api.patch(endpoint);
+      toast.success(`Property status updated to ${statusTarget.status === "ACTIVE" ? "DISABLED" : "ACTIVE"}`);
       setStatusTarget(null);
       void fetchProperties();
     } catch (e: unknown) {
-      alert(e instanceof Error ? e.message : "Failed to update property status");
+      toast.error(e instanceof Error ? e.message : "Failed to update property status");
     } finally {
       setActionLoading(false);
     }
@@ -114,10 +118,11 @@ export default function AdminPropertiesPage() {
     setActionLoading(true);
     try {
       await api.delete(`/admin/properties/${deleteTarget.id}`);
+      toast.success("Property permanently deleted");
       setDeleteTarget(null);
       void fetchProperties();
     } catch (e: unknown) {
-      alert(e instanceof Error ? e.message : "Failed to delete property");
+      toast.error(e instanceof Error ? e.message : "Failed to delete property");
     } finally {
       setActionLoading(false);
     }

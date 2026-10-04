@@ -4,6 +4,8 @@ import { api } from "../../api/client";
 import { inr, imgSrc } from "../../lib/format";
 import type { Property } from "../../types";
 import { ConfirmModal } from "../../components/ConfirmModal";
+import { Badge } from "../../components/Badge";
+import { toast } from "../../components/Toast";
 
 type DisabledUser = {
   id: string;
@@ -81,10 +83,11 @@ export default function AdminDisabledPage() {
       } else if (restoreTarget.type === "property") {
         await api.patch(`/admin/properties/${restoreTarget.id}/enable`);
       }
+      toast.success("Item reinstated and restored successfully!");
       setRestoreTarget(null);
       void fetchData();
     } catch (e: unknown) {
-      alert(e instanceof Error ? e.message : "Failed to restore item");
+      toast.error(e instanceof Error ? e.message : "Failed to restore item");
     } finally {
       setActionLoading(false);
     }

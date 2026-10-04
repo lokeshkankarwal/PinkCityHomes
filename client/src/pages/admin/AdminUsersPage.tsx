@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { api } from "../../api/client";
 import { ConfirmModal } from "../../components/ConfirmModal";
+import { Badge } from "../../components/Badge";
+import { toast } from "../../components/Toast";
 
 type UserItem = {
   id: string;
@@ -60,13 +62,15 @@ export default function AdminUsersPage() {
     try {
       if (targetUser.action === "DISABLE") {
         await api.patch(`/admin/users/${targetUser.user.id}/disable`);
+        toast.success(`User "${targetUser.user.name}" has been disabled.`);
       } else {
         await api.patch(`/admin/users/${targetUser.user.id}/enable`);
+        toast.success(`User "${targetUser.user.name}" has been enabled.`);
       }
       setTargetUser(null);
       void fetchUsers();
     } catch (e: unknown) {
-      alert(e instanceof Error ? e.message : "Failed to update user status");
+      toast.error(e instanceof Error ? e.message : "Failed to update user status");
     } finally {
       setActionLoading(false);
     }

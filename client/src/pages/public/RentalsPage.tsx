@@ -4,6 +4,9 @@ import { api } from "../../api/client";
 import { PropertyCard } from "../../components/PropertyCard";
 import { LocationSearchBar } from "../../components/LocationSearchBar";
 import { PropertyFilterBar, type FilterState } from "../../components/PropertyFilterBar";
+import { SkeletonCard } from "../../components/Skeleton";
+import { EmptyState } from "../../components/EmptyState";
+import { toast } from "../../components/Toast";
 import { useAuth } from "../../auth";
 import type { Property } from "../../types";
 
@@ -27,7 +30,6 @@ export default function RentalsPage() {
   const [rentals, setRentals] = useState<Property[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [actionMsg, setActionMsg] = useState<string | null>(null);
 
   // Pagination
   const [page, setPage] = useState(1);
@@ -93,35 +95,32 @@ export default function RentalsPage() {
 
   const handleFav = async (propertyId: string, title: string) => {
     if (!user) {
-      setActionMsg("Please log in to save favourites.");
-      setTimeout(() => setActionMsg(null), 3000);
+      toast.info("Please log in to save favourites.");
       return;
     }
     try {
       await api.post("/favourites", { propertyId });
       window.dispatchEvent(new Event("favourites-updated"));
-      setActionMsg(`Saved "${title}" to favourites!`);
-      setTimeout(() => setActionMsg(null), 3000);
+      toast.success(`Saved "${title}" to favourites!`);
     } catch (e: unknown) {
-      setActionMsg(e instanceof Error ? e.message : "Failed to save favourite");
-      setTimeout(() => setActionMsg(null), 3000);
+      toast.error(e instanceof Error ? e.message : "Failed to save favourite");
     }
   };
 
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
   return (
-    <div className="space-y-6 pb-16">
+    <div className="space-y-6 pb-16 animate-fade-in">
       {/* Header & Location Search */}
       <div className="space-y-4">
         <div>
           <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-800">
             🔑 Rental Homes in Jaipur
           </div>
-          <h1 className="font-serif text-3xl font-bold mt-2 sm:text-4xl text-ink">
+          <h1 className="font-display text-3xl font-bold mt-2 sm:text-4xl text-navy">
             Find Furnished &amp; Unfurnished Rentals in Jaipur
           </h1>
-          <p className="text-sm text-ink/70 max-w-2xl mt-1">
+          <p className="text-xs sm:text-sm text-slate-500 max-w-2xl mt-1">
             Browse verified flats, apartments, and villas available for monthly lease across Jaipur's premier residential localities.
           </p>
         </div>
@@ -132,13 +131,7 @@ export default function RentalsPage() {
         />
       </div>
 
-      {actionMsg && (
-        <div className="rounded-2xl bg-moss/10 border border-moss/20 px-4 py-2.5 text-sm text-moss font-semibold animate-fade-in">
-          {actionMsg}
-        </div>
-      )}
-
-      {/* Filter Bar (Card- & Filter-first) */}
+      {/* Filter Bar */}
       <PropertyFilterBar
         filters={filters}
         onChange={updateFilters}
@@ -149,26 +142,17 @@ export default function RentalsPage() {
 
       {/* Rentals Grid */}
       {loading ? (
-        <div className="py-24 text-center space-y-3">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-emerald-600 border-r-transparent"></div>
-          <p className="text-sm font-semibold text-ink/60">Searching verified rental homes in Jaipur...</p>
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 pt-4">
+          <SkeletonCard count={8} />
         </div>
       ) : rentals.length === 0 ? (
-        /* Friendly Empty State */
-        <div className="rounded-3xl border border-ink/10 bg-white p-8 sm:p-12 text-center space-y-4 shadow-sm max-w-2xl mx-auto">
-          <span className="text-4xl">🔑</span>
-          <h3 className="font-serif text-2xl font-bold text-ink">No rental homes found with these filters</h3>
-          <div className="text-sm text-ink/70 text-left space-y-2 bg-sand/40 p-5 rounded-2xl border border-ink/5">
-            <p className="font-semibold text-ink">Helpful suggestions:</p>
-            <ul className="list-disc list-inside text-xs space-y-1.5 text-ink/70">
-              <li>Try increasing your monthly rent budget range</li>
-              <li>Consider semi-furnished or unfurnished options</li>
-              <li>Explore nearby localities with good metro connectivity</li>
-            </ul>
-          </div>
-          <button
-            type="button"
-            onClick={() =>
+        <EmptyState
+          icon="🔑"
+          title="No rental homes found with these filters"
+          body="Try adjusting your monthly rent range, choosing different bedrooms, or clearing filters."
+          action={{
+            label: "Clear Filters & Show All Rentals",
+            onClick: () =>
               updateFilters({
                 locality: "",
                 minPrice: "",
@@ -179,16 +163,12 @@ export default function RentalsPage() {
                 bathrooms: "",
                 minArea: "",
                 sort: "recommended",
-              })
-            }
-            className="inline-block rounded-xl bg-ink px-6 py-2.5 text-xs font-bold text-sand hover:bg-ink/90 transition shadow"
-          >
-            Clear Filters & Show All Rentals
-          </button>
-        </div>
+              }),
+          }}
+        />
       ) : (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pt-2">
             {rentals.map((item) => (
               <PropertyCard
                 key={item.id}
@@ -213,18 +193,18 @@ export default function RentalsPage() {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-center gap-2 pt-6">
+            <div className="flex items-center justify-center gap-2 pt-8">
               <button
                 disabled={page <= 1}
                 onClick={() => {
                   setPage((p) => Math.max(1, p - 1));
                   window.scrollTo({ top: 120, behavior: "smooth" });
                 }}
-                className="rounded-xl border border-ink/20 bg-white px-4 py-2 text-xs font-bold disabled:opacity-40 hover:bg-sand transition shadow-sm"
+                className="rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-700 disabled:opacity-40 hover:bg-slate-50 transition shadow-xs active:scale-95"
               >
                 &larr; Previous
               </button>
-              <span className="text-xs font-bold text-ink/70 px-3">
+              <span className="text-xs font-bold text-slate-600 px-3">
                 Page {page} of {totalPages}
               </span>
               <button
@@ -233,7 +213,7 @@ export default function RentalsPage() {
                   setPage((p) => Math.min(totalPages, p + 1));
                   window.scrollTo({ top: 120, behavior: "smooth" });
                 }}
-                className="rounded-xl border border-ink/20 bg-white px-4 py-2 text-xs font-bold disabled:opacity-40 hover:bg-sand transition shadow-sm"
+                className="rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-700 disabled:opacity-40 hover:bg-slate-50 transition shadow-xs active:scale-95"
               >
                 Next &rarr;
               </button>

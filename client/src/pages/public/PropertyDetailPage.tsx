@@ -5,6 +5,9 @@ import { inr, imgSrc } from "../../lib/format";
 import { useAuth } from "../../auth";
 import type { Property } from "../../types";
 import { PropertyLocationMap } from "../../components/PropertyLocationMap";
+import { PropertyCard } from "../../components/PropertyCard";
+import { Badge } from "../../components/Badge";
+import { toast } from "../../components/Toast";
 
 export default function PropertyDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -13,10 +16,10 @@ export default function PropertyDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [property, setProperty] = useState<Property | null>(null);
-  const [activeImage, setActiveImage] = useState<string>("");
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [isFullscreenGallery, setIsFullscreenGallery] = useState(false);
   const [similar, setSimilar] = useState<Property[]>([]);
   const [sellerOthers, setSellerOthers] = useState<Property[]>([]);
-  const [actionMsg, setActionMsg] = useState<string | null>(null);
 
   // Visit modal state
   const [showVisitModal, setShowVisitModal] = useState(false);
@@ -28,13 +31,12 @@ export default function PropertyDetailPage() {
     if (!id) return;
     setLoading(true);
     setError(null);
+    setActiveImageIndex(0);
 
     api
       .get<Property>(`/properties/${id}`)
       .then((p) => {
         setProperty(p);
-        const primary = p.images?.length ? p.images[0].path : p.primaryImage;
-        setActiveImage(primary ? imgSrc(primary) : "/defaults/apartment.svg");
 
         // Fetch other properties by this seller
         if (p.sellerId) {
@@ -52,7 +54,7 @@ export default function PropertyDetailPage() {
           .get<{ results: Property[] }>(`/properties?limit=4`)
           .then((res) => {
             const others = (res.results || []).filter((item) => item.id !== id && item.sellerId !== p.sellerId);
-            setSimilar(others.slice(0, 3));
+            setSimilar(others.slice(0, 4));
           })
           .catch(() => {});
       })
@@ -65,38 +67,38 @@ export default function PropertyDetailPage() {
 
   const handleFav = async () => {
     if (!user) {
-      setActionMsg("Please log in to save favourites.");
+      toast.info("Please log in to save favourites.");
       return;
     }
     if (!property) return;
     try {
       await api.post("/favourites", { propertyId: property.id });
       window.dispatchEvent(new Event("favourites-updated"));
-      setActionMsg("Saved to favourites!");
+      toast.success("Saved to your favourite properties!");
     } catch (e: unknown) {
-      setActionMsg(e instanceof Error ? e.message : "Failed to save favourite");
+      toast.error(e instanceof Error ? e.message : "Failed to save favourite");
     }
   };
 
   const handleCart = async () => {
     if (!user) {
-      setActionMsg("Please log in to add to cart.");
+      toast.info("Please log in to add to cart.");
       return;
     }
     if (!property) return;
     try {
       await api.post("/cart", { propertyId: property.id });
       window.dispatchEvent(new Event("cart-updated"));
-      setActionMsg("Added property to cart!");
+      toast.success("Added property to purchase closing cart!");
     } catch (e: unknown) {
-      setActionMsg(e instanceof Error ? e.message : "Failed to add to cart");
+      toast.error(e instanceof Error ? e.message : "Failed to add to cart");
     }
   };
 
   const handleScheduleVisit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) {
-      setActionMsg("Please log in to schedule a visit.");
+      toast.info("Please log in to schedule a visit.");
       setShowVisitModal(false);
       return;
     }
@@ -108,26 +110,37 @@ export default function PropertyDetailPage() {
         scheduledAt: new Date(visitDate).toISOString(),
         notes: visitNotes,
       });
-      setActionMsg("Visit scheduled successfully! The representative will contact you shortly.");
+      toast.success("Visit scheduled successfully! The seller has been notified.");
       setShowVisitModal(false);
       setVisitDate("");
       setVisitNotes("");
     } catch (e: unknown) {
-      setActionMsg(e instanceof Error ? e.message : "Failed to schedule visit");
+      toast.error(e instanceof Error ? e.message : "Failed to schedule visit");
     } finally {
       setSubmittingVisit(false);
     }
   };
 
-  if (loading) return <div className="py-24 text-center text-ink/60">Loading property details...</div>;
+  if (loading) {
+    return (
+      <div className="py-24 text-center space-y-3">
+        <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-pink-600 border-r-transparent" />
+        <p className="text-xs font-semibold text-slate-500">Loading verified property details...</p>
+      </div>
+    );
+  }
 
   if (error || !property) {
     return (
-      <div className="py-24 text-center space-y-4">
-        <h2 className="font-serif text-2xl font-bold">Property Not Found</h2>
-        <p className="text-sm text-ink/70">The property you are looking for does not exist or has been removed.</p>
-        <Link to="/properties" className="inline-block rounded-xl bg-ink px-4 py-2 text-sm text-sand">
-          &larr; Back to Properties
+      <div className="py-24 text-center space-y-4 max-w-md mx-auto">
+        <div className="text-5xl">🏡</div>
+        <h2 className="font-display text-2xl font-bold text-navy">Property Not Found</h2>
+        <p className="text-xs text-slate-500">The property you are looking for does not exist or has been deactivated.</p>
+        <Link
+          to="/properties"
+          className="inline-block rounded-2xl bg-navy px-5 py-2.5 text-xs font-semibold text-white shadow hover:bg-navy-800 transition"
+        >
+          &larr; Explore Verified Properties
         </Link>
       </div>
     );
@@ -139,51 +152,112 @@ export default function PropertyDetailPage() {
       ? [imgSrc(property.primaryImage)]
       : ["/defaults/apartment.svg"];
 
+  const currentImage = allImages[activeImageIndex] || allImages[0];
+  const isRent = property.listingType === "RENT";
+  const sellerTargetId = property.seller?.sellerProfileId || property.seller?.id || property.sellerId;
+
+  const nextImage = () => {
+    setActiveImageIndex((prev) => (prev + 1) % allImages.length);
+  };
+  const prevImage = () => {
+    setActiveImageIndex((prev) => (prev - 1 + allImages.length) % allImages.length);
+  };
+
   return (
-    <div className="space-y-8 pb-16">
-      {/* Breadcrumb */}
-      <nav className="flex items-center gap-2 text-xs text-ink/60">
-        <Link to="/" className="hover:text-ink">Home</Link>
+    <div className="space-y-8 pb-16 animate-fade-in">
+      {/* ── Breadcrumb ────────────────────────────────────────────── */}
+      <nav className="flex items-center gap-2 text-xs text-slate-500">
+        <Link to="/" className="hover:text-navy transition">Home</Link>
         <span>/</span>
-        <Link to="/properties" className="hover:text-ink">Properties</Link>
+        <Link to={isRent ? "/rentals" : "/properties"} className="hover:text-navy transition">
+          {isRent ? "Rentals" : "Properties"}
+        </Link>
         <span>/</span>
-        <span className="text-ink font-medium capitalize">{property.locality}</span>
+        <span className="text-navy font-semibold capitalize truncate max-w-[200px]">{property.locality}</span>
+        <span>/</span>
+        <span className="text-slate-400 truncate max-w-[150px]">{property.title}</span>
       </nav>
 
-      {actionMsg && (
-        <div className="rounded-xl bg-moss/10 border border-moss/20 px-4 py-3 text-sm font-semibold text-moss">
-          {actionMsg}
-        </div>
-      )}
-
-      {/* Main Grid */}
+      {/* ── Main Layout (2 Cols: Gallery + Details vs Sticky Action Sidebar) ── */}
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-        {/* Left Column: Photos, specs, overview */}
+        {/* Left 2 Cols */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Gallery */}
+          {/* ── Interactive Image Gallery ── */}
           <div className="space-y-3">
-            <div className="relative overflow-hidden rounded-3xl border border-ink/10 bg-sand/30 shadow-sm aspect-video sm:aspect-[16/9]">
+            <div className="group relative overflow-hidden rounded-3xl border border-slate-200/80 bg-slate-100 aspect-video sm:aspect-[16/9] shadow-card">
               <img
-                src={activeImage || allImages[0]}
+                src={currentImage}
                 alt={property.title}
-                className="h-full w-full object-cover"
+                className="h-full w-full object-cover transition-transform duration-300"
               />
-              {property.status === "SOLD" && (
-                <div className="absolute top-4 left-4 rounded-xl bg-red-600 px-3 py-1 text-xs font-bold text-white shadow">
-                  SOLD
-                </div>
+
+              {/* Status and Type Badges */}
+              <div className="absolute top-4 left-4 flex flex-wrap gap-2">
+                <span className={`rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider shadow-md ${
+                  isRent ? "bg-emerald-600 text-white" : "bg-navy-950 text-white"
+                }`}>
+                  {isRent ? "For Rent" : "For Sale"}
+                </span>
+
+                {property.status === "SOLD" && (
+                  <span className="rounded-full bg-rose-600 px-3 py-1 text-xs font-bold uppercase tracking-wider text-white shadow-md">
+                    SOLD
+                  </span>
+                )}
+              </div>
+
+              {/* Image Counter & Fullscreen trigger */}
+              <div className="absolute bottom-4 right-4 flex items-center gap-2">
+                <span className="rounded-full bg-navy-950/80 backdrop-blur-md px-3 py-1 text-xs font-semibold text-white shadow">
+                  📷 {activeImageIndex + 1} / {allImages.length}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setIsFullscreenGallery(true)}
+                  className="rounded-full bg-navy-950/80 backdrop-blur-md p-2 text-white shadow hover:bg-navy-900 transition"
+                  title="Fullscreen Gallery"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Next/Prev overlay buttons */}
+              {allImages.length > 1 && (
+                <>
+                  <button
+                    type="button"
+                    onClick={prevImage}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-navy shadow-md opacity-80 group-hover:opacity-100 hover:bg-white transition"
+                    aria-label="Previous image"
+                  >
+                    &larr;
+                  </button>
+                  <button
+                    type="button"
+                    onClick={nextImage}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-navy shadow-md opacity-80 group-hover:opacity-100 hover:bg-white transition"
+                    aria-label="Next image"
+                  >
+                    &rarr;
+                  </button>
+                </>
               )}
             </div>
 
+            {/* Thumbnail carousel */}
             {allImages.length > 1 && (
-              <div className="flex gap-2 overflow-x-auto pb-2">
+              <div className="flex gap-2.5 overflow-x-auto pb-2 scrollbar-thin">
                 {allImages.map((img, idx) => (
                   <button
                     key={idx}
                     type="button"
-                    onClick={() => setActiveImage(img)}
-                    className={`h-16 w-20 flex-none overflow-hidden rounded-xl border-2 transition ${
-                      activeImage === img ? "border-pink-600" : "border-transparent opacity-70 hover:opacity-100"
+                    onClick={() => setActiveImageIndex(idx)}
+                    className={`h-16 w-24 flex-none overflow-hidden rounded-2xl border-2 transition active:scale-95 ${
+                      activeImageIndex === idx
+                        ? "border-pink-600 ring-2 ring-pink-300 shadow-sm"
+                        : "border-transparent opacity-60 hover:opacity-100"
                     }`}
                   >
                     <img src={img} alt="" className="h-full w-full object-cover" />
@@ -193,64 +267,68 @@ export default function PropertyDetailPage() {
             )}
           </div>
 
-          {/* Quick Specs Cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 rounded-2xl border border-ink/10 bg-white p-5 shadow-sm text-center">
-            <div>
-              <span className="text-xs text-ink/60 uppercase">Bedrooms</span>
-              <p className="font-serif text-lg font-bold">{property.bhk} BHK</p>
+          {/* ── Quick Specs Ribbon ── */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 rounded-3xl border border-slate-200/80 bg-white p-5 shadow-card text-center">
+            <div className="space-y-0.5">
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Bedrooms</span>
+              <p className="font-display text-xl font-bold text-navy">{property.bhk} BHK</p>
             </div>
-            <div>
-              <span className="text-xs text-ink/60 uppercase">Carpet Area</span>
-              <p className="font-serif text-lg font-bold">{property.carpetArea} sq ft</p>
+            <div className="space-y-0.5">
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Carpet Area</span>
+              <p className="font-display text-xl font-bold text-navy">{property.carpetArea} sq ft</p>
             </div>
-            <div>
-              <span className="text-xs text-ink/60 uppercase">Bathrooms</span>
-              <p className="font-serif text-lg font-bold">{property.bathrooms}</p>
+            <div className="space-y-0.5">
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Bathrooms</span>
+              <p className="font-display text-xl font-bold text-navy">{property.bathrooms}</p>
             </div>
-            <div>
-              <span className="text-xs text-ink/60 uppercase">Furnishing</span>
-              <p className="font-serif text-lg font-bold capitalize">{property.furnishing.replace(/_/g, " ").toLowerCase()}</p>
-            </div>
-          </div>
-
-          {/* Overview */}
-          <div className="rounded-2xl border border-ink/10 bg-white p-6 shadow-sm space-y-3">
-            <h3 className="font-serif text-xl font-bold">Property Overview</h3>
-            <p className="text-sm text-ink/80 leading-relaxed whitespace-pre-line">{property.description}</p>
-          </div>
-
-          {/* Detailed Specs */}
-          <div className="rounded-2xl border border-ink/10 bg-white p-6 shadow-sm space-y-4">
-            <h3 className="font-serif text-xl font-bold">Specifications</h3>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-y-4 gap-x-6 text-sm">
-              <div>
-                <span className="text-ink/60">Property Type</span>
-                <p className="font-medium capitalize">{property.propertyType.replace(/_/g, " ").toLowerCase()}</p>
-              </div>
-              <div>
-                <span className="text-ink/60">Floor</span>
-                <p className="font-medium">{property.floor != null ? `${property.floor} of ${property.totalFloors || "—"}` : "—"}</p>
-              </div>
-              <div>
-                <span className="text-ink/60">Super Built-up Area</span>
-                <p className="font-medium">{property.superBuiltUpArea ? `${property.superBuiltUpArea} sq ft` : "—"}</p>
-              </div>
-              <div>
-                <span className="text-ink/60">Parking</span>
-                <p className="font-medium">{property.parking ? `${property.parking} Covered` : "Available"}</p>
-              </div>
-              <div>
-                <span className="text-ink/60">Locality</span>
-                <p className="font-medium capitalize">{property.locality}</p>
-              </div>
-              <div>
-                <span className="text-ink/60">City</span>
-                <p className="font-medium capitalize">{property.city || "Jaipur"}</p>
-              </div>
+            <div className="space-y-0.5">
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Furnishing</span>
+              <p className="font-display text-base font-bold text-navy capitalize truncate">
+                {property.furnishing.replace(/_/g, " ").toLowerCase()}
+              </p>
             </div>
           </div>
 
-          {/* Dedicated Property Location Map */}
+          {/* ── Overview & Description ── */}
+          <div className="rounded-3xl border border-slate-200/80 bg-white p-6 sm:p-8 shadow-card space-y-3">
+            <h3 className="font-display text-xl font-bold text-navy">Property Description</h3>
+            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed whitespace-pre-line">
+              {property.description}
+            </p>
+          </div>
+
+          {/* ── Specifications Grid ── */}
+          <div className="rounded-3xl border border-slate-200/80 bg-white p-6 sm:p-8 shadow-card space-y-4">
+            <h3 className="font-display text-xl font-bold text-navy">Key Specifications</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-y-4 gap-x-6 text-xs sm:text-sm">
+              <div className="space-y-0.5">
+                <span className="text-slate-400">Property Type</span>
+                <p className="font-semibold text-navy capitalize">{property.propertyType.replace(/_/g, " ").toLowerCase()}</p>
+              </div>
+              <div className="space-y-0.5">
+                <span className="text-slate-400">Floor Level</span>
+                <p className="font-semibold text-navy">{property.floor != null ? `${property.floor} of ${property.totalFloors || "—"}` : "Independent"}</p>
+              </div>
+              <div className="space-y-0.5">
+                <span className="text-slate-400">Super Built-up Area</span>
+                <p className="font-semibold text-navy">{property.superBuiltUpArea ? `${property.superBuiltUpArea} sq ft` : "—"}</p>
+              </div>
+              <div className="space-y-0.5">
+                <span className="text-slate-400">Parking</span>
+                <p className="font-semibold text-navy">{property.parking ? `${property.parking} Covered Space(s)` : "Available"}</p>
+              </div>
+              <div className="space-y-0.5">
+                <span className="text-slate-400">Locality</span>
+                <p className="font-semibold text-navy capitalize">{property.locality}</p>
+              </div>
+              <div className="space-y-0.5">
+                <span className="text-slate-400">City / State</span>
+                <p className="font-semibold text-navy">{property.city || "Jaipur"}, Rajasthan</p>
+              </div>
+            </div>
+          </div>
+
+          {/* ── Interactive Location Map ── */}
           <PropertyLocationMap
             latitude={property.latitude}
             longitude={property.longitude}
@@ -263,20 +341,20 @@ export default function PropertyDetailPage() {
           />
         </div>
 
-        {/* Right Sidebar: Price & Actions */}
+        {/* ── Right Column: Sticky Price & Action Sidebar ── */}
         <div className="space-y-6">
-          <div className="rounded-3xl border border-ink/10 bg-white p-6 shadow-md space-y-6">
+          <div className="sticky top-20 rounded-3xl border border-slate-200/80 bg-white p-6 shadow-card space-y-6">
             <div>
-              <span className="text-xs uppercase tracking-wider text-moss font-semibold">
-                {property.listingType === "RENT" ? "For Rent" : "For Sale"}
+              <span className="text-xs uppercase tracking-wider text-pink-600 font-bold">
+                {isRent ? "Monthly Lease" : "Outright Purchase"}
               </span>
-              <h1 className="mt-1 font-serif text-2xl font-bold">{property.title}</h1>
-              <p className="mt-3 text-3xl font-serif font-bold text-ink">
+              <h1 className="mt-1 font-display text-2xl font-bold text-navy">{property.title}</h1>
+              <p className="mt-3 text-3xl font-display font-bold text-navy">
                 {inr(property.price)}
-                {property.listingType === "RENT" && <span className="text-sm font-normal text-ink/60"> / month</span>}
+                {isRent && <span className="text-sm font-normal text-slate-500"> / month</span>}
               </p>
-              {property.carpetArea > 0 && property.listingType !== "RENT" && (
-                <p className="text-xs text-ink/60 mt-1">
+              {property.carpetArea > 0 && !isRent && (
+                <p className="text-xs text-slate-500 mt-1 font-medium">
                   ₹{Math.round(property.price / property.carpetArea).toLocaleString("en-IN")} / sq ft (Carpet)
                 </p>
               )}
@@ -284,185 +362,225 @@ export default function PropertyDetailPage() {
 
             {/* Action Buttons */}
             {property.status !== "SOLD" && user?.role !== "SELLER" && (
-              <div className="space-y-3 pt-2">
+              <div className="space-y-2.5 pt-2">
                 <button
                   type="button"
                   onClick={handleCart}
-                  className="w-full rounded-xl bg-ink py-3 font-semibold text-sand shadow hover:bg-ink/90 transition"
+                  className="w-full rounded-2xl bg-navy py-3.5 font-semibold text-sm text-white shadow-md hover:bg-navy-800 transition active:scale-95 flex items-center justify-center gap-2"
                 >
-                  Initiate Purchase Closing
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                  </svg>
+                  <span>Initiate Purchase Closing</span>
                 </button>
 
                 <div className="flex gap-2">
                   <button
                     type="button"
                     onClick={handleFav}
-                    className="flex-1 rounded-xl border border-ink/20 py-2.5 text-sm font-semibold text-ink hover:bg-sand/50 transition flex items-center justify-center gap-1.5"
+                    className="flex-1 rounded-2xl border border-slate-200 py-3 text-xs font-semibold text-navy hover:bg-slate-50 transition active:scale-95 flex items-center justify-center gap-1.5"
                   >
-                    <span>♥</span> Save
+                    <span>❤️</span> Save
                   </button>
                   <button
                     type="button"
                     onClick={() => setShowVisitModal(true)}
-                    className="flex-1 rounded-xl border border-ink/20 py-2.5 text-sm font-semibold text-ink hover:bg-sand/50 transition flex items-center justify-center gap-1.5"
+                    className="flex-1 rounded-2xl border border-pink-200 bg-pink-50/50 py-3 text-xs font-semibold text-pink-700 hover:bg-pink-100 transition active:scale-95 flex items-center justify-center gap-1.5"
                   >
-                    <span>📅</span> Visit
+                    <span>📅</span> Schedule Tour
                   </button>
                 </div>
               </div>
             )}
 
-            {/* Seller & Agency Profile Card */}
-            {(() => {
-              const sellerTargetId = property.seller?.sellerProfileId || property.seller?.id || property.sellerId;
-              return (
-                <div className="rounded-2xl border border-ink/10 bg-sand/20 p-4 space-y-3.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] uppercase tracking-wider text-ink/50 font-bold">
-                      Property Listed By
-                    </span>
-                    <span className="rounded-full bg-moss/10 text-moss border border-moss/30 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider flex items-center gap-1">
-                      <span>✓</span> Verified Seller
-                    </span>
+            {/* ── Seller & Agency Profile Card ── */}
+            <div className="rounded-3xl border border-slate-200/80 bg-slate-50/80 p-5 space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] uppercase tracking-wider text-slate-500 font-bold">
+                  Property Listed By
+                </span>
+                <span className="rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider flex items-center gap-1">
+                  <span>✓</span> Verified Partner
+                </span>
+              </div>
+
+              {/* Clickable Seller Header */}
+              {sellerTargetId ? (
+                <Link
+                  to={`/sellers/${sellerTargetId}`}
+                  className="group flex items-start gap-3 p-2 -m-2 rounded-2xl hover:bg-white transition"
+                >
+                  <div className="h-11 w-11 rounded-2xl bg-gradient-to-tr from-pink-600 to-amber-500 flex items-center justify-center text-white font-bold font-display text-base shadow-sm flex-shrink-0">
+                    {(property.seller?.companyName || property.seller?.name || "S").charAt(0).toUpperCase()}
                   </div>
-
-                  {/* Clickable Seller Header */}
-                  {sellerTargetId ? (
-                    <Link
-                      to={`/sellers/${sellerTargetId}`}
-                      className="group flex items-start gap-3 p-1.5 -m-1.5 rounded-xl hover:bg-white/80 transition"
-                    >
-                      <div className="h-11 w-11 rounded-xl bg-gradient-to-tr from-pink-600 to-amber-500 flex items-center justify-center text-white font-bold font-serif text-base shadow-sm flex-shrink-0">
-                        {(property.seller?.companyName || property.seller?.name || "S").charAt(0).toUpperCase()}
-                      </div>
-                      <div className="space-y-0.5 flex-1 min-w-0">
-                        <p className="font-serif font-bold text-sm text-ink group-hover:text-pink-600 transition truncate">
-                          {property.seller?.companyName || property.contactName || property.seller?.name || "Direct Seller"}
-                        </p>
-                        {property.seller?.companyName && property.seller?.name && (
-                          <p className="text-xs text-ink/60 truncate">Agent: {property.seller.name}</p>
-                        )}
-                        {property.seller?.totalProperties !== undefined && (
-                          <p className="text-[11px] font-semibold text-brass">
-                            🏡 {property.seller.totalProperties} Active Listing{property.seller.totalProperties === 1 ? "" : "s"}
-                          </p>
-                        )}
-                      </div>
-                      <span className="text-xs text-ink/40 group-hover:text-pink-600 group-hover:translate-x-0.5 transition">
-                        &rarr;
-                      </span>
-                    </Link>
-                  ) : (
-                    <div className="flex items-start gap-3">
-                      <div className="h-10 w-10 rounded-xl bg-ink/5 flex items-center justify-center text-ink font-bold font-serif text-base">
-                        🏢
-                      </div>
-                      <div>
-                        <p className="font-bold text-sm text-ink">{property.contactName || "Direct Seller"}</p>
-                        <p className="text-xs text-ink/60">Jaipur Property Partner</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Direct Communication Buttons */}
-                  <div className="space-y-1.5 pt-1 border-t border-ink/5 text-xs">
-                    {(property.contactPhone || property.seller?.phone) && (
-                      <a
-                        href={`tel:${property.contactPhone || property.seller?.phone}`}
-                        className="flex items-center gap-2 p-1.5 rounded-lg text-ink/80 hover:bg-white hover:text-pink-600 transition font-medium"
-                      >
-                        <span>📞</span> <span>{property.contactPhone || property.seller?.phone}</span>
-                      </a>
+                  <div className="space-y-0.5 flex-1 min-w-0">
+                    <p className="font-display font-bold text-sm text-navy group-hover:text-pink-600 transition truncate">
+                      {property.seller?.companyName || property.contactName || property.seller?.name || "Direct Seller"}
+                    </p>
+                    {property.seller?.companyName && property.seller?.name && (
+                      <p className="text-xs text-slate-500 truncate">Agent: {property.seller.name}</p>
                     )}
-                    {property.seller?.email && (
-                      <a
-                        href={`mailto:${property.seller.email}?subject=Inquiry about ${property.title}`}
-                        className="flex items-center gap-2 p-1.5 rounded-lg text-ink/80 hover:bg-white hover:text-pink-600 transition truncate"
-                      >
-                        <span>✉️</span> <span className="truncate">{property.seller.email}</span>
-                      </a>
+                    {property.seller?.totalProperties !== undefined && (
+                      <p className="text-[11px] font-semibold text-pink-600">
+                        🏡 {property.seller.totalProperties} Active Listing{property.seller.totalProperties === 1 ? "" : "s"}
+                      </p>
                     )}
                   </div>
-
-                  {/* View Full Seller Profile Link Button */}
-                  {sellerTargetId && (
-                    <Link
-                      to={`/sellers/${sellerTargetId}`}
-                      className="block w-full text-center rounded-xl bg-white border border-ink/15 py-2 text-xs font-bold text-ink hover:bg-ink hover:text-sand hover:border-ink transition shadow-sm"
-                    >
-                      View Seller Profile &amp; All Listings &rarr;
-                    </Link>
-                  )}
+                  <span className="text-xs text-slate-400 group-hover:text-pink-600 group-hover:translate-x-0.5 transition">
+                    &rarr;
+                  </span>
+                </Link>
+              ) : (
+                <div className="flex items-start gap-3">
+                  <div className="h-10 w-10 rounded-2xl bg-slate-200 flex items-center justify-center text-navy font-bold font-display text-base">
+                    🏢
+                  </div>
+                  <div>
+                    <p className="font-bold text-sm text-navy">{property.contactName || "Direct Seller"}</p>
+                    <p className="text-xs text-slate-500">Jaipur Property Partner</p>
+                  </div>
                 </div>
-              );
-            })()}
-          </div>
+              )}
 
-          {/* Location Details */}
-          <div className="rounded-3xl border border-ink/10 bg-white p-5 shadow-sm space-y-3">
-            <h3 className="font-serif text-base font-bold">Location &amp; Address</h3>
-            <p className="text-sm font-semibold text-ink">📍 {property.locality}, {property.city || "Jaipur"}</p>
-            {property.address && (
-              <p className="text-xs text-ink/70">{property.address}</p>
-            )}
+              {/* Direct Communication Buttons */}
+              <div className="space-y-1.5 pt-2 border-t border-slate-200/60 text-xs">
+                {(property.contactPhone || property.seller?.phone) && (
+                  <a
+                    href={`tel:${property.contactPhone || property.seller?.phone}`}
+                    className="flex items-center gap-2 p-2 rounded-xl text-slate-700 hover:bg-white hover:text-pink-600 transition font-medium"
+                  >
+                    <span>📞</span> <span>{property.contactPhone || property.seller?.phone}</span>
+                  </a>
+                )}
+                {property.seller?.email && (
+                  <a
+                    href={`mailto:${property.seller.email}?subject=Inquiry about ${property.title}`}
+                    className="flex items-center gap-2 p-2 rounded-xl text-slate-700 hover:bg-white hover:text-pink-600 transition truncate font-medium"
+                  >
+                    <span>✉️</span> <span className="truncate">{property.seller.email}</span>
+                  </a>
+                )}
+              </div>
+
+              {/* View Full Seller Profile Link Button */}
+              {sellerTargetId && (
+                <Link
+                  to={`/sellers/${sellerTargetId}`}
+                  className="block w-full text-center rounded-2xl bg-white border border-slate-200 py-2.5 text-xs font-bold text-navy hover:bg-navy hover:text-white transition shadow-xs active:scale-95"
+                >
+                  View Seller Profile &amp; Inventory &rarr;
+                </Link>
+              )}
+            </div>
+
+            {/* Address snippet */}
+            <div className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-xs space-y-2">
+              <h4 className="font-display text-sm font-bold text-navy">Locality &amp; Address</h4>
+              <p className="text-xs font-semibold text-slate-700">📍 {property.locality}, {property.city || "Jaipur"}</p>
+              {property.address && (
+                <p className="text-xs text-slate-500 leading-relaxed">{property.address}</p>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Schedule Visit Modal */}
+      {/* ── Similar Properties Carousel / Grid ── */}
+      {similar.length > 0 && (
+        <section className="space-y-6 pt-10 border-t border-slate-200">
+          <div>
+            <span className="text-xs font-bold uppercase tracking-wider text-pink-600">Similar Options</span>
+            <h2 className="font-display text-2xl font-bold text-navy mt-1">
+              You May Also Like in Jaipur
+            </h2>
+          </div>
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {similar.map((item) => (
+              <PropertyCard
+                key={item.id}
+                id={item.id}
+                title={item.title}
+                price={item.price}
+                locality={item.locality}
+                city={item.city || "Jaipur"}
+                bhk={item.bhk}
+                bathrooms={item.bathrooms}
+                area={item.carpetArea}
+                propertyType={item.propertyType}
+                image={item.images?.[0]?.path}
+                href={`/properties/${item.id}`}
+                sold={item.status === "SOLD"}
+                listingType={item.listingType}
+              />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ── Schedule Visit Modal ── */}
       {showVisitModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/60 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl space-y-4">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-navy-950/70 p-4 backdrop-blur-sm animate-fade-in"
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !submittingVisit) setShowVisitModal(false);
+          }}
+        >
+          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-modal space-y-4 border border-slate-200/80 animate-scale-in">
             <div className="flex items-center justify-between">
-              <h3 className="font-serif text-xl font-bold">Book a Property Visit</h3>
+              <h3 className="font-display text-xl font-bold text-navy">Book a Property Tour</h3>
               <button
+                type="button"
                 onClick={() => setShowVisitModal(false)}
-                className="text-xl text-ink/50 hover:text-ink"
+                className="text-slate-400 hover:text-navy text-xl"
               >
                 &times;
               </button>
             </div>
-            <p className="text-xs text-ink/70">
-              Pick a date and time to visit {property.title}. The assigned representative will coordinate access.
+            <p className="text-xs text-slate-500">
+              Pick a convenient date and time to visit <span className="font-bold text-navy">{property.title}</span>. The partner representative will receive your request.
             </p>
 
-            <form onSubmit={handleScheduleVisit} className="space-y-4">
+            <form onSubmit={handleScheduleVisit} className="space-y-4 pt-1">
               <div>
-                <label className="block text-xs font-semibold text-ink/70 mb-1">Visit Date & Time</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  Preferred Date &amp; Time
+                </label>
                 <input
                   type="datetime-local"
                   required
                   value={visitDate}
                   onChange={(e) => setVisitDate(e.target.value)}
-                  className="w-full rounded-xl border border-ink/20 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass"
+                  className="w-full rounded-2xl border border-slate-200 px-4 py-2.5 text-xs text-navy focus:outline-none focus:ring-2 focus:ring-pink-500"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-ink/70 mb-1">Notes / Preferences (Optional)</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  Notes or Inquiries (Optional)
+                </label>
                 <textarea
                   rows={3}
                   value={visitNotes}
                   onChange={(e) => setVisitNotes(e.target.value)}
-                  placeholder="e.g. Afternoon visit preferred, checking floor plan."
-                  className="w-full rounded-xl border border-ink/20 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass"
+                  placeholder="e.g. Interested in morning slot, looking for loan assistance."
+                  className="w-full rounded-2xl border border-slate-200 px-4 py-2.5 text-xs text-navy focus:outline-none focus:ring-2 focus:ring-pink-500"
                 />
               </div>
 
-              <div className="flex justify-end gap-2 pt-2">
+              <div className="flex justify-end gap-2.5 pt-2">
                 <button
                   type="button"
                   onClick={() => setShowVisitModal(false)}
-                  className="rounded-xl px-4 py-2 text-sm font-semibold text-ink/70 hover:bg-ink/5"
+                  className="rounded-2xl border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submittingVisit}
-                  className="rounded-xl bg-ink px-5 py-2 text-sm font-semibold text-sand hover:bg-ink/90 disabled:opacity-50"
+                  className="rounded-2xl bg-navy px-5 py-2 text-xs font-semibold text-white shadow-md hover:bg-navy-800 disabled:opacity-50"
                 >
-                  {submittingVisit ? "Scheduling..." : "Confirm Schedule"}
+                  {submittingVisit ? "Scheduling..." : "Confirm Request"}
                 </button>
               </div>
             </form>
@@ -470,84 +588,45 @@ export default function PropertyDetailPage() {
         </div>
       )}
 
-      {/* More Properties from this Seller */}
-      {sellerOthers.length > 0 && (
-        <section className="space-y-4 pt-8 border-t border-ink/10">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-            <div>
-              <h3 className="font-serif text-2xl font-bold text-ink">
-                More Properties from {property.seller?.companyName || property.seller?.name || "this Seller"}
-              </h3>
-              <p className="text-xs text-ink/60">Other active listings in Jaipur by this partner</p>
-            </div>
-            {(() => {
-              const targetId = property.seller?.sellerProfileId || property.seller?.id || property.sellerId;
-              if (!targetId) return null;
-              return (
-                <Link
-                  to={`/sellers/${targetId}`}
-                  className="text-xs font-bold text-pink-600 hover:text-pink-700 underline"
+      {/* ── Fullscreen Gallery Modal ── */}
+      {isFullscreenGallery && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-navy-950/95 p-4 backdrop-blur-md"
+          onClick={() => setIsFullscreenGallery(false)}
+        >
+          <div className="relative max-w-5xl w-full h-[80vh] flex flex-col items-center justify-center" onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={() => setIsFullscreenGallery(false)}
+              className="absolute top-2 right-2 rounded-full bg-white/20 p-2 text-white hover:bg-white/30 transition text-lg z-10"
+            >
+              &times;
+            </button>
+            <img
+              src={currentImage}
+              alt=""
+              className="max-h-full max-w-full object-contain rounded-2xl"
+            />
+            {allImages.length > 1 && (
+              <div className="absolute inset-x-0 bottom-4 flex items-center justify-center gap-4">
+                <button
+                  onClick={prevImage}
+                  className="rounded-full bg-white/20 backdrop-blur-md px-4 py-2 text-white text-xs font-bold hover:bg-white/30"
                 >
-                  View All Listings by this Seller &rarr;
-                </Link>
-              );
-            })()}
-          </div>
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {sellerOthers.map((item) => {
-              const primary = item.primaryImage || item.images?.[0]?.path;
-              return (
-                <Link
-                  key={item.id}
-                  to={`/properties/${item.id}`}
-                  className="group block overflow-hidden rounded-2xl border border-ink/10 bg-white p-4 shadow-sm transition hover:shadow-md"
+                  &larr; Prev
+                </button>
+                <span className="text-xs text-white/80 font-mono">
+                  {activeImageIndex + 1} / {allImages.length}
+                </span>
+                <button
+                  onClick={nextImage}
+                  className="rounded-full bg-white/20 backdrop-blur-md px-4 py-2 text-white text-xs font-bold hover:bg-white/30"
                 >
-                  <div className="flex gap-3">
-                    <img
-                      src={imgSrc(primary)}
-                      alt=""
-                      className="h-20 w-24 rounded-xl object-cover flex-shrink-0 bg-sand/30"
-                    />
-                    <div className="space-y-1 min-w-0">
-                      <span className="text-[10px] uppercase font-bold text-moss">
-                        {item.listingType === "RENT" ? "For Rent" : "For Sale"} · {item.bhk} BHK
-                      </span>
-                      <h4 className="font-serif text-sm font-bold text-ink line-clamp-1 group-hover:text-pink-600 transition">
-                        {item.title}
-                      </h4>
-                      <p className="text-sm font-bold text-brass">
-                        {item.listingType === "RENT" ? `${inr(item.price)}/mo` : inr(item.price)}
-                      </p>
-                      <p className="text-[11px] text-ink/50 truncate">📍 {item.locality}</p>
-                    </div>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        </section>
-      )}
-
-      {/* Similar Listings */}
-      {similar.length > 0 && (
-        <section className="space-y-4 pt-6 border-t border-ink/10">
-          <h3 className="font-serif text-2xl font-bold">Similar Homes You May Like</h3>
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {similar.map((sim) => (
-              <div
-                key={sim.id}
-                className="overflow-hidden rounded-2xl border border-ink/10 bg-white p-4 shadow-sm space-y-2"
-              >
-                <Link to={`/properties/${sim.id}`} className="block">
-                  <p className="text-xs uppercase text-moss font-bold">{sim.bhk} BHK</p>
-                  <h4 className="font-serif text-base font-semibold">{sim.title}</h4>
-                  <p className="text-brass font-bold">{inr(sim.price)}</p>
-                  <p className="text-xs text-ink/60">{sim.carpetArea} sq ft · {sim.locality}</p>
-                </Link>
+                  Next &rarr;
+                </button>
               </div>
-            ))}
+            )}
           </div>
-        </section>
+        </div>
       )}
     </div>
   );
