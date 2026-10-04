@@ -3,7 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { api } from "../../api/client";
 import { inr, imgSrc } from "../../lib/format";
 import { useAuth } from "../../auth";
-import type { Property, IvyListing } from "../../types";
+import type { Property } from "../../types";
 
 export default function PropertyDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -11,39 +11,9 @@ export default function PropertyDetailPage() {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  // Normalized property details
-  const [item, setItem] = useState<{
-    id: string;
-    title: string;
-    description: string;
-    price: number;
-    carpetArea: number;
-    superBuiltUpArea?: number;
-    bhk: number;
-    bathrooms?: number;
-    balconies?: number;
-    floor?: number;
-    totalFloors?: number;
-    facing?: string;
-    parking?: number;
-    furnishing: string;
-    locality: string;
-    city: string;
-    address?: string;
-    latitude: number;
-    longitude: number;
-    contactName?: string;
-    contactPhone?: string;
-    contactEmail?: string;
-    status?: string;
-    views?: number;
-    images: string[];
-    isPlatform: boolean;
-  } | null>(null);
-
+  const [property, setProperty] = useState<Property | null>(null);
   const [activeImage, setActiveImage] = useState<string>("");
-  const [similar, setSimilar] = useState<IvyListing[]>([]);
+  const [similar, setSimilar] = useState<Property[]>([]);
   const [actionMsg, setActionMsg] = useState<string | null>(null);
 
   // Visit modal state
@@ -57,85 +27,25 @@ export default function PropertyDetailPage() {
     setLoading(true);
     setError(null);
 
-    // Try local platform first
     api
       .get<Property>(`/properties/${id}`)
       .then((p) => {
-        const imgs = p.images?.length
-          ? p.images.map((i) => i.path)
-          : [imgSrc(p.primaryImage)];
-        setItem({
-          id: p.id,
-          title: p.title,
-          description: p.description,
-          price: p.price,
-          carpetArea: p.carpetArea,
-          superBuiltUpArea: p.superBuiltUpArea,
-          bhk: p.bhk,
-          bathrooms: p.bathrooms,
-          floor: p.floor,
-          totalFloors: p.totalFloors,
-          parking: p.parking,
-          furnishing: p.furnishing,
-          locality: p.locality,
-          city: p.city,
-          address: p.address,
-          latitude: p.latitude,
-          longitude: p.longitude,
-          contactName: p.seller?.name || p.contactName,
-          contactPhone: p.seller?.phone || p.contactPhone,
-          contactEmail: p.seller?.email,
-          status: p.status,
-          views: p.views,
-          images: imgs,
-          isPlatform: true,
-        });
-        setActiveImage(imgs[0] || "");
-      })
-      .catch(() => {
-        // If not found in platform, try Ivy API
-        api
-          .get<IvyListing>(`/ivy/listings/${id}`)
-          .then((iv) => {
-            const defaultImg = "/defaults/apartment.svg";
-            setItem({
-              id: iv.listing_id,
-              title: iv.apartment_name
-                ? `${iv.bedroom} BHK in ${iv.apartment_name}`
-                : `${iv.bedroom} BHK ${iv.property_type || "Apartment"} in ${iv.locality}`,
-              description: iv.description || "Well appointed home in prime Bangalore locality.",
-              price: iv.price,
-              carpetArea: iv.carpet_area,
-              superBuiltUpArea: iv.super_built_up_area,
-              bhk: iv.bedroom,
-              bathrooms: iv.bathroom,
-              balconies: iv.balcony,
-              floor: iv.floor,
-              totalFloors: iv.total_floors,
-              facing: iv.facing_direction,
-              parking: iv.covered_parking,
-              furnishing: iv.furnishing,
-              locality: iv.locality,
-              city: "Bengaluru",
-              latitude: iv.latitude,
-              longitude: iv.longitude,
-              contactName: iv.posted_by_name || "Verified Agent",
-              contactPhone: iv.posted_by_contact || "+91 80 4567 8900",
-              status: "ACTIVE",
-              images: [defaultImg],
-              isPlatform: false,
-            });
-            setActiveImage(defaultImg);
+        setProperty(p);
+        const primary = p.images?.length ? p.images[0].path : p.primaryImage;
+        setActiveImage(primary ? imgSrc(primary) : "/defaults/apartment.svg");
 
-            // Fetch similar listings
-            api
-              .get<{ results?: IvyListing[] }>(`/ivy/listings/${id}/similar`)
-              .then((s) => setSimilar(s.results || []))
-              .catch(() => {});
+        // Fetch similar properties from same locality or general catalogue
+        api
+          .get<{ results: Property[] }>(`/properties?limit=4`)
+          .then((res) => {
+            const others = (res.results || []).filter((item) => item.id !== id);
+            setSimilar(others.slice(0, 3));
           })
-          .catch((err: Error) => {
-            setError(err.message || "Property not found");
-          });
+          .catch(() => {});
+      })
+      .catch((err: Error) => {
+        setError(err.message || "Property not found");
+        setProperty(null);
       })
       .finally(() => setLoading(false));
   }, [id]);
@@ -145,13 +55,9 @@ export default function PropertyDetailPage() {
       setActionMsg("Please log in to save favourites.");
       return;
     }
-    if (!item) return;
+    if (!property) return;
     try {
-      if (item.isPlatform) {
-        await api.post("/favourites", { propertyId: item.id });
-      } else {
-        await api.post("/ivy/favourites", { id: item.id });
-      }
+      await api.post("/favourites", { propertyId: property.id });
       setActionMsg("Saved to favourites!");
     } catch (e: unknown) {
       setActionMsg(e instanceof Error ? e.message : "Failed to save favourite");
@@ -163,12 +69,9 @@ export default function PropertyDetailPage() {
       setActionMsg("Please log in to add to cart.");
       return;
     }
-    if (!item || !item.isPlatform) {
-      setActionMsg("Only verified platform direct properties can be added to the transactional cart.");
-      return;
-    }
+    if (!property) return;
     try {
-      await api.post("/cart", { propertyId: item.id });
+      await api.post("/cart", { propertyId: property.id });
       setActionMsg("Added property to cart!");
     } catch (e: unknown) {
       setActionMsg(e instanceof Error ? e.message : "Failed to add to cart");
@@ -182,17 +85,15 @@ export default function PropertyDetailPage() {
       setShowVisitModal(false);
       return;
     }
-    if (!item || !visitDate) return;
+    if (!property || !visitDate) return;
     setSubmittingVisit(true);
     try {
-      if (item.isPlatform) {
-        await api.post("/visits/request", {
-          propertyId: item.id,
-          scheduledAt: new Date(visitDate).toISOString(),
-          notes: visitNotes,
-        });
-      }
-      setActionMsg("Visit scheduled successfully! The seller will contact you shortly.");
+      await api.post("/visits/request", {
+        propertyId: property.id,
+        scheduledAt: new Date(visitDate).toISOString(),
+        notes: visitNotes,
+      });
+      setActionMsg("Visit scheduled successfully! The representative will contact you shortly.");
       setShowVisitModal(false);
       setVisitDate("");
       setVisitNotes("");
@@ -203,15 +104,13 @@ export default function PropertyDetailPage() {
     }
   };
 
-  if (loading) {
-    return <div className="py-24 text-center text-ink/60">Loading property details...</div>;
-  }
+  if (loading) return <div className="py-24 text-center text-ink/60">Loading property details...</div>;
 
-  if (error || !item) {
+  if (error || !property) {
     return (
       <div className="py-24 text-center space-y-4">
         <h2 className="font-serif text-2xl font-bold">Property Not Found</h2>
-        <p className="text-sm text-ink/70">{error || "The requested property could not be located."}</p>
+        <p className="text-sm text-ink/70">The property you are looking for does not exist or has been removed.</p>
         <Link to="/properties" className="inline-block rounded-xl bg-ink px-4 py-2 text-sm text-sand">
           &larr; Back to Properties
         </Link>
@@ -219,209 +118,196 @@ export default function PropertyDetailPage() {
     );
   }
 
+  const allImages = property.images?.length
+    ? property.images.map((i) => imgSrc(i.path))
+    : property.primaryImage
+      ? [imgSrc(property.primaryImage)]
+      : ["/defaults/apartment.svg"];
+
   return (
-    <div className="space-y-10 pb-16">
-      {/* Breadcrumbs */}
+    <div className="space-y-8 pb-16">
+      {/* Breadcrumb */}
       <nav className="flex items-center gap-2 text-xs text-ink/60">
-        <Link to="/" className="hover:text-ink">
-          Home
-        </Link>
+        <Link to="/" className="hover:text-ink">Home</Link>
         <span>/</span>
-        <Link to="/properties" className="hover:text-ink">
-          Properties
-        </Link>
+        <Link to="/properties" className="hover:text-ink">Properties</Link>
         <span>/</span>
-        <span className="text-ink font-medium capitalize">{item.locality}</span>
+        <span className="text-ink font-medium capitalize">{property.locality}</span>
       </nav>
 
       {actionMsg && (
-        <div className="rounded-xl bg-moss/10 border border-moss/20 px-4 py-3 text-sm text-moss font-semibold">
+        <div className="rounded-xl bg-moss/10 border border-moss/20 px-4 py-3 text-sm font-semibold text-moss">
           {actionMsg}
         </div>
       )}
 
-      {/* Main Hero & Gallery Grid */}
+      {/* Main Grid */}
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-        {/* Gallery */}
-        <div className="lg:col-span-2 space-y-4">
-          <div className="relative overflow-hidden rounded-3xl border border-ink/10 bg-sand/30 shadow-md">
-            <img
-              src={imgSrc(activeImage)}
-              alt={item.title}
-              className="h-[380px] sm:h-[460px] w-full object-cover"
-            />
-            {item.status === "SOLD" && (
-              <span className="absolute top-4 right-4 rounded-xl bg-ink px-4 py-1.5 text-sm font-bold text-sand shadow">
-                SOLD
-              </span>
+        {/* Left Column: Photos, specs, overview */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Gallery */}
+          <div className="space-y-3">
+            <div className="relative overflow-hidden rounded-3xl border border-ink/10 bg-sand/30 shadow-sm aspect-video sm:aspect-[16/9]">
+              <img
+                src={activeImage || allImages[0]}
+                alt={property.title}
+                className="h-full w-full object-cover"
+              />
+              {property.status === "SOLD" && (
+                <div className="absolute top-4 left-4 rounded-xl bg-red-600 px-3 py-1 text-xs font-bold text-white shadow">
+                  SOLD
+                </div>
+              )}
+            </div>
+
+            {allImages.length > 1 && (
+              <div className="flex gap-2 overflow-x-auto pb-2">
+                {allImages.map((img, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => setActiveImage(img)}
+                    className={`h-16 w-20 flex-none overflow-hidden rounded-xl border-2 transition ${
+                      activeImage === img ? "border-pink-600" : "border-transparent opacity-70 hover:opacity-100"
+                    }`}
+                  >
+                    <img src={img} alt="" className="h-full w-full object-cover" />
+                  </button>
+                ))}
+              </div>
             )}
           </div>
 
-          {/* Thumbnails */}
-          {item.images.length > 1 && (
-            <div className="flex gap-3 overflow-x-auto pb-2">
-              {item.images.map((img, i) => (
-                <button
-                  key={i}
-                  onClick={() => setActiveImage(img)}
-                  className={`h-20 w-24 flex-shrink-0 overflow-hidden rounded-xl border-2 transition ${
-                    activeImage === img ? "border-brass shadow" : "border-transparent opacity-70 hover:opacity-100"
-                  }`}
-                >
-                  <img src={imgSrc(img)} alt="" className="h-full w-full object-cover" />
-                </button>
-              ))}
-            </div>
-          )}
-
-          {/* Key Specs Row */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 rounded-2xl border border-ink/10 bg-white p-5 shadow-sm">
+          {/* Quick Specs Cards */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 rounded-2xl border border-ink/10 bg-white p-5 shadow-sm text-center">
             <div>
               <span className="text-xs text-ink/60 uppercase">Bedrooms</span>
-              <p className="font-serif text-lg font-bold">{item.bhk} BHK</p>
+              <p className="font-serif text-lg font-bold">{property.bhk} BHK</p>
             </div>
             <div>
               <span className="text-xs text-ink/60 uppercase">Carpet Area</span>
-              <p className="font-serif text-lg font-bold">{item.carpetArea} sq ft</p>
+              <p className="font-serif text-lg font-bold">{property.carpetArea} sq ft</p>
             </div>
             <div>
               <span className="text-xs text-ink/60 uppercase">Bathrooms</span>
-              <p className="font-serif text-lg font-bold">{item.bathrooms ?? "—"}</p>
+              <p className="font-serif text-lg font-bold">{property.bathrooms}</p>
             </div>
             <div>
               <span className="text-xs text-ink/60 uppercase">Furnishing</span>
-              <p className="font-serif text-lg font-bold capitalize">
-                {item.furnishing.replace(/_/g, " ")}
-              </p>
+              <p className="font-serif text-lg font-bold capitalize">{property.furnishing.replace(/_/g, " ").toLowerCase()}</p>
             </div>
           </div>
 
-          {/* Full Description */}
+          {/* Overview */}
           <div className="rounded-2xl border border-ink/10 bg-white p-6 shadow-sm space-y-3">
-            <h3 className="font-serif text-xl font-bold">About this home</h3>
-            <p className="whitespace-pre-line text-sm text-ink/80 leading-relaxed">
-              {item.description}
-            </p>
+            <h3 className="font-serif text-xl font-bold">Property Overview</h3>
+            <p className="text-sm text-ink/80 leading-relaxed whitespace-pre-line">{property.description}</p>
           </div>
 
-          {/* Detailed Features Table */}
+          {/* Detailed Specs */}
           <div className="rounded-2xl border border-ink/10 bg-white p-6 shadow-sm space-y-4">
-            <h3 className="font-serif text-xl font-bold">Property Specifications</h3>
+            <h3 className="font-serif text-xl font-bold">Specifications</h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-y-4 gap-x-6 text-sm">
               <div>
-                <span className="text-ink/60">Super Built-up Area</span>
-                <p className="font-medium">{item.superBuiltUpArea ? `${item.superBuiltUpArea} sq ft` : "—"}</p>
+                <span className="text-ink/60">Property Type</span>
+                <p className="font-medium capitalize">{property.propertyType.replace(/_/g, " ").toLowerCase()}</p>
               </div>
               <div>
                 <span className="text-ink/60">Floor</span>
-                <p className="font-medium">
-                  {item.floor != null ? `${item.floor} of ${item.totalFloors || "—"}` : "—"}
-                </p>
+                <p className="font-medium">{property.floor != null ? `${property.floor} of ${property.totalFloors || "—"}` : "—"}</p>
               </div>
               <div>
-                <span className="text-ink/60">Facing Direction</span>
-                <p className="font-medium capitalize">{item.facing || "North-East"}</p>
+                <span className="text-ink/60">Super Built-up Area</span>
+                <p className="font-medium">{property.superBuiltUpArea ? `${property.superBuiltUpArea} sq ft` : "—"}</p>
               </div>
               <div>
-                <span className="text-ink/60">Covered Parking</span>
-                <p className="font-medium">{item.parking != null ? `${item.parking} slots` : "Available"}</p>
+                <span className="text-ink/60">Parking</span>
+                <p className="font-medium">{property.parking ? `${property.parking} Covered` : "Available"}</p>
               </div>
               <div>
                 <span className="text-ink/60">Locality</span>
-                <p className="font-medium capitalize">{item.locality}</p>
+                <p className="font-medium capitalize">{property.locality}</p>
               </div>
               <div>
-                <span className="text-ink/60">Views</span>
-                <p className="font-medium">{item.views ?? 1}</p>
+                <span className="text-ink/60">City</span>
+                <p className="font-medium capitalize">{property.city || "Jaipur"}</p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Sidebar Actions & Seller Contact */}
+        {/* Right Sidebar: Price & Actions */}
         <div className="space-y-6">
           <div className="rounded-3xl border border-ink/10 bg-white p-6 shadow-md space-y-6">
             <div>
               <span className="text-xs uppercase tracking-wider text-moss font-semibold">
-                {item.isPlatform ? "Verified Direct Listing" : "Ivy MLS Partner Listing"}
+                {property.listingType === "RENT" ? "For Rent" : "For Sale"}
               </span>
-              <h1 className="mt-1 font-serif text-2xl font-bold leading-snug">{item.title}</h1>
-              <p className="mt-2 text-3xl font-serif font-bold text-brass">
-                {item.status === "SOLD" ? "SOLD" : inr(item.price)}
+              <h1 className="mt-1 font-serif text-2xl font-bold">{property.title}</h1>
+              <p className="mt-3 text-3xl font-serif font-bold text-ink">
+                {inr(property.price)}
+                {property.listingType === "RENT" && <span className="text-sm font-normal text-ink/60"> / month</span>}
               </p>
-              {item.carpetArea > 0 && (
-                <p className="text-xs text-ink/60">
-                  ≈ {inr(Math.round(item.price / item.carpetArea))} / sq ft
+              {property.carpetArea > 0 && property.listingType !== "RENT" && (
+                <p className="text-xs text-ink/60 mt-1">
+                  ₹{Math.round(property.price / property.carpetArea).toLocaleString("en-IN")} / sq ft (Carpet)
                 </p>
               )}
             </div>
 
             {/* Action Buttons */}
-            {user?.role === "SELLER" ? (
-              <div className="rounded-2xl border border-ink/10 bg-sand/40 p-4 text-center space-y-2">
-                <span className="inline-block rounded-full bg-ink/10 px-3 py-1 text-xs font-bold text-ink">
-                  Seller Portal View
-                </span>
-                <p className="text-xs text-ink/70">
-                  You are logged in with a Seller account. Customer actions (cart, visit requests, favorites) are disabled.
-                </p>
-                <Link
-                  to="/seller/properties"
-                  className="inline-block rounded-xl bg-ink px-4 py-2 text-xs font-semibold text-sand hover:bg-ink/90 transition mt-1"
-                >
-                  Manage My Inventory &rarr;
-                </Link>
-              </div>
-            ) : (
+            {property.status !== "SOLD" && user?.role !== "SELLER" && (
               <div className="space-y-3 pt-2">
                 <button
-                  onClick={() => setShowVisitModal(true)}
+                  type="button"
+                  onClick={handleCart}
                   className="w-full rounded-xl bg-ink py-3 font-semibold text-sand shadow hover:bg-ink/90 transition"
                 >
-                  Schedule Property Visit
+                  Initiate Purchase Closing
                 </button>
 
-                {item.isPlatform && item.status !== "SOLD" && (
+                <div className="flex gap-2">
                   <button
-                    onClick={() => void handleCart()}
-                    className="w-full rounded-xl border-2 border-ink py-3 font-semibold text-ink hover:bg-ink/5 transition"
+                    type="button"
+                    onClick={handleFav}
+                    className="flex-1 rounded-xl border border-ink/20 py-2.5 text-sm font-semibold text-ink hover:bg-sand/50 transition flex items-center justify-center gap-1.5"
                   >
-                    Add to Cart
+                    <span>♥</span> Save
                   </button>
-                )}
-
-                <button
-                  onClick={() => void handleFav()}
-                  className="w-full rounded-xl border border-ink/20 py-2.5 text-sm font-semibold text-ink/80 hover:bg-ink/5 transition"
-                >
-                  ♥ Save to Favourites
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowVisitModal(true)}
+                    className="flex-1 rounded-xl border border-ink/20 py-2.5 text-sm font-semibold text-ink hover:bg-sand/50 transition flex items-center justify-center gap-1.5"
+                  >
+                    <span>📅</span> Visit
+                  </button>
+                </div>
               </div>
             )}
 
             {/* Contact Details Card */}
             <div className="rounded-2xl bg-sand/40 p-4 space-y-2 border border-ink/5">
               <p className="text-xs uppercase tracking-wider text-ink/60 font-semibold">Contact Representative</p>
-              <p className="font-bold text-sm text-ink">{item.contactName || "Ivy Homes Associate"}</p>
-              {item.contactPhone && (
+              <p className="font-bold text-sm text-ink">{property.contactName || property.seller?.name || "PinkCityHomes Representative"}</p>
+              {(property.contactPhone || property.seller?.phone) && (
                 <p className="text-sm text-ink/80 flex items-center gap-2">
-                  <span>📞</span> <a href={`tel:${item.contactPhone}`} className="hover:underline">{item.contactPhone}</a>
+                  <span>📞</span> <a href={`tel:${property.contactPhone || property.seller?.phone}`} className="hover:underline font-semibold">{property.contactPhone || property.seller?.phone}</a>
                 </p>
               )}
-              {item.contactEmail && (
+              {property.seller?.email && (
                 <p className="text-sm text-ink/80 flex items-center gap-2">
-                  <span>✉️</span> <a href={`mailto:${item.contactEmail}`} className="hover:underline">{item.contactEmail}</a>
+                  <span>✉️</span> <a href={`mailto:${property.seller.email}`} className="hover:underline">{property.seller.email}</a>
                 </p>
               )}
             </div>
           </div>
 
-          {/* Location Details (Keywords/Address only - Map removed) */}
+          {/* Location Details */}
           <div className="rounded-3xl border border-ink/10 bg-white p-5 shadow-sm space-y-3">
             <h3 className="font-serif text-base font-bold">Location &amp; Address</h3>
-            <p className="text-sm font-semibold text-ink">📍 {item.locality}, {item.city}</p>
-            {item.address && (
-              <p className="text-xs text-ink/70">{item.address}</p>
+            <p className="text-sm font-semibold text-ink">📍 {property.locality}, {property.city || "Jaipur"}</p>
+            {property.address && (
+              <p className="text-xs text-ink/70">{property.address}</p>
             )}
           </div>
         </div>
@@ -441,7 +327,7 @@ export default function PropertyDetailPage() {
               </button>
             </div>
             <p className="text-xs text-ink/70">
-              Pick a date and time to visit {item.title}. The assigned representative will coordinate access.
+              Pick a date and time to visit {property.title}. The assigned representative will coordinate access.
             </p>
 
             <form onSubmit={handleScheduleVisit} className="space-y-4">
@@ -493,16 +379,16 @@ export default function PropertyDetailPage() {
         <section className="space-y-4 pt-6 border-t border-ink/10">
           <h3 className="font-serif text-2xl font-bold">Similar Homes You May Like</h3>
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {similar.slice(0, 3).map((sim) => (
+            {similar.map((sim) => (
               <div
-                key={sim.listing_id}
+                key={sim.id}
                 className="overflow-hidden rounded-2xl border border-ink/10 bg-white p-4 shadow-sm space-y-2"
               >
-                <Link to={`/properties/${sim.listing_id}`} className="block">
-                  <p className="text-xs uppercase text-moss font-bold">{sim.bedroom} BHK</p>
-                  <h4 className="font-serif text-base font-semibold">{sim.apartment_name || sim.locality}</h4>
+                <Link to={`/properties/${sim.id}`} className="block">
+                  <p className="text-xs uppercase text-moss font-bold">{sim.bhk} BHK</p>
+                  <h4 className="font-serif text-base font-semibold">{sim.title}</h4>
                   <p className="text-brass font-bold">{inr(sim.price)}</p>
-                  <p className="text-xs text-ink/60">{sim.carpet_area} sq ft · {sim.locality}</p>
+                  <p className="text-xs text-ink/60">{sim.carpetArea} sq ft · {sim.locality}</p>
                 </Link>
               </div>
             ))}

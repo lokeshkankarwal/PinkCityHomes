@@ -30,86 +30,48 @@ export interface Property {
   seller?: { name: string; email?: string; phone?: string };
 }
 
-export interface IvyListing {
-  listing_id: string;
-  listing_url?: string;
-  website?: string;
-  city_id?: number;
-  apartment_name?: string;
+export interface Project {
+  id: string;
+  sellerId?: string;
+  name: string;
+  developerName: string;
   locality: string;
-  property_type: string;
-  bedroom: number;
-  bathroom?: number;
-  balcony?: number;
-  floor?: number;
-  total_floors?: number;
-  furnishing: string;
-  facing_direction?: string;
-  covered_parking?: number;
-  price: number;
-  carpet_area: number;
-  super_built_up_area?: number;
-  latitude: number;
-  longitude: number;
-  posted_by?: string;
-  posted_by_name?: string;
-  posted_by_contact?: string;
-  project_id?: string;
+  city: string;
+  address?: string;
   description?: string;
-  posted_at?: string;
-  is_verified?: boolean;
-  is_live?: boolean;
+  totalUnits: number;
+  totalTowers?: number;
+  amenities: string[];
+  image?: string;
+  createdAt?: string;
+  unitsCount?: number;
+  buyUnitsCount?: number;
+  rentUnitsCount?: number;
+  units?: Property[];
 }
 
-export interface IvyRental {
-  listing_id: string;
-  listing_url?: string;
-  website?: string;
-  city_id?: number;
-  title: string;
-  apartment_name?: string;
-  locality: string;
-  property_type: string;
-  bedroom: number;
-  bathroom?: number;
-  floor?: number;
-  total_floors?: number;
-  furnishing: string;
-  facing_direction?: string;
-  price: number;
-  deposit: number;
-  maintenance?: number;
-  carpet_area: number;
-  super_builtup_area?: number;
-  latitude: number;
-  longitude: number;
-  posted_by?: string;
-  posted_by_name?: string;
-  posted_by_contact?: string;
-  description?: string;
-  posted_at?: string;
-}
-
-export interface IvyProject {
+export interface ProjectDetail {
   project_id: string;
-  project_url?: string;
-  city_id?: number;
   apartment_name: string;
   developer_name?: string;
   locality: string;
+  city: string;
+  address?: string;
+  description?: string;
   project_status?: string;
   total_units?: number;
   total_towers?: number;
-  total_floors?: number;
-  launch_date?: string;
-  possession_date?: string;
-  rera_number?: string;
-  min_area_sqft?: number;
-  max_area_sqft?: number;
   total_listings?: number;
   price_min?: number;
   price_max?: number;
+  min_area_sqft?: number;
+  max_area_sqft?: number;
   amenities?: string[];
-  latitude?: number;
-  longitude?: number;
+  image?: string;
+  contactName?: string;
+  contactPhone?: string;
+  contactEmail?: string;
+  saleUnits?: Property[];
+  rentUnits?: Property[];
+  allUnits?: Property[];
 }

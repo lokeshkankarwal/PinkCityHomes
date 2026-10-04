@@ -2,7 +2,7 @@ const API_BASE = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/
 const API = `${API_BASE}/api`;
 
 // ── Token storage ─────────────────────────────────────────────────────────────
-const TOKEN_KEY = "ivy_jwt";
+const TOKEN_KEY = "pch_jwt";
 
 export function getStoredToken(): string | undefined {
   return localStorage.getItem(TOKEN_KEY) ?? undefined;

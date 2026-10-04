@@ -99,7 +99,7 @@ export async function checkout(req: Request, res: Response) {
             sellerId: prop.sellerId,
             name: customerName,
             email: customerEmail || null,
-            phone: customerPhone !== "N/A" ? customerPhone : "Contact via Ivy Portal",
+            phone: customerPhone !== "N/A" ? customerPhone : "Contact via Platform",
             interestLevel: "HIGH",
             notes: `Customer initiated Purchase Closing for "${prop.title}". Order ID: ${order.id}.`,
           },

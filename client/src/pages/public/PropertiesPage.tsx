@@ -3,242 +3,155 @@ import { useSearchParams } from "react-router-dom";
 import { api } from "../../api/client";
 import { PropertyCard } from "../../components/PropertyCard";
 import { useAuth } from "../../auth";
-import type { Property, IvyListing } from "../../types";
+import type { Property } from "../../types";
 
 export default function PropertiesPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
 
-  // Filter states initialized from URL params
-  const [locality, setLocality] = useState(searchParams.get("locality") || "");
-  const [bhk, setBhk] = useState(searchParams.get("bhk") || "");
-  const [propertyType, setPropertyType] = useState(searchParams.get("type") || "");
-  const [furnishing, setFurnishing] = useState(searchParams.get("furnishing") || "");
-  const [minPrice, setMinPrice] = useState(searchParams.get("minPrice") || "");
-  const [maxPrice, setMaxPrice] = useState(searchParams.get("maxPrice") || "");
+  // Filter input states
+  const [localityInput, setLocalityInput] = useState(searchParams.get("locality") || "");
+  const [bhkInput, setBhkInput] = useState(searchParams.get("bhk") || "");
+  const [propertyTypeInput, setPropertyTypeInput] = useState(searchParams.get("type") || "");
+  const [furnishingInput, setFurnishingInput] = useState(searchParams.get("furnishing") || "");
+  const [minPriceInput, setMinPriceInput] = useState(searchParams.get("minPrice") || "");
+  const [maxPriceInput, setMaxPriceInput] = useState(searchParams.get("maxPrice") || "");
   const [sortBy, setSortBy] = useState("newest");
-  const [sourceTab, setSourceTab] = useState<"all" | "ivy" | "platform">("all");
+
+  // Applied filters
+  const [appliedFilters, setAppliedFilters] = useState({
+    locality: searchParams.get("locality") || "",
+    bhk: searchParams.get("bhk") || "",
+    propertyType: searchParams.get("type") || "",
+    furnishing: searchParams.get("furnishing") || "",
+    minPrice: searchParams.get("minPrice") || "",
+    maxPrice: searchParams.get("maxPrice") || "",
+  });
 
   const [platformProps, setPlatformProps] = useState<Property[]>([]);
-  const [ivyListings, setIvyListings] = useState<IvyListing[]>([]);
   const [loading, setLoading] = useState(true);
-  const [ivyError, setIvyError] = useState<string | null>(null);
   const [actionMsg, setActionMsg] = useState<string | null>(null);
 
-  // Pagination state
+  // Pagination
   const [page, setPage] = useState(1);
   const pageSize = 12;
 
-  // Load data
+  // Load properties
   useEffect(() => {
     let isMounted = true;
     setLoading(true);
 
-    // Fetch local platform properties
-    const fetchPlatform = api
-      .get<{ results: Property[] }>("/properties?limit=100")
+    api
+      .get<{ results: Property[] }>("/properties?limit=200")
       .then((d) => (isMounted ? setPlatformProps(d.results || []) : null))
-      .catch(() => (isMounted ? setPlatformProps([]) : null));
-
-    // Fetch Ivy API listings
-    const fetchIvy = api
-      .get<{ results?: IvyListing[]; listings?: IvyListing[] }>("/ivy/listings?limit=100")
-      .then((d) => {
-        if (!isMounted) return;
-        const list = d.results || d.listings || [];
-        setIvyListings(list);
-        setIvyError(null);
-      })
-      .catch((err: Error) => {
-        if (!isMounted) return;
-        setIvyError(err.message || "Ivy API offline");
+      .catch(() => (isMounted ? setPlatformProps([]) : null))
+      .finally(() => {
+        if (isMounted) setLoading(false);
       });
-
-    Promise.allSettled([fetchPlatform, fetchIvy]).finally(() => {
-      if (isMounted) setLoading(false);
-    });
 
     return () => {
       isMounted = false;
     };
   }, []);
 
-  // Update URL search params
   const applyFilters = () => {
+    const trimmedLocality = localityInput.trim();
+    setAppliedFilters({
+      locality: trimmedLocality,
+      bhk: bhkInput,
+      propertyType: propertyTypeInput,
+      furnishing: furnishingInput,
+      minPrice: minPriceInput,
+      maxPrice: maxPriceInput,
+    });
     const params = new URLSearchParams();
-    if (locality) params.set("locality", locality);
-    if (bhk) params.set("bhk", bhk);
-    if (propertyType) params.set("type", propertyType);
-    if (furnishing) params.set("furnishing", furnishing);
-    if (minPrice) params.set("minPrice", minPrice);
-    if (maxPrice) params.set("maxPrice", maxPrice);
+    if (trimmedLocality) params.set("locality", trimmedLocality);
+    if (bhkInput) params.set("bhk", bhkInput);
+    if (propertyTypeInput) params.set("type", propertyTypeInput);
+    if (furnishingInput) params.set("furnishing", furnishingInput);
+    if (minPriceInput) params.set("minPrice", minPriceInput);
+    if (maxPriceInput) params.set("maxPrice", maxPriceInput);
     setSearchParams(params);
     setPage(1);
   };
 
   const clearFilters = () => {
-    setLocality("");
-    setBhk("");
-    setPropertyType("");
-    setFurnishing("");
-    setMinPrice("");
-    setMaxPrice("");
+    setLocalityInput("");
+    setBhkInput("");
+    setPropertyTypeInput("");
+    setFurnishingInput("");
+    setMinPriceInput("");
+    setMaxPriceInput("");
+    setAppliedFilters({
+      locality: "",
+      bhk: "",
+      propertyType: "",
+      furnishing: "",
+      minPrice: "",
+      maxPrice: "",
+    });
     setSearchParams(new URLSearchParams());
     setPage(1);
   };
 
-  // Convert and normalize items
-  // Convert and normalize items
-  type NormalizedItem = {
-    id: string;
-    title: string;
-    price: number;
-    locality: string;
-    city?: string;
-    address?: string;
-    projectName?: string;
-    bhk: number;
-    area: number;
-    image?: string;
-    href: string;
-    latitude: number;
-    longitude: number;
-    furnishing: string;
-    propertyType: string;
-    isSold: boolean;
-    source: "ivy" | "platform";
-    listingType?: string;
-  };
+  // Filter properties (only show BUY listings on sale page)
+  const buyProperties = useMemo(() => {
+    return platformProps.filter((p) => (p.listingType || "BUY") === "BUY");
+  }, [platformProps]);
 
-  const normalizedItems: NormalizedItem[] = useMemo(() => {
-    const list: NormalizedItem[] = [];
-
-    // Platform properties (only show BUY or default on Buy page)
-    if (sourceTab === "all" || sourceTab === "platform") {
-      platformProps
-        .filter((p) => (p.listingType || "BUY") === "BUY")
-        .forEach((p) => {
-          list.push({
-            id: p.id,
-            title: p.title,
-            price: p.price,
-            locality: p.locality,
-            city: p.city || "Bengaluru",
-            address: p.address,
-            projectName: p.projectName,
-            bhk: p.bhk,
-            area: p.carpetArea,
-            image: p.primaryImage,
-            href: `/properties/${p.id}`,
-            latitude: p.latitude,
-            longitude: p.longitude,
-            furnishing: p.furnishing.toLowerCase(),
-            propertyType: p.propertyType.toLowerCase(),
-            isSold: p.status === "SOLD",
-            source: "platform",
-            listingType: p.listingType || "BUY",
-          });
-        });
-    }
-
-    // Ivy listings
-    if (sourceTab === "all" || sourceTab === "ivy") {
-      ivyListings.forEach((iv) => {
-        list.push({
-          id: iv.listing_id,
-          title: iv.apartment_name
-            ? `${iv.bedroom} BHK in ${iv.apartment_name}`
-            : `${iv.bedroom} BHK ${iv.property_type || "Apartment"} in ${iv.locality}`,
-          price: iv.price,
-          locality: iv.locality,
-          city: "Bengaluru",
-          address: iv.apartment_name ? `${iv.apartment_name}, ${iv.locality}` : iv.locality,
-          projectName: iv.apartment_name,
-          bhk: iv.bedroom,
-          area: iv.carpet_area,
-          image: "/defaults/apartment.svg",
-          href: `/properties/${iv.listing_id}`,
-          latitude: iv.latitude,
-          longitude: iv.longitude,
-          furnishing: (iv.furnishing || "").toLowerCase(),
-          propertyType: (iv.property_type || "").toLowerCase(),
-          isSold: false,
-          source: "ivy",
-          listingType: "BUY",
-        });
-      });
-    }
-
-    return list;
-  }, [platformProps, ivyListings, sourceTab]);
-
-  // Client-side filtering with broad district/locality/city/address matching
   const filteredItems = useMemo(() => {
-    return normalizedItems.filter((item) => {
-      if (locality) {
-        const needle = locality.toLowerCase().trim();
-        const loc = (item.locality || "").toLowerCase();
-        const city = (item.city || "").toLowerCase();
-        const addr = (item.address || "").toLowerCase();
-        const proj = (item.projectName || "").toLowerCase();
-        const title = (item.title || "").toLowerCase();
-        const matches =
-          loc.includes(needle) ||
-          city.includes(needle) ||
-          addr.includes(needle) ||
-          proj.includes(needle) ||
-          title.includes(needle);
+    return buyProperties.filter((item) => {
+      if (appliedFilters.locality) {
+        const needle = appliedFilters.locality.toLowerCase().trim();
+        const tokens = needle.split(/[,\s]+/).filter(Boolean);
+        const haystack = `${item.title} ${item.locality} ${item.city || ""} ${item.address || ""} ${item.projectName || ""}`.toLowerCase();
+        const matches = tokens.every((token) => haystack.includes(token));
         if (!matches) return false;
       }
-      if (bhk) {
-        if (item.bhk !== Number(bhk)) return false;
+      if (appliedFilters.bhk) {
+        if (item.bhk !== Number(appliedFilters.bhk)) return false;
       }
-      if (furnishing) {
+      if (appliedFilters.furnishing) {
         const f = item.furnishing.toLowerCase().replace(/_/g, "-");
-        const target = furnishing.toLowerCase().replace(/_/g, "-");
+        const target = appliedFilters.furnishing.toLowerCase().replace(/_/g, "-");
         if (!f.includes(target)) return false;
       }
-      if (propertyType) {
+      if (appliedFilters.propertyType) {
         const pt = item.propertyType.toLowerCase().replace(/_/g, " ");
-        const target = propertyType.toLowerCase().replace(/_/g, " ");
+        const target = appliedFilters.propertyType.toLowerCase().replace(/_/g, " ");
         if (!pt.includes(target)) return false;
       }
-      if (minPrice && item.price < Number(minPrice)) return false;
-      if (maxPrice && item.price > Number(maxPrice)) return false;
+      if (appliedFilters.minPrice && item.price < Number(appliedFilters.minPrice)) return false;
+      if (appliedFilters.maxPrice && item.price > Number(appliedFilters.maxPrice)) return false;
       return true;
     });
-  }, [normalizedItems, locality, bhk, furnishing, propertyType, minPrice, maxPrice]);
+  }, [buyProperties, appliedFilters]);
 
-  // Autocomplete suggestions based on available listings
+  // Autocomplete suggestions
   const [showSuggestions, setShowSuggestions] = useState(false);
   const locationSuggestions = useMemo(() => {
-    if (!locality || locality.trim().length === 0) return [];
-    const needle = locality.toLowerCase().trim();
+    if (!localityInput || localityInput.trim().length === 0) return [];
+    const needle = localityInput.toLowerCase().trim();
     const suggestions = new Set<string>();
 
-    normalizedItems.forEach((item) => {
-      const parts = [item.locality, item.city, item.address].filter(Boolean);
-      const full = parts.join(", ");
-      if (full.toLowerCase().includes(needle)) {
-        suggestions.add(full);
-      } else {
-        if (item.locality && item.locality.toLowerCase().includes(needle)) suggestions.add(item.locality);
-        if (item.city && item.city.toLowerCase().includes(needle)) suggestions.add(item.city);
+    buyProperties.forEach((item) => {
+      if (item.locality && item.locality.toLowerCase().includes(needle)) {
+        suggestions.add(item.locality);
       }
       if (item.projectName && item.projectName.toLowerCase().includes(needle)) {
-        suggestions.add(`${item.projectName} (${item.locality})`);
+        suggestions.add(item.projectName);
       }
     });
 
     return Array.from(suggestions).slice(0, 6);
-  }, [normalizedItems, locality]);
+  }, [buyProperties, localityInput]);
 
   // Sorting
   const sortedItems = useMemo(() => {
     const copy = [...filteredItems];
     if (sortBy === "price_asc") copy.sort((a, b) => a.price - b.price);
     else if (sortBy === "price_desc") copy.sort((a, b) => b.price - a.price);
-    else if (sortBy === "area_desc") copy.sort((a, b) => b.area - a.area);
+    else if (sortBy === "area_desc") copy.sort((a, b) => (b.carpetArea || 0) - (a.carpetArea || 0));
     return copy;
   }, [filteredItems, sortBy]);
 
@@ -246,19 +159,15 @@ export default function PropertiesPage() {
   const totalPages = Math.max(1, Math.ceil(sortedItems.length / pageSize));
   const paginatedItems = sortedItems.slice((page - 1) * pageSize, page * pageSize);
 
-  const handleFav = async (item: NormalizedItem) => {
+  const handleFav = async (propertyId: string, title: string) => {
     if (!user) {
       setActionMsg("Please log in to save favourites.");
       setTimeout(() => setActionMsg(null), 3000);
       return;
     }
     try {
-      if (item.source === "ivy") {
-        await api.post("/ivy/favourites", { id: item.id });
-      } else {
-        await api.post("/favourites", { propertyId: item.id });
-      }
-      setActionMsg(`Saved "${item.title}" to favourites!`);
+      await api.post("/favourites", { propertyId });
+      setActionMsg(`Saved "${title}" to favourites!`);
       setTimeout(() => setActionMsg(null), 3000);
     } catch (e: unknown) {
       setActionMsg(e instanceof Error ? e.message : "Failed to save favourite");
@@ -266,20 +175,15 @@ export default function PropertiesPage() {
     }
   };
 
-  const handleCart = async (item: NormalizedItem) => {
+  const handleCart = async (propertyId: string, title: string) => {
     if (!user) {
       setActionMsg("Please log in to add to cart.");
       setTimeout(() => setActionMsg(null), 3000);
       return;
     }
-    if (item.source === "ivy") {
-      setActionMsg("Ivy MLS listings can be saved to favourites and inquired via contact.");
-      setTimeout(() => setActionMsg(null), 3000);
-      return;
-    }
     try {
-      await api.post("/cart", { propertyId: item.id });
-      setActionMsg(`Added "${item.title}" to your cart!`);
+      await api.post("/cart", { propertyId });
+      setActionMsg(`Added "${title}" to your cart!`);
       setTimeout(() => setActionMsg(null), 3000);
     } catch (e: unknown) {
       setActionMsg(e instanceof Error ? e.message : "Failed to add to cart");
@@ -289,52 +193,13 @@ export default function PropertiesPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header & Mode controls */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      {/* Header */}
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="font-serif text-3xl font-bold">Properties for Sale</h1>
+          <h1 className="font-serif text-3xl font-bold">Properties for Sale in Jaipur</h1>
           <p className="text-sm text-ink/70">
-            {sortedItems.length} properties matching criteria across Bengaluru
+            {sortedItems.length} verified propert{sortedItems.length === 1 ? "y" : "ies"} in the Pink City
           </p>
-        </div>
-
-        <div className="flex items-center gap-3">
-          {/* Source Filter */}
-          <div className="flex rounded-xl bg-ink/5 p-1 text-xs font-semibold">
-            <button
-              onClick={() => {
-                setSourceTab("all");
-                setPage(1);
-              }}
-              className={`rounded-lg px-3 py-1.5 transition ${
-                sourceTab === "all" ? "bg-white shadow text-ink" : "text-ink/60 hover:text-ink"
-              }`}
-            >
-              All ({platformProps.length + ivyListings.length})
-            </button>
-            <button
-              onClick={() => {
-                setSourceTab("ivy");
-                setPage(1);
-              }}
-              className={`rounded-lg px-3 py-1.5 transition ${
-                sourceTab === "ivy" ? "bg-white shadow text-ink" : "text-ink/60 hover:text-ink"
-              }`}
-            >
-              Ivy MLS ({ivyListings.length})
-            </button>
-            <button
-              onClick={() => {
-                setSourceTab("platform");
-                setPage(1);
-              }}
-              className={`rounded-lg px-3 py-1.5 transition ${
-                sourceTab === "platform" ? "bg-white shadow text-ink" : "text-ink/60 hover:text-ink"
-              }`}
-            >
-              Platform ({platformProps.length})
-            </button>
-          </div>
         </div>
       </div>
 
@@ -344,25 +209,23 @@ export default function PropertiesPage() {
         </div>
       )}
 
-      {ivyError && sourceTab !== "platform" && (
-        <div className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-xs text-amber-900">
-          <span className="font-bold">Note on Ivy API:</span> {ivyError}. Showing platform verified listings. Add your
-          IVY_API_KEY in .env to pull real-time city MLS data.
-        </div>
-      )}
-
       {/* Filter Bar */}
       <div className="rounded-2xl border border-ink/10 bg-white p-4 shadow-sm space-y-3">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-6">
           <div className="relative">
             <input
               type="text"
-              placeholder="District / Locality (e.g. Jagatpura, Whitefield)"
-              value={locality}
+              placeholder="Locality (e.g. Malviya Nagar, Mansarovar)"
+              value={localityInput}
               onChange={(e) => {
-                setLocality(e.target.value);
+                setLocalityInput(e.target.value);
                 setShowSuggestions(true);
-                setPage(1);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  setShowSuggestions(false);
+                  applyFilters();
+                }
               }}
               onFocus={() => setShowSuggestions(true)}
               className="w-full rounded-xl border border-ink/10 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass"
@@ -374,9 +237,8 @@ export default function PropertiesPage() {
                     key={sug}
                     type="button"
                     onClick={() => {
-                      setLocality(sug);
+                      setLocalityInput(sug);
                       setShowSuggestions(false);
-                      setPage(1);
                     }}
                     className="w-full rounded-lg px-2.5 py-1.5 text-left font-medium text-ink hover:bg-sand transition flex items-center gap-1.5"
                   >
@@ -389,8 +251,8 @@ export default function PropertiesPage() {
           </div>
 
           <select
-            value={bhk}
-            onChange={(e) => setBhk(e.target.value)}
+            value={bhkInput}
+            onChange={(e) => setBhkInput(e.target.value)}
             className="rounded-xl border border-ink/10 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass"
           >
             <option value="">All BHKs</option>
@@ -401,42 +263,42 @@ export default function PropertiesPage() {
           </select>
 
           <select
-            value={propertyType}
-            onChange={(e) => setPropertyType(e.target.value)}
+            value={propertyTypeInput}
+            onChange={(e) => setPropertyTypeInput(e.target.value)}
             className="rounded-xl border border-ink/10 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass"
           >
             <option value="">All Types</option>
-            <option value="apartment">Apartment</option>
-            <option value="villa">Villa</option>
-            <option value="independent house">Independent House</option>
-            <option value="plot">Plot</option>
-            <option value="builder floor">Builder Floor</option>
+            <option value="APARTMENT">Apartment</option>
+            <option value="VILLA">Villa</option>
+            <option value="INDEPENDENT_HOUSE">Independent House</option>
+            <option value="PLOT">Plot</option>
+            <option value="BUILDER_FLOOR">Builder Floor</option>
           </select>
 
           <select
-            value={furnishing}
-            onChange={(e) => setFurnishing(e.target.value)}
+            value={furnishingInput}
+            onChange={(e) => setFurnishingInput(e.target.value)}
             className="rounded-xl border border-ink/10 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass"
           >
             <option value="">Any Furnishing</option>
-            <option value="unfurnished">Unfurnished</option>
-            <option value="semi-furnished">Semi-Furnished</option>
-            <option value="fully-furnished">Fully Furnished</option>
+            <option value="UNFURNISHED">Unfurnished</option>
+            <option value="SEMI_FURNISHED">Semi-Furnished</option>
+            <option value="FULLY_FURNISHED">Fully Furnished</option>
           </select>
 
           <input
             type="number"
             placeholder="Min Price (₹)"
-            value={minPrice}
-            onChange={(e) => setMinPrice(e.target.value)}
+            value={minPriceInput}
+            onChange={(e) => setMinPriceInput(e.target.value)}
             className="rounded-xl border border-ink/10 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass"
           />
 
           <input
             type="number"
             placeholder="Max Price (₹)"
-            value={maxPrice}
-            onChange={(e) => setMaxPrice(e.target.value)}
+            value={maxPriceInput}
+            onChange={(e) => setMaxPriceInput(e.target.value)}
             className="rounded-xl border border-ink/10 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass"
           />
         </div>
@@ -478,7 +340,7 @@ export default function PropertiesPage() {
         <div className="py-20 text-center text-ink/60">Loading properties...</div>
       ) : sortedItems.length === 0 ? (
         <div className="rounded-2xl border border-ink/10 bg-white p-12 text-center text-ink/60">
-          No properties match your active filters. Try clearing or adjusting the filters.
+          No properties match your active filters. Try adjusting or clearing your filters.
         </div>
       ) : (
         <>
@@ -491,17 +353,18 @@ export default function PropertiesPage() {
                 price={item.price}
                 locality={item.locality}
                 bhk={item.bhk}
-                area={item.area}
-                image={item.image}
-                href={item.href}
-                sold={item.isSold}
-                onFav={user?.role === "SELLER" ? undefined : () => void handleFav(item)}
-                onCart={user?.role === "SELLER" || item.isSold || item.source !== "platform" ? undefined : () => void handleCart(item)}
+                area={item.carpetArea}
+                image={item.images?.[0]?.path}
+                href={`/properties/${item.id}`}
+                sold={item.status === "SOLD"}
+                projectName={item.projectName || undefined}
+                listingType={item.listingType}
+                onFav={user?.role === "SELLER" ? undefined : () => void handleFav(item.id, item.title)}
+                onCart={user?.role === "SELLER" || item.status === "SOLD" ? undefined : () => void handleCart(item.id, item.title)}
               />
             ))}
           </div>
 
-          {/* Pagination Controls */}
           {totalPages > 1 && (
             <div className="flex items-center justify-center gap-2 pt-6">
               <button

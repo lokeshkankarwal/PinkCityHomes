@@ -29,7 +29,7 @@ export default function AdminUsersPage() {
       <div>
         <h1 className="font-serif text-3xl font-bold">User Directory</h1>
         <p className="text-sm text-ink/70">
-          All registered buyers, agents, and sellers on the Ivy platform
+          All registered buyers, agents, and sellers on PinkCityHomes
         </p>
       </div>
 

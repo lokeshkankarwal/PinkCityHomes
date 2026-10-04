@@ -4,7 +4,6 @@ import { prisma } from "../../config/prisma.js";
 import { HttpError } from "../../middleware/error.js";
 import { signToken } from "../../middleware/auth.js";
 import { sendVerificationEmail } from "../../services/email.service.js";
-import { ivyLogin } from "../../services/ivy-api.service.js";
 import { env } from "../../config/env.js";
 import type { Request, Response } from "express";
 import type { Role } from "@prisma/client";
@@ -74,7 +73,7 @@ export async function register(req: Request, res: Response) {
   });
   const { mail } = await issueVerification(user.id, user.email);
   res.status(201).json({
-    message: "Registered. Verify email with the OTP sent.",
+    message: "Registered. Verify your email with the OTP sent.",
     email: user.email,
     role: user.role,
     devOtpHint: env.nodeEnv !== "production" && mail.otpLogged,
@@ -149,36 +148,6 @@ export async function login(req: Request, res: Response) {
   });
 }
 
-export async function ivyDemoLogin(req: Request, res: Response) {
-  const body = loginSchema.parse(req.body);
-  const ivy = await ivyLogin(body.email, body.password);
-  const ivyToken = String((ivy as { token?: string }).token ?? (ivy as { access_token?: string }).access_token ?? "");
-  const ivyUser = (ivy as { user?: { email?: string; name?: string } }).user;
-  const email = (ivyUser?.email ?? body.email).toLowerCase();
-  let user = await prisma.user.findUnique({ where: { email } });
-  if (!user) {
-    user = await prisma.user.create({
-      data: {
-        email,
-        name: ivyUser?.name ?? email,
-        passwordHash: await bcrypt.hash(body.password, 12),
-        role: "CUSTOMER",
-        emailVerifiedAt: new Date(),
-        ivyAccessToken: ivyToken,
-      },
-    });
-  } else {
-    user = await prisma.user.update({
-      where: { id: user.id },
-      data: { ivyAccessToken: ivyToken },
-    });
-  }
-  const token = signToken({ id: user.id, email: user.email, role: user.role, name: user.name });
-  res.cookie("token", token, cookieOpts());
-  res.cookie("ivy_token", ivyToken, cookieOpts());
-  res.json({ token, ivy, user: publicUser(user) });
-}
-
 export async function me(req: Request, res: Response) {
   if (!req.user) throw new HttpError(401, "Authentication required");
   const user = await prisma.user.findUnique({
@@ -192,7 +161,6 @@ export async function me(req: Request, res: Response) {
 export async function logout(req: Request, res: Response) {
   const opts = { ...cookieOpts(), maxAge: 0 };
   res.clearCookie("token", opts);
-  res.clearCookie("ivy_token", opts);
   res.json({ ok: true });
 }
 

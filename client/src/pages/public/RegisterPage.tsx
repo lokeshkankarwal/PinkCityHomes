@@ -86,7 +86,7 @@ export default function RegisterPage() {
         <div className="text-center space-y-2">
           <h1 className="font-serif text-3xl font-bold">Create an Account</h1>
           <p className="text-xs text-ink/70">
-            Join Ivy Homes as a property buyer or verified seller
+            Join PinkCityHomes as a property buyer or verified seller in Jaipur
           </p>
         </div>
 
@@ -140,7 +140,7 @@ export default function RegisterPage() {
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Apex Realty Bangalore"
+                  placeholder="e.g. Apex Realty Jaipur"
                   value={companyName}
                   onChange={(e) => setCompanyName(e.target.value)}
                   className="w-full rounded-xl border border-ink/20 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brass"

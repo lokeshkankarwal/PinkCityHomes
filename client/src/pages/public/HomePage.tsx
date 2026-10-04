@@ -37,29 +37,30 @@ export default function HomePage() {
   return (
     <div className="space-y-16 pb-12">
       {/* Hero Section */}
-      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-ink via-[#1c3854] to-ink px-6 py-20 text-white shadow-xl sm:px-12 md:py-28">
+      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-pink-700 via-pink-600 to-rose-700 px-6 py-20 text-white shadow-xl sm:px-12 md:py-28">
+        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "radial-gradient(circle at 70% 40%, #fff 0%, transparent 60%)" }} />
         <div className="relative z-10 mx-auto max-w-3xl text-center space-y-6">
-          <div className="inline-flex items-center gap-2 rounded-full border border-brass/40 bg-sand/10 px-4 py-1.5 text-xs tracking-wider uppercase text-brass">
-            Bengaluru Verified Real Estate Platform
+          <div className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/10 px-4 py-1.5 text-xs tracking-wider uppercase text-white/90">
+            🏡 Jaipur Verified Real Estate Platform
           </div>
-          <h1 className="font-serif text-4xl font-normal tracking-tight sm:text-5xl md:text-6xl text-sand">
-            Find your home with verified accuracy.
+          <h1 className="font-serif text-4xl font-normal tracking-tight sm:text-5xl md:text-6xl text-white">
+            Find your home in the <em>Pink City</em>.
           </h1>
-          <p className="text-base text-sand/80 sm:text-lg">
-            Direct builder projects, vetted resale homes, and authentic rental listings across Bengaluru.
+          <p className="text-base text-white/80 sm:text-lg">
+            Verified properties, vetted sellers, and transparent pricing across Jaipur — Malviya Nagar, Mansarovar, Vaishali Nagar & beyond.
           </p>
 
           {/* Search Box */}
           <form
             onSubmit={handleSearch}
-            className="mx-auto mt-8 flex flex-col gap-3 rounded-2xl bg-sand p-3 text-ink shadow-2xl sm:flex-row sm:items-center"
+            className="mx-auto mt-8 flex flex-col gap-3 rounded-2xl bg-white p-3 text-ink shadow-2xl sm:flex-row sm:items-center"
           >
             <div className="flex rounded-xl bg-ink/5 p-1">
               <button
                 type="button"
                 onClick={() => setType("buy")}
                 className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
-                  type === "buy" ? "bg-ink text-sand shadow" : "text-ink/70 hover:text-ink"
+                  type === "buy" ? "bg-ink text-white shadow" : "text-ink/70 hover:text-ink"
                 }`}
               >
                 Buy
@@ -68,7 +69,7 @@ export default function HomePage() {
                 type="button"
                 onClick={() => setType("rent")}
                 className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
-                  type === "rent" ? "bg-ink text-sand shadow" : "text-ink/70 hover:text-ink"
+                  type === "rent" ? "bg-ink text-white shadow" : "text-ink/70 hover:text-ink"
                 }`}
               >
                 Rent
@@ -77,16 +78,16 @@ export default function HomePage() {
 
             <input
               type="text"
-              placeholder="District / Locality (e.g. Jagatpura, Whitefield, Koramangala)"
+              placeholder="Locality (e.g. Malviya Nagar, Mansarovar, C-Scheme)"
               value={locality}
               onChange={(e) => setLocality(e.target.value)}
-              className="flex-1 rounded-xl border border-ink/10 bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brass"
+              className="flex-1 rounded-xl border border-ink/10 bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500"
             />
 
             <select
               value={bhk}
               onChange={(e) => setBhk(e.target.value)}
-              className="rounded-xl border border-ink/10 bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brass"
+              className="rounded-xl border border-ink/10 bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500"
             >
               <option value="">Any BHK</option>
               <option value="1">1 BHK</option>
@@ -97,7 +98,7 @@ export default function HomePage() {
 
             <button
               type="submit"
-              className="rounded-xl bg-brass px-6 py-2.5 font-semibold text-ink transition hover:bg-brass/90"
+              className="rounded-xl bg-pink-600 px-6 py-2.5 font-semibold text-white transition hover:bg-pink-700"
             >
               Search
             </button>
@@ -108,24 +109,24 @@ export default function HomePage() {
       {/* Value Props */}
       <section className="grid grid-cols-1 gap-6 sm:grid-cols-3">
         <div className="rounded-2xl border border-ink/10 bg-white p-6 shadow-sm">
-          <div className="mb-3 text-2xl font-serif text-moss">01</div>
+          <div className="mb-3 text-2xl font-serif text-pink-600">01</div>
           <h3 className="font-serif text-lg font-bold">Verified Pricing & Area</h3>
           <p className="mt-1 text-sm text-ink/70">
-            Transparent carpet area and verified super built-up numbers, eliminating broker inflation.
+            Transparent carpet area and super built-up numbers for every Jaipur listing, eliminating hidden charges.
           </p>
         </div>
         <div className="rounded-2xl border border-ink/10 bg-white p-6 shadow-sm">
           <div className="mb-3 text-2xl font-serif text-brass">02</div>
-          <h3 className="font-serif text-lg font-bold">Strict Ownership & Roles</h3>
+          <h3 className="font-serif text-lg font-bold">Vetted Sellers & Agents</h3>
           <p className="mt-1 text-sm text-ink/70">
-            Vetted sellers, background-checked listings, and strict Superadmin sold status controls.
+            Every seller is reviewed and approved by our platform team. No unverified listings.
           </p>
         </div>
         <div className="rounded-2xl border border-ink/10 bg-white p-6 shadow-sm">
           <div className="mb-3 text-2xl font-serif text-ink">03</div>
-          <h3 className="font-serif text-lg font-bold">Deep Market Insights</h3>
+          <h3 className="font-serif text-lg font-bold">Jaipur Market Insights</h3>
           <p className="mt-1 text-sm text-ink/70">
-            Real market analytics, data discrepancy audits, and accurate ₹/sqft across Bangalore micro-markets.
+            Accurate ₹/sqft analytics across Jaipur's top micro-markets — Mansarovar, Vaishali Nagar, and C-Scheme.
           </p>
         </div>
       </section>
@@ -135,10 +136,10 @@ export default function HomePage() {
         <div className="flex items-end justify-between">
           <div>
             <h2 className="font-serif text-2xl font-bold sm:text-3xl">Featured Properties</h2>
-            <p className="mt-1 text-sm text-ink/70">Recently verified homes ready for inspection</p>
+            <p className="mt-1 text-sm text-ink/70">Verified homes in Jaipur ready for inspection</p>
           </div>
           <Link to="/properties" className="text-sm font-semibold text-moss hover:underline">
-            View all properties &rarr;
+            View all &rarr;
           </Link>
         </div>
 
@@ -160,18 +161,25 @@ export default function HomePage() {
           </div>
         ) : (
           <div className="rounded-2xl border border-ink/10 bg-white p-8 text-center text-ink/60">
-            Browse our complete catalogue under <Link to="/properties" className="text-moss underline">Buy</Link>.
+            <p className="text-lg font-serif font-bold mb-2">No listings yet</p>
+            <p className="text-sm">Be the first to list your Jaipur property.</p>
+            <Link
+              to="/register"
+              className="mt-4 inline-block rounded-xl bg-pink-600 px-5 py-2 text-sm font-semibold text-white hover:bg-pink-700"
+            >
+              Register as Seller &rarr;
+            </Link>
           </div>
         )}
       </section>
 
       {/* Project & Rental Discovery Banner */}
       <section className="grid grid-cols-1 gap-6 md:grid-cols-2">
-        <div className="rounded-3xl border border-ink/10 bg-gradient-to-br from-sand to-amber-50/50 p-8">
-          <span className="text-xs uppercase tracking-wider text-moss font-bold">Builder Direct</span>
-          <h3 className="mt-2 font-serif text-2xl font-bold">Explore Premium Projects</h3>
+        <div className="rounded-3xl border border-ink/10 bg-gradient-to-br from-sand to-pink-50/60 p-8">
+          <span className="text-xs uppercase tracking-wider text-pink-600 font-bold">Builder Direct</span>
+          <h3 className="mt-2 font-serif text-2xl font-bold">Explore Jaipur Projects</h3>
           <p className="mt-2 text-sm text-ink/70">
-            Prestige, Sobha, Brigade, and Godrej developments with RERA registration and accurate floor plans.
+            Premium residential projects with RERA registration across Vaishali Nagar, Jagatpura, and Mansarovar Extension.
           </p>
           <Link
             to="/projects"
@@ -183,9 +191,9 @@ export default function HomePage() {
 
         <div className="rounded-3xl border border-ink/10 bg-gradient-to-br from-sand to-emerald-50/50 p-8">
           <span className="text-xs uppercase tracking-wider text-moss font-bold">Zero Brokerage</span>
-          <h3 className="mt-2 font-serif text-2xl font-bold">Curated Bangalore Rentals</h3>
+          <h3 className="mt-2 font-serif text-2xl font-bold">Jaipur Rentals</h3>
           <p className="mt-2 text-sm text-ink/70">
-            Furnished & semi-furnished apartments in Koramangala, Whitefield, Indiranagar, and HSR Layout.
+            Furnished & semi-furnished apartments in Malviya Nagar, C-Scheme, Bapu Nagar, and Tonk Road.
           </p>
           <Link
             to="/rentals"
@@ -196,20 +204,44 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Insights teaser */}
+      {/* Market teaser */}
       <section className="rounded-3xl border border-ink/10 bg-white p-8 sm:p-10 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6">
         <div className="space-y-2">
-          <h3 className="font-serif text-2xl font-bold">Market Intelligence & Data Investigation</h3>
+          <h3 className="font-serif text-2xl font-bold">Jaipur Real Estate Market</h3>
           <p className="text-sm text-ink/70 max-w-2xl">
-            See the full audit of Bangalore real estate numbers: median prices, ₹/sqft per locality, and the 10 core assignment findings.
+            Explore price trends, locality comparisons, and verified ₹/sqft data across Jaipur's growing residential markets.
           </p>
         </div>
         <Link
           to="/insights"
           className="whitespace-nowrap rounded-xl border-2 border-ink px-6 py-3 font-semibold text-ink hover:bg-ink hover:text-sand transition"
         >
-          View Market Insights &rarr;
+          View Market Data &rarr;
         </Link>
+      </section>
+
+      {/* Popular Localities */}
+      <section className="space-y-4">
+        <h2 className="font-serif text-2xl font-bold">Popular Localities in Jaipur</h2>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+          {[
+            { name: "Malviya Nagar", icon: "🏢" },
+            { name: "Mansarovar", icon: "🏡" },
+            { name: "Vaishali Nagar", icon: "🌆" },
+            { name: "C-Scheme", icon: "🏛️" },
+            { name: "Jagatpura", icon: "🌳" },
+            { name: "Tonk Road", icon: "🛣️" },
+          ].map((loc) => (
+            <Link
+              key={loc.name}
+              to={`/properties?locality=${encodeURIComponent(loc.name.toLowerCase())}`}
+              className="rounded-2xl border border-ink/10 bg-white p-4 text-center hover:border-pink-300 hover:shadow-sm transition"
+            >
+              <div className="text-2xl mb-1">{loc.icon}</div>
+              <p className="text-xs font-semibold text-ink">{loc.name}</p>
+            </Link>
+          ))}
+        </div>
       </section>
     </div>
   );

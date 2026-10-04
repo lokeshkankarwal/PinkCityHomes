@@ -7,7 +7,6 @@ import type { Property } from "../../types";
 type FavItem = {
   id: string;
   propertyId?: string | null;
-  ivyListingId?: string | null;
   property?: Property | null;
   title?: string;
   price?: number;
@@ -21,7 +20,6 @@ export default function FavouritesPage() {
   const fetchFavs = async () => {
     setLoading(true);
     try {
-      // Local favourites
       const res = await api.get<{ count: number; results: FavItem[] }>("/favourites");
       setItems(res.results || []);
     } catch {
@@ -72,8 +70,8 @@ export default function FavouritesPage() {
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {items.map((fav) => {
             const p = fav.property;
-            const targetId = fav.property?.id || fav.propertyId || fav.ivyListingId || fav.id;
-            const title = p?.title || (fav.ivyListingId ? `Ivy MLS Listing #${fav.ivyListingId}` : "Saved Property");
+            const targetId = fav.property?.id || fav.propertyId || fav.id;
+            const title = p?.title || "Saved Property";
             const price = p?.price;
             const locality = p?.locality;
             const image = p?.images?.[0]?.path;
@@ -98,7 +96,7 @@ export default function FavouritesPage() {
                       <p className="font-serif text-xl font-bold text-brass">{inr(price)}</p>
                     )}
                     {locality && (
-                      <p className="text-xs text-ink/60 capitalize">📍 {locality}</p>
+                      <p className="text-xs text-ink/60 capitalize">📍 {locality}, Jaipur</p>
                     )}
                   </div>
                 </Link>

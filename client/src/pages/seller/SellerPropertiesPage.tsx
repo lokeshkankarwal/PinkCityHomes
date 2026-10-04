@@ -36,9 +36,9 @@ export default function SellerPropertiesPage() {
     parking: 1,
     address: "",
     locality: "",
-    city: "Bengaluru",
-    latitude: 12.9716,
-    longitude: 77.5946,
+    city: "Jaipur",
+    latitude: 26.9124,
+    longitude: 75.7873,
     contactName: "",
     contactPhone: "",
   };
@@ -87,9 +87,9 @@ export default function SellerPropertiesPage() {
       parking: p.parking ?? 0,
       address: p.address || "",
       locality: p.locality || "",
-      city: p.city || "Bengaluru",
-      latitude: p.latitude || 12.9716,
-      longitude: p.longitude || 77.5946,
+      city: p.city || "Jaipur",
+      latitude: p.latitude || 26.9124,
+      longitude: p.longitude || 75.7873,
       contactName: p.contactName || "",
       contactPhone: p.contactPhone || "",
     });
@@ -368,7 +368,7 @@ export default function SellerPropertiesPage() {
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Luxurious 3 BHK with Balcony in Whitefield"
+                  placeholder="e.g. Luxurious 3 BHK with Balcony in Malviya Nagar"
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                   className="w-full rounded-xl border border-ink/20 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass"
@@ -517,7 +517,7 @@ export default function SellerPropertiesPage() {
                   <input
                     type="text"
                     required
-                    placeholder="e.g. whitefield, jagatpura"
+                    placeholder="e.g. malviya nagar, mansarovar"
                     value={formData.locality}
                     onChange={(e) => setFormData({ ...formData, locality: e.target.value.toLowerCase() })}
                     className="w-full rounded-xl border border-ink/20 px-3 py-2 text-sm"
@@ -529,7 +529,7 @@ export default function SellerPropertiesPage() {
                   <input
                     type="text"
                     required
-                    placeholder="e.g. Bengaluru, Jaipur"
+                    placeholder="e.g. Jaipur"
                     value={formData.city}
                     onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                     className="w-full rounded-xl border border-ink/20 px-3 py-2 text-sm"

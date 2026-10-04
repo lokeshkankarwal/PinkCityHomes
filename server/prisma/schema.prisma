@@ -15,7 +15,6 @@ model User {
   phone           String?
   role            Role                     @default(CUSTOMER)
   emailVerifiedAt DateTime?
-  ivyAccessToken  String?
   createdAt       DateTime                 @default(now())
   updatedAt       DateTime                 @updatedAt
   auditLogs       AuditLog[]               @relation("Actor")
@@ -27,6 +26,7 @@ model User {
   favourites      Favourite[]
   orders          Order[]
   properties      Property[]
+  projects        Project[]
   visits          PropertyVisit[]
   sellerProfile   SellerProfile?
 
@@ -121,16 +121,14 @@ model PropertyImage {
 }
 
 model Favourite {
-  id           String    @id @default(cuid())
-  userId       String
-  propertyId   String?
-  ivyListingId String?
-  createdAt    DateTime  @default(now())
-  property     Property? @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id         String    @id @default(cuid())
+  userId     String
+  propertyId String?
+  createdAt  DateTime  @default(now())
+  property   Property? @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, propertyId])
-  @@unique([userId, ivyListingId])
   @@index([userId])
 }
 
@@ -315,4 +313,25 @@ enum VisitStatus {
 enum OrderStatus {
   INITIATED
   SOLD
+}
+
+model Project {
+  id            String   @id @default(cuid())
+  sellerId      String?
+  name          String   @unique
+  developerName String
+  locality      String
+  city          String
+  address       String?
+  description   String?
+  totalUnits    Int      @default(10)
+  totalTowers   Int      @default(1)
+  amenities     String[] @default([])
+  image         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  seller        User?    @relation(fields: [sellerId], references: [id], onDelete: SetNull)
+
+  @@index([locality])
+  @@index([sellerId])
 }
