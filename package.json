@@ -11,7 +11,9 @@
     "dev:client": "npm run dev -w client",
     "build": "npm run build -w server && npm run build -w client",
     "start": "node server/dist/src/server.js",
-    "typecheck": "npm run typecheck -w server && npm run typecheck -w client"
+    "typecheck": "npm run typecheck -w server && npm run typecheck -w client",
+    "db:migrate:atlas": "tsx server/src/scripts/migrateAtlas.ts",
+    "db:backup": "bash scripts/migrate-local-to-atlas.sh"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"

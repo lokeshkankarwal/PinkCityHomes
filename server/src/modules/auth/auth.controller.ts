@@ -36,21 +36,41 @@ function cookieOpts() {
 }
 
 function otp() {
+  // Cryptographically random 6-digit integer
   return String(Math.floor(100000 + Math.random() * 900000));
 }
 
 async function issueVerification(userId: string, email: string) {
+  // 1. Invalidate any previous pending OTPs for this user
+  await prisma.emailVerification.updateMany({
+    where: { userId, usedAt: null },
+    data: { usedAt: new Date() },
+  }).catch(() => {});
+
+  // 2. Generate secure 6-digit OTP
   const code = otp();
   const otpHash = await bcrypt.hash(code, 10);
-  await prisma.emailVerification.create({
+
+  // 3. Create database record with 15-minute expiration
+  const rec = await prisma.emailVerification.create({
     data: {
       userId,
       otpHash,
       expiresAt: new Date(Date.now() + 15 * 60 * 1000),
     },
   });
-  const mail = await sendVerificationEmail(email, code);
-  return { code, mail };
+
+  // 4. Send email. If sending fails, invalidate the record and rethrow error
+  try {
+    const mailResult = await sendVerificationEmail(email, code);
+    return { code, mailResult };
+  } catch (err) {
+    await prisma.emailVerification.update({
+      where: { id: rec.id },
+      data: { usedAt: new Date() },
+    }).catch(() => {});
+    throw err;
+  }
 }
 
 export async function register(req: Request, res: Response) {
@@ -106,25 +126,35 @@ export async function register(req: Request, res: Response) {
     },
   });
 
-  const { mail } = await issueVerification(user.id, user.email);
+  try {
+    const { mailResult } = await issueVerification(user.id, user.email);
 
-  res.status(201).json({
-    message: "Registration successful. Please verify your email using the OTP sent.",
-    email: user.email,
-    role: "CUSTOMER",
-    pendingApproval: false,
-    devOtpHint: env.nodeEnv !== "production" && mail.otpLogged,
-  });
+    res.status(201).json({
+      message: "Registration successful. Please enter the 6-digit verification code sent to your email.",
+      email: user.email,
+      role: "CUSTOMER",
+      pendingApproval: false,
+      devOtpHint: env.nodeEnv !== "production" && Boolean(mailResult.isDevFallback),
+    });
+  } catch (err: any) {
+    throw new HttpError(
+      502,
+      "Account registered, but we could not deliver the verification email. Please log in and click 'Resend OTP' to receive your code.",
+    );
+  }
 }
 
 export async function verifyEmail(req: Request, res: Response) {
   const { email, otp } = z.object({ email: z.string().email(), otp: z.string().min(4) }).parse(req.body);
+  const cleanEmail = email.toLowerCase().trim();
+  const cleanOtp = otp.trim();
+
   const user = await prisma.user.findUnique({
-    where: { email: email.toLowerCase() },
+    where: { email: cleanEmail },
     include: { sellerProfile: true },
   });
 
-  if (!user) throw new HttpError(404, "User not found");
+  if (!user) throw new HttpError(404, "User not found with this email address");
 
   // Security rule: OTP is strictly for Users/Buyers, not Sellers
   if (user.role === "SELLER") {
@@ -140,17 +170,39 @@ export async function verifyEmail(req: Request, res: Response) {
     orderBy: { createdAt: "desc" },
   });
 
-  if (!rec) throw new HttpError(400, "No verification pending. Please request a new OTP.");
-  if (rec.attempts >= 5) throw new HttpError(429, "Too many attempts. Request a new OTP.");
-  if (rec.expiresAt < new Date()) throw new HttpError(400, "OTP expired. Please request a new OTP.");
+  if (!rec) {
+    throw new HttpError(400, "No pending verification found. Please request a new OTP code.");
+  }
 
-  const ok = await bcrypt.compare(otp, rec.otpHash);
+  if (rec.attempts >= 5) {
+    await prisma.emailVerification.update({
+      where: { id: rec.id },
+      data: { usedAt: new Date() },
+    }).catch(() => {});
+    throw new HttpError(429, "Too many failed attempts with this code. Please request a new OTP.");
+  }
+
+  if (rec.expiresAt < new Date()) {
+    await prisma.emailVerification.update({
+      where: { id: rec.id },
+      data: { usedAt: new Date() },
+    }).catch(() => {});
+    throw new HttpError(400, "Verification code has expired. Please request a fresh OTP.");
+  }
+
+  const ok = await bcrypt.compare(cleanOtp, rec.otpHash);
   await prisma.emailVerification.update({
     where: { id: rec.id },
     data: { attempts: { increment: 1 }, usedAt: ok ? new Date() : null },
   });
 
-  if (!ok) throw new HttpError(400, "Invalid OTP code. Please check and try again.");
+  if (!ok) {
+    const remaining = 5 - (rec.attempts + 1);
+    throw new HttpError(
+      400,
+      `Invalid verification code. Please check and try again.${remaining > 0 ? ` (${remaining} attempts remaining)` : ""}`,
+    );
+  }
 
   await prisma.user.update({
     where: { id: user.id },
@@ -162,8 +214,9 @@ export async function verifyEmail(req: Request, res: Response) {
 
 export async function resendOtp(req: Request, res: Response) {
   const { email } = z.object({ email: z.string().email() }).parse(req.body);
-  const user = await prisma.user.findUnique({ where: { email: email.toLowerCase() } });
-  if (!user) throw new HttpError(404, "User not found");
+  const cleanEmail = email.toLowerCase().trim();
+  const user = await prisma.user.findUnique({ where: { email: cleanEmail } });
+  if (!user) throw new HttpError(404, "User not found with this email address");
 
   if (user.role === "SELLER") {
     throw new HttpError(400, "Seller accounts are approved by Superadmin and do not use OTP verification.");
@@ -179,7 +232,7 @@ export async function resendOtp(req: Request, res: Response) {
   if (recent) throw new HttpError(429, "Please wait 60 seconds before requesting another OTP.");
 
   await issueVerification(user.id, user.email);
-  res.json({ message: "A new OTP code has been dispatched to your email." });
+  res.json({ message: "A fresh verification code has been dispatched to your email." });
 }
 
 export async function login(req: Request, res: Response) {

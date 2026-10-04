@@ -54,11 +54,20 @@ let client: MongoClient | null = null;
 let db: Db | null = null;
 let isConnected = false;
 
+export function sanitizeMongoUri(uri: string): string {
+  try {
+    return uri.replace(/(mongodb(?:\+srv)?:\/\/[^:]+:)([^@]+)(@.+)/i, "$1****$3");
+  } catch {
+    return "[hidden-uri]";
+  }
+}
+
 export async function connectMongo(): Promise<Db | null> {
   if (db && isConnected) return db;
   try {
+    console.log("[MongoDB] Connecting...");
     client = new MongoClient(env.mongoUri, {
-      serverSelectionTimeoutMS: 4000,
+      serverSelectionTimeoutMS: 5000,
       connectTimeoutMS: 5000,
     });
     await client.connect();
@@ -77,10 +86,24 @@ export async function connectMongo(): Promise<Db | null> {
     await col.createIndex({ sellerId: 1 });
     await col.createIndex({ createdAt: -1 });
 
-    console.log("[MongoDB] Connected successfully to primary properties database. 2dsphere verified.");
+    console.log("[MongoDB] Connected successfully");
+    console.log(`[MongoDB] Database: ${targetDb}`);
+    console.log("[MongoDB] 2dsphere and query indexes verified");
     return db;
   } catch (err) {
-    console.error("[MongoDB] Connection error:", (err as Error).message);
+    const rawMsg = (err as Error).message || "Unknown error";
+    console.error(`[MongoDB] Connection failure: ${rawMsg}`);
+
+    if (rawMsg.includes("Authentication failed") || rawMsg.includes("bad auth")) {
+      console.error("[MongoDB ERROR] Reason: Authentication failed. Please verify your MongoDB Atlas username and password.");
+    } else if (rawMsg.includes("querySrv ENOTFOUND") || rawMsg.includes("getaddrinfo ENOTFOUND")) {
+      console.error("[MongoDB ERROR] Reason: DNS hostname resolution failed. Please verify your cluster domain.");
+    } else if (rawMsg.includes("timed out") || rawMsg.includes("ETIMEDOUT") || rawMsg.includes("Server selection timed out")) {
+      console.error("[MongoDB ERROR] Reason: Connection timed out. Ensure MongoDB Atlas Network Access allows 0.0.0.0/0 (or your Render outbound IP).");
+    } else if (rawMsg.includes("Invalid connection string") || rawMsg.includes("Invalid scheme")) {
+      console.error("[MongoDB ERROR] Reason: Invalid connection string scheme. Check that MONGODB_URI begins with mongodb:// or mongodb+srv://.");
+    }
+
     isConnected = false;
     db = null;
     return null;

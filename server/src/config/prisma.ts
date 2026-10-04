@@ -41,6 +41,8 @@ export async function initMongoPrisma(): Promise<Db> {
     await db.collection("cart_items").createIndex({ cartId: 1, propertyId: 1 }, { unique: true });
     await db.collection("client_property_interests").createIndex({ clientId: 1, propertyId: 1 }, { unique: true });
     await db.collection("projects").createIndex({ name: 1 }, { unique: true });
+    await db.collection("email_verifications").createIndex({ userId: 1, usedAt: 1, createdAt: -1 });
+    await db.collection("email_verifications").createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
   } catch (err) {
     // Indexes already exist or soft error
   }
@@ -414,6 +416,12 @@ export const prisma = {
       await col.updateOne({ id: args.where.id }, { $set: args.data });
       const doc = await col.findOne({ id: args.where.id });
       return sanitizeDoc(doc);
+    },
+
+    async updateMany(args: { where: any; data: any }): Promise<{ count: number }> {
+      const col = getDb().collection("email_verifications");
+      const res = await col.updateMany(transformWhere(args.where), { $set: args.data });
+      return { count: res.modifiedCount };
     },
 
     async deleteMany(args: { where: any }): Promise<{ count: number }> {

@@ -26,7 +26,7 @@ async function req<T>(path: string, init: RequestInit = {}): Promise<T> {
     ...init,
   });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || data.detail || res.statusText);
+  if (!res.ok) throw new Error(data.error || data.message || data.detail || res.statusText || "Request failed");
   return data as T;
 }
 
