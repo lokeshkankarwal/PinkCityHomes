@@ -114,8 +114,11 @@ export default function RentalsPage() {
       {/* Header & Location Search */}
       <div className="space-y-4">
         <div>
-          <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-800">
-            🔑 Rental Homes in Jaipur
+          <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-800">
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+            </svg>
+            <span>Rental Homes in Jaipur</span>
           </div>
           <h1 className="font-display text-3xl font-bold mt-2 sm:text-4xl text-navy">
             Find Furnished &amp; Unfurnished Rentals in Jaipur

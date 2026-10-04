@@ -98,19 +98,19 @@ export default function SellerDashboardPage() {
         <div className="flex flex-wrap items-center gap-2.5">
           <Link
             to="/seller/properties?new=1"
-            className="rounded-2xl bg-pink-600 px-5 py-2.5 text-xs sm:text-sm font-bold text-white shadow-md hover:bg-pink-700 transition active:scale-95 flex items-center gap-1.5"
+            className="rounded-2xl bg-pink-600 px-4 py-2 sm:px-5 sm:py-2.5 text-xs sm:text-sm font-bold text-white shadow-md hover:bg-pink-700 transition active:scale-95 flex items-center gap-1.5 self-start sm:self-auto"
           >
             <span>+</span> Add Property
           </Link>
           <Link
             to="/seller/properties"
-            className="rounded-2xl bg-slate-900 px-5 py-2.5 text-xs sm:text-sm font-bold text-white shadow-md hover:bg-slate-800 transition active:scale-95"
+            className="hidden sm:inline-flex rounded-2xl bg-slate-900 px-5 py-2.5 text-xs sm:text-sm font-bold text-white shadow-md hover:bg-slate-800 transition active:scale-95"
           >
             Manage Listings
           </Link>
           <Link
             to="/seller/clients"
-            className="rounded-2xl border-2 border-slate-300 bg-white px-5 py-2.5 text-xs sm:text-sm font-bold text-slate-800 hover:bg-slate-50 hover:border-slate-400 transition active:scale-95 shadow-sm"
+            className="hidden sm:inline-flex rounded-2xl border-2 border-slate-300 bg-white px-5 py-2.5 text-xs sm:text-sm font-bold text-slate-800 hover:bg-slate-50 hover:border-slate-400 transition active:scale-95 shadow-sm"
           >
             Clients &amp; Leads
           </Link>

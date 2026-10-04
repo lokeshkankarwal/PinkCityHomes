@@ -59,8 +59,11 @@ export default function InsightsPage() {
     <div className="space-y-8 pb-16 animate-fade-in">
       {/* Header */}
       <div className="space-y-2">
-        <div className="inline-flex items-center gap-2 rounded-full border border-pink-200 bg-pink-50 px-3 py-1 text-xs font-semibold text-pink-700">
-          🏙️ Jaipur Real Estate Market Intelligence
+        <div className="inline-flex items-center gap-1.5 rounded-full border border-pink-200 bg-pink-50 px-3 py-1 text-xs font-semibold text-pink-700">
+          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+          </svg>
+          <span>Jaipur Real Estate Market Intelligence</span>
         </div>
         <h1 className="font-display text-3xl font-bold sm:text-4xl text-navy">Market Intelligence &amp; Trends</h1>
         <p className="text-xs sm:text-sm text-slate-500 max-w-2xl">

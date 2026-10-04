@@ -4,6 +4,111 @@ import { useAuth } from "../auth";
 import { api } from "../api/client";
 import { ToastContainer } from "./Toast";
 
+// ── SVG Icons ─────────────────────────────────────────────────────────────
+function HomeIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className || "w-5 h-5"} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+    </svg>
+  );
+}
+
+function SearchIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className || "w-5 h-5"} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+    </svg>
+  );
+}
+
+function KeyIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className || "w-5 h-5"} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+    </svg>
+  );
+}
+
+function HeartIcon({ className, filled }: { className?: string; filled?: boolean }) {
+  return (
+    <svg className={className || "w-5 h-5"} fill={filled ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+    </svg>
+  );
+}
+
+function BoxIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className || "w-5 h-5"} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+    </svg>
+  );
+}
+
+function UserIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className || "w-5 h-5"} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+    </svg>
+  );
+}
+
+function BuildingIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className || "w-5 h-5"} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+    </svg>
+  );
+}
+
+function UsersIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className || "w-5 h-5"} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+    </svg>
+  );
+}
+
+function TrendIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className || "w-5 h-5"} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+    </svg>
+  );
+}
+
+function MenuIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className || "w-6 h-6"} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+    </svg>
+  );
+}
+
+function CloseIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className || "w-5 h-5"} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+    </svg>
+  );
+}
+
+function LogoutIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className || "w-4 h-4"} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+    </svg>
+  );
+}
+
+function CartIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className || "w-5 h-5"} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+    </svg>
+  );
+}
+
 const navLink = ({ isActive }: { isActive: boolean }) =>
   `relative px-3.5 py-2 rounded-2xl text-xs font-semibold tracking-wide transition-all duration-200 ${
     isActive
@@ -12,15 +117,15 @@ const navLink = ({ isActive }: { isActive: boolean }) =>
   }`;
 
 const drawerNavLink = ({ isActive }: { isActive: boolean }) =>
-  `flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold tracking-wide transition-all duration-200 min-h-[42px] ${
+  `flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-semibold tracking-wide transition-all duration-200 min-h-[44px] ${
     isActive
       ? "text-pink-600 bg-pink-50 font-bold border border-pink-100 shadow-xs"
-      : "text-slate-700 hover:text-navy hover:bg-slate-100"
+      : "text-slate-700 hover:text-navy hover:bg-slate-100/80"
   }`;
 
 const bottomNavLink = ({ isActive }: { isActive: boolean }) =>
-  `flex flex-col items-center py-1 px-1.5 text-[10px] font-semibold transition ${
-    isActive ? "text-pink-600 font-bold" : "text-slate-500 hover:text-slate-900"
+  `flex flex-col items-center justify-center flex-1 py-1 px-1 text-[10px] font-semibold tracking-tight transition duration-150 ${
+    isActive ? "text-pink-600 font-bold" : "text-slate-500 hover:text-navy"
   }`;
 
 const adminNavLink = ({ isActive }: { isActive: boolean }) =>
@@ -278,7 +383,8 @@ export default function Layout() {
                             to="/customer/profile"
                             className="flex items-center gap-2 px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-50 hover:text-navy transition font-medium"
                           >
-                            <span>👤</span> Profile & Settings
+                            <UserIcon className="w-4 h-4 text-slate-500" />
+                            <span>Profile &amp; Settings</span>
                           </Link>
                           {isCustomer && (
                             <>
@@ -286,13 +392,15 @@ export default function Layout() {
                                 to="/customer/favourites"
                                 className="flex items-center gap-2 px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-50 hover:text-navy transition font-medium"
                               >
-                                <span>❤️</span> Saved Homes
+                                <HeartIcon className="w-4 h-4 text-pink-600" filled />
+                                <span>Saved Homes</span>
                               </Link>
                               <Link
                                 to="/customer/orders"
                                 className="flex items-center gap-2 px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-50 hover:text-navy transition font-medium"
                               >
-                                <span>📦</span> Orders & Purchases
+                                <BoxIcon className="w-4 h-4 text-slate-500" />
+                                <span>Orders &amp; Purchases</span>
                               </Link>
                             </>
                           )}
@@ -312,7 +420,8 @@ export default function Layout() {
                             onClick={handleLogout}
                             className="w-full text-left flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-rose-600 hover:bg-rose-50 transition font-semibold"
                           >
-                            <span>🚪</span> Sign Out
+                            <LogoutIcon className="w-4 h-4" />
+                            <span>Sign Out</span>
                           </button>
                         </div>
                       </div>
@@ -341,10 +450,8 @@ export default function Layout() {
           {/* ── Mobile Actions & Hamburger Button ── */}
           <div className="flex items-center gap-1.5 md:hidden">
             {isCustomer && cartCount > 0 && (
-              <Link to="/customer/cart" className="relative p-2 text-slate-800" aria-label="Purchase Cart">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                </svg>
+              <Link to="/customer/cart" className="relative p-2 text-slate-700 hover:text-navy" aria-label="Purchase Cart">
+                <CartIcon className="w-5 h-5" />
                 <span className="absolute top-1 right-1 rounded-full bg-pink-600 text-white text-[9px] font-bold h-4 w-4 flex items-center justify-center">
                   {cartCount}
                 </span>
@@ -361,9 +468,7 @@ export default function Layout() {
               }`}
               aria-label="Open navigation menu"
             >
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16m-7 6h7" />
-              </svg>
+              <MenuIcon className="w-6 h-6" />
             </button>
           </div>
         </div>
@@ -374,7 +479,7 @@ export default function Layout() {
         <div className="fixed inset-0 z-50 md:hidden flex flex-col justify-end">
           {/* Backdrop */}
           <div
-            className="fixed inset-0 bg-navy-950/60 backdrop-blur-sm transition-opacity"
+            className="fixed inset-0 bg-navy-950/60 backdrop-blur-xs transition-opacity"
             onClick={() => setMobileMenuOpen(false)}
           />
 
@@ -393,8 +498,8 @@ export default function Layout() {
                     </div>
                     <div className="min-w-0 truncate">
                       <p className="font-display font-bold text-sm text-navy truncate">{user.name}</p>
-                      <span className="inline-block rounded-full bg-navy-100 text-navy-800 text-[9px] font-bold px-2 py-0.5 uppercase tracking-wider">
-                        {user.role}
+                      <span className="inline-block rounded-full bg-pink-50 text-pink-700 text-[9px] font-bold px-2 py-0.5 uppercase tracking-wider">
+                        {isSeller ? (user.sellerStatus === "APPROVED" ? "VERIFIED SELLER" : "SELLER") : user.role}
                       </span>
                     </div>
                   </div>
@@ -404,9 +509,7 @@ export default function Layout() {
                     className="rounded-full p-2 text-slate-400 hover:text-navy hover:bg-slate-100 transition flex-shrink-0"
                     aria-label="Close menu"
                   >
-                    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
+                    <CloseIcon className="w-5 h-5" />
                   </button>
                 </div>
               ) : (
@@ -425,9 +528,7 @@ export default function Layout() {
                     className="rounded-full p-1.5 text-slate-400 hover:text-navy hover:bg-slate-100 transition"
                     aria-label="Close menu"
                   >
-                    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
+                    <CloseIcon className="w-5 h-5" />
                   </button>
                 </div>
               )}
@@ -435,64 +536,45 @@ export default function Layout() {
               {/* Navigation Links — Only secondary items, strictly no duplicates from bottom nav */}
               <div className="space-y-1 text-xs font-semibold">
                 {isSuperAdmin ? (
+                  // Superadmin Secondary Actions (Home, Users, Sellers, Properties are in bottom nav)
                   <>
-                    <NavLink to="/admin/dashboard" className={drawerNavLink}>
-                      📊 Dashboard Overview
-                    </NavLink>
-                    <NavLink to="/admin/users" className={drawerNavLink}>
-                      👥 Users Directory
-                    </NavLink>
-                    <NavLink to="/admin/sellers" className={drawerNavLink}>
-                      🏢 Sellers Management
-                    </NavLink>
-                    <NavLink to="/admin/properties" className={drawerNavLink}>
-                      🏡 Properties Governance
-                    </NavLink>
                     <NavLink to="/admin/disabled" className={drawerNavLink}>
-                      ⛔ Disabled Records
+                      <BuildingIcon className="w-4 h-4 text-slate-500" />
+                      <span>Disabled Properties</span>
                     </NavLink>
                     <NavLink to="/admin/audit" className={drawerNavLink}>
-                      📜 Audit Logs
+                      <BoxIcon className="w-4 h-4 text-slate-500" />
+                      <span>Audit Logs</span>
                     </NavLink>
                   </>
                 ) : isSeller ? (
-                  <>
-                    <NavLink to="/customer/profile" className={drawerNavLink}>
-                      👤 Seller Profile &amp; Settings
-                    </NavLink>
-                    <a
-                      href="mailto:support@pinkcityhomes.in"
-                      className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-700 hover:text-navy hover:bg-slate-100 min-h-[42px] transition"
-                    >
-                      💬 Help &amp; Partner Support
-                    </a>
-                  </>
+                  // Seller Secondary Actions (Home, Listings, Leads, Insights, Profile are in bottom nav)
+                  <NavLink to="/customer/profile" className={drawerNavLink}>
+                    <UserIcon className="w-4 h-4 text-slate-500" />
+                    <span>My Profile &amp; Settings</span>
+                  </NavLink>
                 ) : isCustomer ? (
+                  // Customer Secondary Actions (Buy, Rent, Saved, Orders, Profile are in bottom nav)
                   <>
                     <NavLink to="/customer/profile" className={drawerNavLink}>
-                      👤 My Profile &amp; Settings
+                      <UserIcon className="w-4 h-4 text-slate-500" />
+                      <span>My Profile &amp; Settings</span>
                     </NavLink>
                     <NavLink to="/insights" className={drawerNavLink}>
-                      📈 Jaipur Market Intelligence
+                      <TrendIcon className="w-4 h-4 text-slate-500" />
+                      <span>Jaipur Market Intelligence</span>
                     </NavLink>
-                    <a
-                      href="mailto:support@pinkcityhomes.in"
-                      className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-700 hover:text-navy hover:bg-slate-100 min-h-[42px] transition"
-                    >
-                      💬 Help &amp; Support
-                    </a>
                   </>
                 ) : (
-                  // Guest
+                  // Guest Secondary Actions (Home, Buy, Rent, Saved, Sign In are in bottom nav)
                   <>
-                    <NavLink to="/properties" className={drawerNavLink}>
-                      🔍 Buy Properties
-                    </NavLink>
-                    <NavLink to="/rentals" className={drawerNavLink}>
-                      🔑 Rental Homes
-                    </NavLink>
                     <NavLink to="/insights" className={drawerNavLink}>
-                      📈 Market Insights
+                      <TrendIcon className="w-4 h-4 text-slate-500" />
+                      <span>Market Insights &amp; Trends</span>
+                    </NavLink>
+                    <NavLink to="/register" className={drawerNavLink}>
+                      <BuildingIcon className="w-4 h-4 text-slate-500" />
+                      <span>Apply as Seller Partner</span>
                     </NavLink>
                     <div className="grid grid-cols-2 gap-2 pt-3">
                       <Link
@@ -518,9 +600,10 @@ export default function Layout() {
                   <button
                     type="button"
                     onClick={handleLogout}
-                    className="w-full rounded-xl border border-rose-200 bg-rose-50/60 py-2.5 text-center text-xs font-semibold text-rose-700 hover:bg-rose-100 transition active:scale-95 flex items-center justify-center gap-1.5"
+                    className="w-full rounded-xl border border-rose-200 bg-rose-50/60 py-2.5 text-center text-xs font-semibold text-rose-700 hover:bg-rose-100 transition active:scale-95 flex items-center justify-center gap-2"
                   >
-                    <span>🚪</span> Sign Out
+                    <LogoutIcon className="w-4 h-4" />
+                    <span>Sign Out</span>
                   </button>
                 </div>
               )}
@@ -534,122 +617,202 @@ export default function Layout() {
         <Outlet />
       </main>
 
-      {/* ── Mobile Bottom App Bar (Fixed at bottom on phones, 5 items max) ───────── */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 border-t border-slate-200/80 backdrop-blur-md md:hidden px-1 py-1 shadow-lg pb-safe">
-        <div className="flex items-center justify-around text-center">
+      {/* ── Mobile Bottom App Bar (Fixed at bottom on phones, clean SVG icons, 5 items max) ───────── */}
+      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 border-t border-slate-200/80 backdrop-blur-md md:hidden px-1 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] pb-safe">
+        <div className="flex items-center justify-around h-16">
           {isSuperAdmin ? (
+            // Superadmin Bottom Nav
             <>
               <NavLink to="/admin/dashboard" className={bottomNavLink}>
-                <span className="text-base">📊</span>
-                <span>Home</span>
+                {({ isActive }) => (
+                  <>
+                    <HomeIcon className={`w-5 h-5 mb-0.5 transition-transform duration-150 ${isActive ? "scale-110 text-pink-600" : ""}`} />
+                    <span>Home</span>
+                  </>
+                )}
               </NavLink>
               <NavLink to="/admin/users" className={bottomNavLink}>
-                <span className="text-base">👥</span>
-                <span>Users</span>
+                {({ isActive }) => (
+                  <>
+                    <UsersIcon className={`w-5 h-5 mb-0.5 transition-transform duration-150 ${isActive ? "scale-110 text-pink-600" : ""}`} />
+                    <span>Users</span>
+                  </>
+                )}
               </NavLink>
               <NavLink to="/admin/sellers" className={bottomNavLink}>
-                <span className="text-base">🏢</span>
-                <span>Sellers</span>
+                {({ isActive }) => (
+                  <>
+                    <BuildingIcon className={`w-5 h-5 mb-0.5 transition-transform duration-150 ${isActive ? "scale-110 text-pink-600" : ""}`} />
+                    <span>Sellers</span>
+                  </>
+                )}
               </NavLink>
               <NavLink to="/admin/properties" className={bottomNavLink}>
-                <span className="text-base">🏡</span>
-                <span>Properties</span>
+                {({ isActive }) => (
+                  <>
+                    <HomeIcon className={`w-5 h-5 mb-0.5 transition-transform duration-150 ${isActive ? "scale-110 text-pink-600" : ""}`} />
+                    <span>Properties</span>
+                  </>
+                )}
               </NavLink>
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(true)}
-                className="flex flex-col items-center py-1 px-1.5 text-[10px] font-semibold text-slate-500 hover:text-slate-900 transition"
+                className="flex flex-col items-center justify-center flex-1 py-1 px-1 text-[10px] font-semibold text-slate-500 hover:text-navy transition"
               >
-                <span className="text-base">☰</span>
+                <MenuIcon className="w-5 h-5 mb-0.5" />
                 <span>More</span>
               </button>
             </>
           ) : isSeller ? (
+            // Seller Bottom Nav (Strictly Seller-Only: Home, Listings, Leads, Insights, Profile)
             <>
               <NavLink to="/seller/dashboard" className={bottomNavLink}>
-                <span className="text-base">📊</span>
-                <span>Home</span>
+                {({ isActive }) => (
+                  <>
+                    <HomeIcon className={`w-5 h-5 mb-0.5 transition-transform duration-150 ${isActive ? "scale-110 text-pink-600" : ""}`} />
+                    <span>Home</span>
+                  </>
+                )}
               </NavLink>
               <NavLink to="/seller/properties" className={bottomNavLink}>
-                <span className="text-base">🏡</span>
-                <span>Listings</span>
+                {({ isActive }) => (
+                  <>
+                    <BuildingIcon className={`w-5 h-5 mb-0.5 transition-transform duration-150 ${isActive ? "scale-110 text-pink-600" : ""}`} />
+                    <span>Listings</span>
+                  </>
+                )}
               </NavLink>
               <NavLink to="/seller/clients" className={bottomNavLink}>
-                <span className="text-base">👥</span>
-                <span>Leads</span>
+                {({ isActive }) => (
+                  <>
+                    <UsersIcon className={`w-5 h-5 mb-0.5 transition-transform duration-150 ${isActive ? "scale-110 text-pink-600" : ""}`} />
+                    <span>Leads</span>
+                  </>
+                )}
               </NavLink>
               <NavLink to="/insights" className={bottomNavLink}>
-                <span className="text-base">📈</span>
-                <span>Insights</span>
+                {({ isActive }) => (
+                  <>
+                    <TrendIcon className={`w-5 h-5 mb-0.5 transition-transform duration-150 ${isActive ? "scale-110 text-pink-600" : ""}`} />
+                    <span>Insights</span>
+                  </>
+                )}
               </NavLink>
               <NavLink to="/customer/profile" className={bottomNavLink}>
-                <span className="text-base">👤</span>
-                <span>Profile</span>
+                {({ isActive }) => (
+                  <>
+                    <UserIcon className={`w-5 h-5 mb-0.5 transition-transform duration-150 ${isActive ? "scale-110 text-pink-600" : ""}`} />
+                    <span>Profile</span>
+                  </>
+                )}
               </NavLink>
             </>
           ) : isCustomer ? (
-            // Customer (Buy, Rent, Saved, Orders, Profile)
+            // Customer Bottom Nav (Buy, Rent, Saved, Orders, Profile)
             <>
               <NavLink to="/properties" className={bottomNavLink}>
-                <span className="text-base">🔍</span>
-                <span>Buy</span>
+                {({ isActive }) => (
+                  <>
+                    <SearchIcon className={`w-5 h-5 mb-0.5 transition-transform duration-150 ${isActive ? "scale-110 text-pink-600" : ""}`} />
+                    <span>Buy</span>
+                  </>
+                )}
               </NavLink>
               <NavLink to="/rentals" className={bottomNavLink}>
-                <span className="text-base">🏠</span>
-                <span>Rent</span>
+                {({ isActive }) => (
+                  <>
+                    <KeyIcon className={`w-5 h-5 mb-0.5 transition-transform duration-150 ${isActive ? "scale-110 text-pink-600" : ""}`} />
+                    <span>Rent</span>
+                  </>
+                )}
               </NavLink>
               <NavLink to="/customer/favourites" className={bottomNavLink}>
-                <span className="relative inline-block text-base">
-                  ♡
-                  {favCount > 0 && (
-                    <span className="absolute -top-1 -right-2 rounded-full bg-pink-600 text-white text-[8px] font-bold h-3.5 w-3.5 flex items-center justify-center">
-                      {favCount}
-                    </span>
-                  )}
-                </span>
-                <span>Saved</span>
+                {({ isActive }) => (
+                  <>
+                    <div className="relative mb-0.5">
+                      <HeartIcon
+                        filled={isActive}
+                        className={`w-5 h-5 transition-transform duration-150 ${isActive ? "scale-110 text-pink-600" : ""}`}
+                      />
+                      {favCount > 0 && (
+                        <span className="absolute -top-1 -right-2 rounded-full bg-pink-600 text-white text-[9px] font-bold h-3.5 w-3.5 flex items-center justify-center">
+                          {favCount}
+                        </span>
+                      )}
+                    </div>
+                    <span>Saved</span>
+                  </>
+                )}
               </NavLink>
               <NavLink to="/customer/orders" className={bottomNavLink}>
-                <span className="text-base">📦</span>
-                <span>Orders</span>
+                {({ isActive }) => (
+                  <>
+                    <BoxIcon className={`w-5 h-5 mb-0.5 transition-transform duration-150 ${isActive ? "scale-110 text-pink-600" : ""}`} />
+                    <span>Orders</span>
+                  </>
+                )}
               </NavLink>
               <NavLink to="/customer/profile" className={bottomNavLink}>
-                <span className="text-base">👤</span>
-                <span>Profile</span>
+                {({ isActive }) => (
+                  <>
+                    <UserIcon className={`w-5 h-5 mb-0.5 transition-transform duration-150 ${isActive ? "scale-110 text-pink-600" : ""}`} />
+                    <span>Profile</span>
+                  </>
+                )}
               </NavLink>
             </>
           ) : (
-            // Guest (Home, Buy, Rent, Saved, Sign In)
+            // Guest Bottom Nav (Home, Buy, Rent, Saved, Sign In)
             <>
               <NavLink to="/" end className={bottomNavLink}>
-                <span className="text-base">🏠</span>
-                <span>Home</span>
+                {({ isActive }) => (
+                  <>
+                    <HomeIcon className={`w-5 h-5 mb-0.5 transition-transform duration-150 ${isActive ? "scale-110 text-pink-600" : ""}`} />
+                    <span>Home</span>
+                  </>
+                )}
               </NavLink>
               <NavLink to="/properties" className={bottomNavLink}>
-                <span className="text-base">🔍</span>
-                <span>Buy</span>
+                {({ isActive }) => (
+                  <>
+                    <SearchIcon className={`w-5 h-5 mb-0.5 transition-transform duration-150 ${isActive ? "scale-110 text-pink-600" : ""}`} />
+                    <span>Buy</span>
+                  </>
+                )}
               </NavLink>
               <NavLink to="/rentals" className={bottomNavLink}>
-                <span className="text-base">🔑</span>
-                <span>Rent</span>
+                {({ isActive }) => (
+                  <>
+                    <KeyIcon className={`w-5 h-5 mb-0.5 transition-transform duration-150 ${isActive ? "scale-110 text-pink-600" : ""}`} />
+                    <span>Rent</span>
+                  </>
+                )}
               </NavLink>
               <NavLink to="/customer/favourites" className={bottomNavLink}>
-                <span className="text-base">♡</span>
-                <span>Saved</span>
+                {({ isActive }) => (
+                  <>
+                    <HeartIcon className={`w-5 h-5 mb-0.5 transition-transform duration-150 ${isActive ? "scale-110 text-pink-600" : ""}`} />
+                    <span>Saved</span>
+                  </>
+                )}
               </NavLink>
               <NavLink to="/login" className={bottomNavLink}>
-                <span className="text-base">👤</span>
-                <span>Sign In</span>
+                {({ isActive }) => (
+                  <>
+                    <UserIcon className={`w-5 h-5 mb-0.5 transition-transform duration-150 ${isActive ? "scale-110 text-pink-600" : ""}`} />
+                    <span>Sign In</span>
+                  </>
+                )}
               </NavLink>
             </>
           )}
         </div>
       </nav>
 
-      {/* ── Footer ────────────────────────────────────────────────── */}
-      <footer className="bg-navy-950 text-slate-300 border-t border-navy-900 mt-auto">
-        {/* Desktop 4-column footer (hidden on mobile < md) */}
-        <div className="hidden md:block mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+      {/* ── Footer (Desktop Only, Completely Hidden on Mobile < md) ── */}
+      <footer className="hidden md:block bg-navy-950 text-slate-300 border-t border-navy-900 mt-auto">
+        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 pb-8 border-b border-navy-800">
             {/* Brand column */}
             <div className="space-y-3">
@@ -736,20 +899,6 @@ export default function Layout() {
               <span className="text-[11px] text-slate-400">Jaipur Verified Real Estate Marketplace</span>
             </div>
           </div>
-        </div>
-
-        {/* Minimal Mobile Footer (visible on mobile < md, compact height ~100-150px) */}
-        <div className="md:hidden px-4 py-6 text-center space-y-2 pb-24 border-t border-navy-900/50">
-          <div className="flex items-center justify-center gap-2">
-            <div className="h-6 w-6 rounded-lg bg-gradient-to-tr from-pink-600 to-amber-500 flex items-center justify-center text-white font-display font-bold text-xs shadow-xs">
-              P
-            </div>
-            <span className="font-display text-base font-bold tracking-tight text-white">
-              <span className="text-pink-600">Pink</span>CityHomes
-            </span>
-          </div>
-          <p className="text-[11px] text-slate-400 font-medium">Verified real estate in Jaipur, Rajasthan</p>
-          <p className="text-[10px] text-slate-500">© {new Date().getFullYear()} PinkCityHomes. All rights reserved.</p>
         </div>
       </footer>
     </div>
