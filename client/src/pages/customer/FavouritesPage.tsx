@@ -37,6 +37,7 @@ export default function FavouritesPage() {
     try {
       await api.del(`/favourites/${favId}`);
       setItems((prev) => prev.filter((i) => i.id !== favId));
+      window.dispatchEvent(new Event("favourites-updated"));
     } catch (e: unknown) {
       alert(e instanceof Error ? e.message : "Failed to remove favourite");
     }

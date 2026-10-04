@@ -98,11 +98,65 @@ export default function HomePage() {
 
             <button
               type="submit"
-              className="rounded-xl bg-pink-600 px-6 py-2.5 font-semibold text-white transition hover:bg-pink-700"
+              className="rounded-xl bg-pink-600 px-6 py-2.5 font-semibold text-white transition hover:bg-pink-700 active:scale-95 shadow-sm"
             >
               Search
             </button>
           </form>
+
+          {/* Popular Jaipur Localities Quick Chips */}
+          <div className="pt-2">
+            <p className="text-xs text-white/70 font-semibold mb-2">Popular Jaipur Localities:</p>
+            <div className="flex flex-wrap justify-center gap-1.5 sm:gap-2">
+              {[
+                "Mansarovar",
+                "Vaishali Nagar",
+                "Jagatpura",
+                "C-Scheme",
+                "Malviya Nagar",
+                "Ajmer Road",
+                "Tonk Road",
+              ].map((loc) => (
+                <button
+                  key={loc}
+                  type="button"
+                  onClick={() => navigate(type === "rent" ? `/rentals?locality=${encodeURIComponent(loc)}` : `/properties?locality=${encodeURIComponent(loc)}`)}
+                  className="rounded-full bg-white/15 backdrop-blur-sm border border-white/20 px-3 py-1 text-xs text-white hover:bg-white hover:text-ink transition active:scale-95"
+                >
+                  📍 {loc}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Property Type Shortcuts */}
+      <section className="space-y-4">
+        <h2 className="font-serif text-xl font-bold sm:text-2xl text-ink">Browse by Property Type</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+          {[
+            { label: "Apartments & Flats", icon: "🏢", type: "APARTMENT", desc: "1, 2, 3 & 4 BHK multi-storey homes" },
+            { label: "Villas & Kothis", icon: "🏡", type: "VILLA", desc: "Independent luxury living" },
+            { label: "Independent Houses", icon: "🏠", type: "INDEPENDENT_HOUSE", desc: "Private residential floors & homes" },
+            { label: "Residential Plots", icon: "📐", type: "PLOT", desc: "JDA approved lands & plots" },
+          ].map((item) => (
+            <button
+              key={item.type}
+              type="button"
+              onClick={() => navigate(`/properties?propertyType=${item.type}`)}
+              className="group rounded-3xl border border-ink/10 bg-white p-5 text-left shadow-sm hover:border-pink-500 hover:shadow-md transition active:scale-95 flex flex-col justify-between"
+            >
+              <div>
+                <span className="text-3xl sm:text-4xl block mb-2 group-hover:scale-110 transition origin-left">{item.icon}</span>
+                <h3 className="font-serif font-bold text-base text-ink group-hover:text-pink-600 transition">{item.label}</h3>
+                <p className="text-xs text-ink/60 mt-1">{item.desc}</p>
+              </div>
+              <span className="text-xs font-semibold text-pink-600 mt-3 flex items-center gap-1 group-hover:translate-x-1 transition">
+                Explore &rarr;
+              </span>
+            </button>
+          ))}
         </div>
       </section>
 
@@ -173,19 +227,19 @@ export default function HomePage() {
         )}
       </section>
 
-      {/* Project & Rental Discovery Banner */}
+      {/* Buy & Rental Discovery Banner */}
       <section className="grid grid-cols-1 gap-6 md:grid-cols-2">
-        <div className="rounded-3xl border border-ink/10 bg-gradient-to-br from-sand to-pink-50/60 p-8">
-          <span className="text-xs uppercase tracking-wider text-pink-600 font-bold">Builder Direct</span>
-          <h3 className="mt-2 font-serif text-2xl font-bold">Explore Jaipur Projects</h3>
+        <div className="rounded-3xl border border-ink/10 bg-gradient-to-br from-sand to-pink-50/60 p-8 shadow-sm">
+          <span className="text-xs uppercase tracking-wider text-pink-600 font-bold">Verified Ownership</span>
+          <h3 className="mt-2 font-serif text-2xl font-bold">Buy Homes &amp; Villas</h3>
           <p className="mt-2 text-sm text-ink/70">
-            Premium residential projects with RERA registration across Vaishali Nagar, Jagatpura, and Mansarovar Extension.
+            Explore curated residential apartments, independent builder floors, and luxury villas across Jaipur's prime localities.
           </p>
           <Link
-            to="/projects"
-            className="mt-6 inline-block rounded-xl bg-ink px-5 py-2.5 text-sm font-semibold text-sand hover:bg-ink/90"
+            to="/properties"
+            className="mt-6 inline-block rounded-xl bg-ink px-5 py-2.5 text-sm font-semibold text-sand hover:bg-ink/90 transition active:scale-95 shadow-sm"
           >
-            Browse Projects &rarr;
+            Browse Buy Properties &rarr;
           </Link>
         </div>
 

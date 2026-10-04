@@ -618,3 +618,52 @@ export async function deleteProperty(req: Request, res: Response) {
 
   res.json({ ok: true, message: "Property permanently deleted" });
 }
+
+export async function getMarketInsights(_req: Request, res: Response) {
+  const col = getPropertiesCollection();
+  const activeProps = await col.find({ status: "ACTIVE", sellerDisabled: { $ne: true } }).toArray();
+
+  const total = activeProps.length;
+  const buyProps = activeProps.filter((p) => p.listingType === "BUY");
+  const rentProps = activeProps.filter((p) => p.listingType === "RENT");
+
+  const avgBuyPrice = buyProps.length > 0
+    ? Math.round(buyProps.reduce((sum, p) => sum + (p.price || 0), 0) / buyProps.length)
+    : 0;
+
+  const avgRentPrice = rentProps.length > 0
+    ? Math.round(rentProps.reduce((sum, p) => sum + (p.price || 0), 0) / rentProps.length)
+    : 0;
+
+  const sellerIds = new Set(activeProps.map((p) => p.sellerId).filter(Boolean));
+  const sellersCount = sellerIds.size;
+
+  const localityMap = new Map<string, { count: number; avgPrice: number; totalPrice: number }>();
+  for (const p of activeProps) {
+    const loc = p.locality || "Jaipur Central";
+    const existing = localityMap.get(loc) || { count: 0, avgPrice: 0, totalPrice: 0 };
+    existing.count += 1;
+    existing.totalPrice += p.price || 0;
+    localityMap.set(loc, existing);
+  }
+
+  const topLocalities = Array.from(localityMap.entries())
+    .map(([name, data]) => ({
+      name,
+      count: data.count,
+      avgPrice: Math.round(data.totalPrice / data.count),
+    }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 10);
+
+  res.json({
+    properties: total,
+    buyCount: buyProps.length,
+    rentCount: rentProps.length,
+    sellers: sellersCount,
+    avgBuyPrice,
+    avgRentPrice,
+    topLocalities,
+  });
+}
+

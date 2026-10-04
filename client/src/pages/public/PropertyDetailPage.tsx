@@ -71,6 +71,7 @@ export default function PropertyDetailPage() {
     if (!property) return;
     try {
       await api.post("/favourites", { propertyId: property.id });
+      window.dispatchEvent(new Event("favourites-updated"));
       setActionMsg("Saved to favourites!");
     } catch (e: unknown) {
       setActionMsg(e instanceof Error ? e.message : "Failed to save favourite");
@@ -85,6 +86,7 @@ export default function PropertyDetailPage() {
     if (!property) return;
     try {
       await api.post("/cart", { propertyId: property.id });
+      window.dispatchEvent(new Event("cart-updated"));
       setActionMsg("Added property to cart!");
     } catch (e: unknown) {
       setActionMsg(e instanceof Error ? e.message : "Failed to add to cart");

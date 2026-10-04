@@ -42,6 +42,7 @@ export default function CartPage() {
     try {
       const updated = await api.del<Cart>(`/cart/${propertyId}`);
       setCart(updated);
+      window.dispatchEvent(new Event("cart-updated"));
     } catch (e: unknown) {
       alert(e instanceof Error ? e.message : "Failed to remove item");
     }
@@ -53,6 +54,7 @@ export default function CartPage() {
     try {
       const res = await api.post<{ success: boolean; message: string }>("/cart/checkout");
       setMsg(res.message || "Purchase closing initiated! A legal closing executive and the property seller have been notified.");
+      window.dispatchEvent(new Event("cart-updated"));
       await fetchCart();
     } catch (e: unknown) {
       alert(e instanceof Error ? e.message : "Failed to initiate purchase closing");

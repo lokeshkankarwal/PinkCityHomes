@@ -1,12 +1,16 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { api } from "../../api/client";
 import { inr } from "../../lib/format";
 
-type PlatformStats = {
-  sellers?: number;
-  customers?: number;
-  properties?: number;
-  sold?: number;
+type MarketInsights = {
+  properties: number;
+  buyCount: number;
+  rentCount: number;
+  sellers: number;
+  avgBuyPrice: number;
+  avgRentPrice: number;
+  topLocalities: { name: string; count: number; avgPrice: number }[];
 };
 
 const jaipurLocalities = [
@@ -23,29 +27,29 @@ const jaipurLocalities = [
 ];
 
 const marketFacts = [
-  { label: "Avg. ₹/sqft (Malviya Nagar)", value: "₹5,500–₹8,000" },
-  { label: "Avg. ₹/sqft (C-Scheme)", value: "₹7,000–₹12,000" },
-  { label: "Avg. ₹/sqft (Mansarovar)", value: "₹4,200–₹6,500" },
-  { label: "Avg. ₹/sqft (Vaishali Nagar)", value: "₹4,500–₹7,000" },
-  { label: "Avg. ₹/sqft (Jagatpura)", value: "₹3,500–₹5,500" },
-  { label: "Typical 2BHK Price (city-wide)", value: "₹45L–₹90L" },
-  { label: "Typical 3BHK Price (city-wide)", value: "₹70L–₹1.5Cr" },
-  { label: "Avg. Rental Yield", value: "3%–4.5% annually" },
+  { label: "Avg. ₹/sqft (Malviya Nagar)", value: "₹5,500–₹8,000", locality: "Malviya Nagar" },
+  { label: "Avg. ₹/sqft (C-Scheme)", value: "₹7,000–₹12,000", locality: "C-Scheme" },
+  { label: "Avg. ₹/sqft (Mansarovar)", value: "₹4,200–₹6,500", locality: "Mansarovar" },
+  { label: "Avg. ₹/sqft (Vaishali Nagar)", value: "₹4,500–₹7,000", locality: "Vaishali Nagar" },
+  { label: "Avg. ₹/sqft (Jagatpura)", value: "₹3,500–₹5,500", locality: "Jagatpura" },
+  { label: "Typical 2BHK Price (city-wide)", value: "₹45L–₹90L", locality: "" },
+  { label: "Typical 3BHK Price (city-wide)", value: "₹70L–₹1.5Cr", locality: "" },
+  { label: "Avg. Rental Yield", value: "3%–4.5% annually", locality: "" },
 ];
 
 export default function InsightsPage() {
-  const [stats, setStats] = useState<PlatformStats | null>(null);
+  const [stats, setStats] = useState<MarketInsights | null>(null);
   const [tab, setTab] = useState<"overview" | "localities" | "guide">("overview");
 
   useEffect(() => {
     api
-      .get<PlatformStats>("/admin/dashboard")
+      .get<MarketInsights>("/properties/insights")
       .then((d) => setStats(d))
       .catch(() => {});
   }, []);
 
   return (
-    <div className="space-y-10 pb-16">
+    <div className="space-y-8 pb-16">
       {/* Header */}
       <div className="space-y-2">
         <div className="inline-flex items-center gap-2 rounded-full border border-pink-200 bg-pink-50 px-3 py-1 text-xs font-semibold text-pink-700">
@@ -53,7 +57,7 @@ export default function InsightsPage() {
         </div>
         <h1 className="font-serif text-3xl font-bold sm:text-4xl">Market Intelligence</h1>
         <p className="text-sm text-ink/70 max-w-2xl">
-          Data-driven insights for Jaipur's residential real estate market. Make informed decisions with verified locality data and market trends.
+          Data-driven insights for Jaipur's residential real estate market. Make informed decisions with verified locality data and live listings.
         </p>
       </div>
 
@@ -73,20 +77,52 @@ export default function InsightsPage() {
         ))}
       </div>
 
-      {/* Platform Stats (only visible to logged-in admins, graceful fallback) */}
+      {/* Live Market Metrics */}
       {stats && (
-        <section className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          {[
-            { label: "Active Sellers", value: stats.sellers ?? "–" },
-            { label: "Registered Buyers", value: stats.customers ?? "–" },
-            { label: "Total Listings", value: stats.properties ?? "–" },
-            { label: "Properties Sold", value: stats.sold ?? "–" },
-          ].map((s) => (
-            <div key={s.label} className="rounded-2xl border border-ink/10 bg-white p-5 shadow-sm text-center">
-              <p className="font-serif text-2xl font-bold text-pink-600">{String(s.value)}</p>
-              <p className="text-xs text-ink/60 mt-1">{s.label}</p>
-            </div>
-          ))}
+        <section className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          <Link
+            to="/properties"
+            className="group rounded-2xl border border-ink/10 bg-white p-4 shadow-sm text-center hover:border-pink-500 hover:shadow-md transition"
+          >
+            <p className="font-serif text-2xl font-bold text-pink-600 group-hover:scale-105 transition">{stats.properties}</p>
+            <p className="text-xs text-ink/60 mt-1 font-medium">Active Listings</p>
+          </Link>
+          <Link
+            to="/properties"
+            className="group rounded-2xl border border-ink/10 bg-white p-4 shadow-sm text-center hover:border-pink-500 hover:shadow-md transition"
+          >
+            <p className="font-serif text-2xl font-bold text-ink group-hover:scale-105 transition">{stats.buyCount}</p>
+            <p className="text-xs text-ink/60 mt-1 font-medium">For Sale</p>
+          </Link>
+          <Link
+            to="/rentals"
+            className="group rounded-2xl border border-ink/10 bg-white p-4 shadow-sm text-center hover:border-emerald-500 hover:shadow-md transition"
+          >
+            <p className="font-serif text-2xl font-bold text-moss group-hover:scale-105 transition">{stats.rentCount}</p>
+            <p className="text-xs text-ink/60 mt-1 font-medium">For Rent</p>
+          </Link>
+          <div className="rounded-2xl border border-ink/10 bg-white p-4 shadow-sm text-center">
+            <p className="font-serif text-2xl font-bold text-ink">{stats.sellers}</p>
+            <p className="text-xs text-ink/60 mt-1 font-medium">Verified Agencies</p>
+          </div>
+          <Link
+            to="/properties"
+            className="group rounded-2xl border border-ink/10 bg-white p-4 shadow-sm text-center hover:border-brass hover:shadow-md transition"
+          >
+            <p className="font-serif text-xl font-bold text-brass group-hover:scale-105 transition">
+              {stats.avgBuyPrice ? inr(stats.avgBuyPrice) : "—"}
+            </p>
+            <p className="text-xs text-ink/60 mt-1 font-medium">Avg. Buy Price</p>
+          </Link>
+          <Link
+            to="/rentals"
+            className="group rounded-2xl border border-ink/10 bg-white p-4 shadow-sm text-center hover:border-emerald-500 hover:shadow-md transition"
+          >
+            <p className="font-serif text-xl font-bold text-emerald-700 group-hover:scale-105 transition">
+              {stats.avgRentPrice ? `${inr(stats.avgRentPrice)}/m` : "—"}
+            </p>
+            <p className="text-xs text-ink/60 mt-1 font-medium">Avg. Rent Price</p>
+          </Link>
         </section>
       )}
 
@@ -101,12 +137,21 @@ export default function InsightsPage() {
               Prices vary by floor, age, and amenities. Always verify with the seller.
             </p>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              {marketFacts.map((f) => (
-                <div key={f.label} className="flex items-center justify-between rounded-xl bg-sand/50 px-4 py-3 border border-ink/5">
-                  <span className="text-sm text-ink/70">{f.label}</span>
-                  <span className="text-sm font-bold text-ink">{f.value}</span>
-                </div>
-              ))}
+              {marketFacts.map((f) => {
+                const inner = (
+                  <div className="flex items-center justify-between rounded-xl bg-sand/50 px-4 py-3 border border-ink/5 hover:border-pink-300 hover:bg-white transition">
+                    <span className="text-sm text-ink/70">{f.label}</span>
+                    <span className="text-sm font-bold text-ink">{f.value}</span>
+                  </div>
+                );
+                return f.locality ? (
+                  <Link key={f.label} to={`/properties?locality=${encodeURIComponent(f.locality)}`} title={`Search properties in ${f.locality}`}>
+                    {inner}
+                  </Link>
+                ) : (
+                  <div key={f.label}>{inner}</div>
+                );
+              })}
             </div>
             <p className="text-xs text-ink/40 mt-4">
               * Indicative ranges based on published market data. Actual prices depend on property age, specifications, and negotiation.
@@ -139,7 +184,7 @@ export default function InsightsPage() {
       {tab === "localities" && (
         <div className="space-y-6">
           <p className="text-sm text-ink/70">
-            Jaipur's residential market spans multiple distinct zones. Each locality has its own character, price range, and demographic profile.
+            Jaipur's residential market spans multiple distinct zones. Click any locality to instantly view available properties for sale or rent.
           </p>
           <div className="rounded-3xl border border-ink/10 bg-white overflow-hidden shadow-sm">
             <table className="w-full text-left text-sm">
@@ -148,14 +193,30 @@ export default function InsightsPage() {
                   <th className="py-3 px-5">Locality</th>
                   <th className="py-3 px-5">Zone</th>
                   <th className="py-3 px-5">Character</th>
+                  <th className="py-3 px-5 text-right">Explore</th>
                 </tr>
               </thead>
               <tbody>
                 {jaipurLocalities.map((loc, i) => (
                   <tr key={loc.name} className={`border-b border-ink/5 hover:bg-sand/30 ${i % 2 === 0 ? "" : "bg-sand/10"}`}>
-                    <td className="py-3 px-5 font-semibold text-ink">{loc.name}</td>
+                    <td className="py-3 px-5 font-semibold text-ink">
+                      <Link
+                        to={`/properties?locality=${encodeURIComponent(loc.name)}`}
+                        className="text-ink hover:text-pink-600 transition"
+                      >
+                        📍 {loc.name}
+                      </Link>
+                    </td>
                     <td className="py-3 px-5 text-ink/60">{loc.zone}</td>
                     <td className="py-3 px-5 text-ink/70">{loc.character}</td>
+                    <td className="py-3 px-5 text-right">
+                      <Link
+                        to={`/properties?locality=${encodeURIComponent(loc.name)}`}
+                        className="rounded-lg border border-ink/15 px-3 py-1 text-xs font-semibold text-ink hover:bg-ink hover:text-sand transition"
+                      >
+                        View Listings &rarr;
+                      </Link>
+                    </td>
                   </tr>
                 ))}
               </tbody>

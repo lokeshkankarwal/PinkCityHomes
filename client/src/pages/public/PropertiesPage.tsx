@@ -99,6 +99,7 @@ export default function PropertiesPage() {
     }
     try {
       await api.post("/favourites", { propertyId });
+      window.dispatchEvent(new Event("favourites-updated"));
       setActionMsg(`Saved "${title}" to favourites!`);
       setTimeout(() => setActionMsg(null), 3000);
     } catch (e: unknown) {
@@ -115,6 +116,7 @@ export default function PropertiesPage() {
     }
     try {
       await api.post("/cart", { propertyId });
+      window.dispatchEvent(new Event("cart-updated"));
       setActionMsg(`Added "${title}" to your cart!`);
       setTimeout(() => setActionMsg(null), 3000);
     } catch (e: unknown) {

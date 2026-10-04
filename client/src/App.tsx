@@ -6,9 +6,6 @@ import HomePage from "./pages/public/HomePage";
 import PropertiesPage from "./pages/public/PropertiesPage";
 import PropertyDetailPage from "./pages/public/PropertyDetailPage";
 import RentalsPage from "./pages/public/RentalsPage";
-import RentalDetailPage from "./pages/public/RentalDetailPage";
-import ProjectsPage from "./pages/public/ProjectsPage";
-import ProjectDetailPage from "./pages/public/ProjectDetailPage";
 import InsightsPage from "./pages/public/InsightsPage";
 import LoginPage from "./pages/public/LoginPage";
 import RegisterPage from "./pages/public/RegisterPage";
@@ -42,9 +39,9 @@ export default function App() {
         <Route path="properties" element={<PropertiesPage />} />
         <Route path="properties/:id" element={<PropertyDetailPage />} />
         <Route path="rentals" element={<RentalsPage />} />
-        <Route path="rentals/:id" element={<RentalDetailPage />} />
-        <Route path="projects" element={<ProjectsPage />} />
-        <Route path="projects/:id" element={<ProjectDetailPage />} />
+        <Route path="rentals/:id" element={<PropertyDetailPage />} />
+        <Route path="projects" element={<Navigate to="/properties" replace />} />
+        <Route path="projects/:id" element={<Navigate to="/properties" replace />} />
         <Route path="insights" element={<InsightsPage />} />
         <Route path="login" element={<LoginPage />} />
         <Route path="register" element={<RegisterPage />} />

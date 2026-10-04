@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { api } from "../../api/client";
 import { inr, imgSrc } from "../../lib/format";
 import type { Property } from "../../types";
@@ -8,6 +8,7 @@ import { searchJaipurLocations, type JaipurLocation } from "../../services/jaipu
 import { ConfirmModal } from "../../components/ConfirmModal";
 
 export default function SellerPropertiesPage() {
+  const [searchParams] = useSearchParams();
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -75,10 +76,6 @@ export default function SellerPropertiesPage() {
     }
   };
 
-  useEffect(() => {
-    void fetchMine();
-  }, []);
-
   const handleOpenAdd = () => {
     setFormData(initialForm);
     setEditingProperty(null);
@@ -87,6 +84,17 @@ export default function SellerPropertiesPage() {
     setIsLocationConfirmed(false);
     setShowAddModal(true);
   };
+
+  useEffect(() => {
+    void fetchMine();
+    if (searchParams.get("new") === "1") {
+      handleOpenAdd();
+    }
+    const statusParam = searchParams.get("status");
+    if (statusParam && ["ACTIVE", "INACTIVE", "SOLD"].includes(statusParam.toUpperCase())) {
+      setStatusFilter(statusParam.toUpperCase() as any);
+    }
+  }, [searchParams]);
 
   const handleOpenEdit = (p: Property) => {
     setFormData({
@@ -581,7 +589,7 @@ export default function SellerPropertiesPage() {
 
                   <div>
                     <label className="block font-semibold text-ink/70 mb-1">
-                      Project / Society Name <span className="font-normal text-ink/50">(Optional)</span>
+                      Society / Apartment / Building Name <span className="font-normal text-ink/50">(Optional)</span>
                     </label>
                     <input
                       type="text"

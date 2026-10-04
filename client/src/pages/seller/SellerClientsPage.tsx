@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { api } from "../../api/client";
 import { inr } from "../../lib/format";
 import type { Property } from "../../types";
@@ -17,8 +18,10 @@ type Client = {
 };
 
 export default function SellerClientsPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [clients, setClients] = useState<Client[]>([]);
-  const [filterInterest, setFilterInterest] = useState("");
+  const [filterInterest, setFilterInterest] = useState(searchParams.get("interest") || "");
+  const [searchTerm, setSearchTerm] = useState(searchParams.get("search") || "");
   const [loading, setLoading] = useState(true);
 
   // Modals
@@ -152,21 +155,48 @@ export default function SellerClientsPage() {
         </button>
       </div>
 
-      {/* Filter Tabs */}
-      <div className="flex gap-2 text-xs font-semibold">
-        {["", "HIGH", "MEDIUM", "LOW"].map((lvl) => (
-          <button
-            key={lvl}
-            onClick={() => setFilterInterest(lvl)}
-            className={`rounded-xl px-4 py-2 transition ${
-              filterInterest === lvl
-                ? "bg-ink text-sand shadow"
-                : "bg-white border border-ink/10 text-ink/70 hover:bg-sand"
-            }`}
-          >
-            {lvl ? `${lvl} Interest` : "All Clients"}
-          </button>
-        ))}
+      {/* Controls: Search & Filter Tabs */}
+      <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+        {/* Search */}
+        <div className="relative max-w-sm w-full">
+          <input
+            type="text"
+            placeholder="Search by client name, phone, or email..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full rounded-2xl border border-ink/20 px-4 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-brass bg-white shadow-sm"
+          />
+          {searchTerm && (
+            <button
+              onClick={() => setSearchTerm("")}
+              className="absolute right-3 top-2.5 text-xs text-ink/40 hover:text-ink"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+
+        {/* Filter Tabs */}
+        <div className="flex rounded-xl bg-ink/5 p-1 text-xs font-semibold overflow-x-auto">
+          {[
+            { id: "", label: "All Clients" },
+            { id: "HIGH", label: "🔥 High Interest" },
+            { id: "MEDIUM", label: "⚡ Medium" },
+            { id: "LOW", label: "🌱 Low" },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setFilterInterest(tab.id)}
+              className={`rounded-lg px-3.5 py-1.5 whitespace-nowrap transition ${
+                filterInterest === tab.id
+                  ? "bg-white text-ink shadow-sm font-bold"
+                  : "text-ink/60 hover:text-ink"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {loading ? (
@@ -182,55 +212,100 @@ export default function SellerClientsPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Clients List */}
           <div className="lg:col-span-2 space-y-3">
-            {clients.map((c) => (
-              <div
-                key={c.id}
-                onClick={() => void selectClientDetails(c)}
-                className={`cursor-pointer rounded-2xl border p-4 transition bg-white shadow-sm hover:border-brass ${
-                  selectedClient?.id === c.id ? "border-brass ring-1 ring-brass" : "border-ink/10"
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <span
-                      className={`h-3 w-3 rounded-full ${
-                        c.interestLevel === "HIGH"
-                          ? "bg-red-500"
-                          : c.interestLevel === "MEDIUM"
-                          ? "bg-amber-500"
-                          : "bg-gray-400"
-                      }`}
-                    />
-                    <div>
-                      <h3 className="font-serif text-base font-bold text-ink">{c.name}</h3>
-                      <p className="text-xs text-ink/60">{c.phone} {c.email ? `· ${c.email}` : ""}</p>
+            {clients
+              .filter((c) => {
+                if (filterInterest && c.interestLevel !== filterInterest) return false;
+                if (searchTerm) {
+                  const t = searchTerm.toLowerCase();
+                  return (
+                    c.name.toLowerCase().includes(t) ||
+                    c.phone.toLowerCase().includes(t) ||
+                    (c.email && c.email.toLowerCase().includes(t))
+                  );
+                }
+                return true;
+              })
+              .map((c) => (
+                <div
+                  key={c.id}
+                  onClick={() => void selectClientDetails(c)}
+                  className={`cursor-pointer rounded-2xl border p-4 transition bg-white shadow-sm hover:border-brass ${
+                    selectedClient?.id === c.id ? "border-brass ring-2 ring-brass/30" : "border-ink/10"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span
+                        className={`h-3 w-3 rounded-full flex-shrink-0 ${
+                          c.interestLevel === "HIGH"
+                            ? "bg-red-500 ring-2 ring-red-200"
+                            : c.interestLevel === "MEDIUM"
+                            ? "bg-amber-500 ring-2 ring-amber-200"
+                            : "bg-gray-400 ring-2 ring-gray-200"
+                        }`}
+                      />
+                      <div>
+                        <h3 className="font-serif text-base font-bold text-ink">{c.name}</h3>
+                        <p className="text-xs text-ink/60">{c.phone} {c.email ? `· ${c.email}` : ""}</p>
+                      </div>
                     </div>
+                    <span
+                      className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                        c.interestLevel === "HIGH"
+                          ? "bg-red-50 text-red-800 border border-red-200"
+                          : c.interestLevel === "MEDIUM"
+                          ? "bg-amber-50 text-amber-800 border border-amber-200"
+                          : "bg-gray-100 text-gray-700 border border-gray-200"
+                      }`}
+                    >
+                      {c.interestLevel} Interest
+                    </span>
                   </div>
-                  <span
-                    className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
-                      c.interestLevel === "HIGH"
-                        ? "bg-red-50 text-red-800"
-                        : c.interestLevel === "MEDIUM"
-                        ? "bg-amber-50 text-amber-800"
-                        : "bg-gray-100 text-gray-700"
-                    }`}
-                  >
-                    {c.interestLevel} Interest
-                  </span>
-                </div>
 
-                {c.notes && (
-                  <p className="mt-2 text-xs text-ink/70 line-clamp-1 italic bg-sand/30 p-2 rounded-lg">
-                    "{c.notes}"
-                  </p>
-                )}
+                  {c.notes && (
+                    <p className="mt-2 text-xs text-ink/70 line-clamp-1 italic bg-sand/30 p-2 rounded-lg">
+                      "{c.notes}"
+                    </p>
+                  )}
 
-                <div className="mt-3 flex gap-4 text-[11px] text-ink/60 border-t border-ink/5 pt-2">
-                  <span>{c.interactions?.length ?? 0} interactions</span>
-                  <span>{c.visits?.length ?? 0} visits</span>
+                  {/* Direct Communication Buttons */}
+                  <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-ink/5 pt-2 text-xs">
+                    <div className="flex items-center gap-2">
+                      <a
+                        href={`tel:${c.phone}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="rounded-lg border border-ink/15 bg-sand/30 px-2.5 py-1 text-ink hover:bg-pink-50 hover:text-pink-600 hover:border-pink-300 transition flex items-center gap-1 font-medium text-[11px]"
+                        title="Direct Call"
+                      >
+                        📞 Call
+                      </a>
+                      <a
+                        href={`https://wa.me/${c.phone.replace(/[^0-9]/g, "")}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-emerald-800 hover:bg-emerald-100 transition flex items-center gap-1 font-medium text-[11px]"
+                        title="Chat on WhatsApp"
+                      >
+                        💬 WhatsApp
+                      </a>
+                      {c.email && (
+                        <a
+                          href={`mailto:${c.email}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="rounded-lg border border-ink/15 bg-sand/30 px-2.5 py-1 text-ink hover:bg-sand transition flex items-center gap-1 font-medium text-[11px]"
+                          title="Send Email"
+                        >
+                          ✉️ Email
+                        </a>
+                      )}
+                    </div>
+                    <span className="text-[11px] text-ink/50">
+                      {c.interactions?.length ?? 0} notes · {c.visits?.length ?? 0} tours
+                    </span>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
           </div>
 
           {/* Client Details Sidebar */}

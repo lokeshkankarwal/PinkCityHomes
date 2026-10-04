@@ -99,6 +99,7 @@ export default function RentalsPage() {
     }
     try {
       await api.post("/favourites", { propertyId });
+      window.dispatchEvent(new Event("favourites-updated"));
       setActionMsg(`Saved "${title}" to favourites!`);
       setTimeout(() => setActionMsg(null), 3000);
     } catch (e: unknown) {
