@@ -62,7 +62,8 @@ export async function connectMongo(): Promise<Db | null> {
       connectTimeoutMS: 5000,
     });
     await client.connect();
-    db = client.db();
+    const targetDb = client.options.dbName && client.options.dbName !== "test" ? client.options.dbName : "pinkcityhomes";
+    db = client.db(targetDb);
     isConnected = true;
 
     // Ensure geospatial and performance indexes

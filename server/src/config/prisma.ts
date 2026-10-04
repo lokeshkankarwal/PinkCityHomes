@@ -27,7 +27,8 @@ export async function initMongoPrisma(): Promise<Db> {
     connectTimeoutMS: 5000,
   });
   await client.connect();
-  db = client.db();
+  const targetDb = client.options.dbName && client.options.dbName !== "test" ? client.options.dbName : "pinkcityhomes";
+  db = client.db(targetDb);
 
   // Initialize unique indexes
   try {
@@ -51,7 +52,8 @@ function getDb(): Db {
   if (!db) {
     client = new MongoClient(env.mongoUri);
     client.connect().catch((e) => console.error("[MongoDB DB] connect error:", e));
-    db = client.db();
+    const targetDb = client.options.dbName && client.options.dbName !== "test" ? client.options.dbName : "pinkcityhomes";
+    db = client.db(targetDb);
   }
   return db;
 }

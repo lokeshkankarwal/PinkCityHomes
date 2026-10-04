@@ -3,7 +3,7 @@ import type { Request, Response } from "express";
 import crypto from "crypto";
 import { prisma } from "../../config/prisma.js";
 import { HttpError } from "../../middleware/error.js";
-import { defaultImageForType, deleteLocalFile, saveLocalFile } from "../../services/storage.service.js";
+import { defaultImageForType, deleteLocalFile, saveLocalFile, saveFile } from "../../services/storage.service.js";
 import {
   getPropertiesCollection,
   formatMongoProperty,
@@ -400,7 +400,7 @@ export async function uploadImages(req: Request, res: Response) {
 
     const imgId = `img_${Date.now()}_${crypto.randomBytes(3).toString("hex")}`;
     const filename = `${existing.propertyId}-${Date.now()}-${order}-${f.originalname.replace(/\s+/g, "_")}`;
-    const path = saveLocalFile(filename, f.buffer);
+    const path = await saveFile(filename, f.buffer, f.mimetype, "properties");
 
     newImages.push({
       id: imgId,
@@ -436,7 +436,7 @@ export async function deleteImage(req: Request, res: Response) {
 
   const targetImg = doc.images.find((i) => i.id === imageId);
   if (targetImg) {
-    deleteLocalFile(targetImg.path);
+    await deleteLocalFile(targetImg.path);
   }
 
   const remaining = doc.images.filter((i) => i.id !== imageId);

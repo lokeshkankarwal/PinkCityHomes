@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
+import fs from "node:fs";
 import cookieParser from "cookie-parser";
 import rateLimit from "express-rate-limit";
 import path from "node:path";
@@ -84,10 +85,25 @@ export function createApp() {
   ensureUploadDir();
   const app = express();
   app.set("trust proxy", 1);
-  app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
+  app.use(
+    helmet({
+      contentSecurityPolicy: false,
+      crossOriginResourcePolicy: { policy: "cross-origin" },
+    }),
+  );
   app.use(
     cors({
-      origin: env.clientOrigin,
+      origin: (origin, callback) => {
+        if (!origin) return callback(null, true);
+        if (
+          env.clientOrigin.includes("*") ||
+          env.clientOrigin.includes(origin) ||
+          (env.nodeEnv !== "production" && (origin.includes("localhost") || origin.includes("127.0.0.1")))
+        ) {
+          return callback(null, true);
+        }
+        return callback(null, true);
+      },
       credentials: true,
     }),
   );
@@ -121,6 +137,29 @@ export function createApp() {
   app.use("/api/seller", sellersRouter);
   app.use("/api/sellers", sellersRouter);
   app.use("/api/projects", projectsRouter);
+
+  // Serve production client build when available (unified single-service deployment)
+  const clientDistCandidates = [
+    path.resolve(process.cwd(), "client/dist"),
+    path.resolve(process.cwd(), "../client/dist"),
+    path.resolve(here, "../../client/dist"),
+    path.resolve(here, "../../../client/dist"),
+  ];
+  const clientDist = clientDistCandidates.find((p) => fs.existsSync(p));
+  if (clientDist) {
+    app.use(express.static(clientDist));
+    app.use((req, res, next) => {
+      if (
+        req.method !== "GET" ||
+        req.path.startsWith("/api") ||
+        req.path.startsWith("/uploads") ||
+        req.path.startsWith("/defaults")
+      ) {
+        return next();
+      }
+      res.sendFile(path.join(clientDist, "index.html"));
+    });
+  }
 
   app.use(errorHandler);
   return app;

@@ -292,6 +292,11 @@ export async function uploadAvatar(req: Request, res: Response) {
   const file = req.file;
   if (!file) throw new HttpError(400, "No file provided");
 
+  const current = await prisma.user.findUnique({ where: { id: req.user.id }, select: { avatarUrl: true } });
+  if (current?.avatarUrl) {
+    await deleteLocalFile(current.avatarUrl);
+  }
+
   const avatarUrl = await saveFile(file.originalname, file.buffer, file.mimetype, "avatars");
   const user = await prisma.user.update({
     where: { id: req.user.id },
@@ -304,8 +309,8 @@ export async function uploadAvatar(req: Request, res: Response) {
 export async function removeAvatar(req: Request, res: Response) {
   if (!req.user) throw new HttpError(401, "Authentication required");
   const current = await prisma.user.findUnique({ where: { id: req.user.id }, select: { avatarUrl: true } });
-  if (current?.avatarUrl && current.avatarUrl.startsWith("/uploads/")) {
-    deleteLocalFile(current.avatarUrl);
+  if (current?.avatarUrl) {
+    await deleteLocalFile(current.avatarUrl);
   }
 
   const updated = await prisma.user.update({

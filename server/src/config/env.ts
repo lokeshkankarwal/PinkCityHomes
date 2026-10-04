@@ -28,7 +28,11 @@ export const env = {
   emailVerificationUrl: process.env.EMAIL_VERIFICATION_URL ?? "http://localhost:5173",
   // MongoDB Geospatial Discovery
   mongoUri: process.env.MONGODB_URI ?? "mongodb://127.0.0.1:27017/pinkcityhomes",
-  // AWS S3 Storage Architecture
+  // Cloudinary Media Storage
+  cloudinaryCloudName: process.env.CLOUDINARY_CLOUD_NAME ?? "",
+  cloudinaryApiKey: process.env.CLOUDINARY_API_KEY ?? "",
+  cloudinaryApiSecret: process.env.CLOUDINARY_API_SECRET ?? "",
+  // AWS S3 Storage Architecture (fallback)
   awsAccessKeyId: process.env.AWS_ACCESS_KEY_ID ?? "",
   awsSecretAccessKey: process.env.AWS_SECRET_ACCESS_KEY ?? "",
   awsRegion: process.env.AWS_REGION ?? "ap-south-1",
