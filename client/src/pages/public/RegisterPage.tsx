@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { api } from "../../api/client";
+import { api, setStoredToken } from "../../api/client";
+import { useAuth } from "../../auth";
 import { toast } from "../../components/Toast";
 
 export default function RegisterPage() {
   const navigate = useNavigate();
+  const { refresh } = useAuth();
 
   const [role, setRole] = useState<"CUSTOMER" | "SELLER">("CUSTOMER");
   const [name, setName] = useState("");
@@ -22,10 +24,20 @@ export default function RegisterPage() {
   const [otp, setOtp] = useState("");
   const [otpMsg, setOtpMsg] = useState<string | null>(null);
   const [verifying, setVerifying] = useState(false);
-  const [devOtpHint, setDevOtpHint] = useState<boolean>(false);
+  const [devOtp, setDevOtp] = useState<string | null>(null);
+  const [resendCooldown, setResendCooldown] = useState(0);
 
   // Seller Submitted state (No OTP)
   const [sellerSubmitted, setSellerSubmitted] = useState(false);
+
+  // Cooldown countdown effect
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setInterval(() => {
+      setResendCooldown((c) => Math.max(0, c - 1));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,10 +48,11 @@ export default function RegisterPage() {
       const res = await api.post<{
         message: string;
         pendingApproval?: boolean;
-        devOtpHint?: boolean;
+        devOtp?: string;
+        emailDelivered?: boolean;
       }>("/auth/register", {
         name,
-        email,
+        email: email.trim().toLowerCase(),
         password,
         phone,
         role,
@@ -51,11 +64,18 @@ export default function RegisterPage() {
         setSellerSubmitted(true);
         toast.success("Seller application submitted for Superadmin review!");
       } else {
-        // Buyer registration: OTP verification flow
+        // Buyer registration: OTP verification flow right at registration time
         setShowOtp(true);
-        setDevOtpHint(Boolean(res.devOtpHint));
-        setOtpMsg(res.message || "OTP code sent to your email.");
-        toast.info("A 6-digit verification code was sent to your email.");
+        setOtp(res.devOtp || "");
+        setDevOtp(res.devOtp || null);
+        setOtpMsg(res.message || "Please enter the 6-digit verification code sent to your email.");
+        setResendCooldown(60);
+
+        if (res.emailDelivered) {
+          toast.success("Verification code sent to your email!");
+        } else if (res.devOtp) {
+          toast.info("Registration initiated! Development verification code provided.");
+        }
       }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Registration failed");
@@ -70,13 +90,18 @@ export default function RegisterPage() {
     setError(null);
 
     try {
-      await api.post<{ message: string }>("/auth/verify", {
-        email,
-        otp,
+      const res = await api.post<{ message: string; token?: string; user?: any }>("/auth/verify", {
+        email: email.trim().toLowerCase(),
+        otp: otp.trim(),
       });
 
-      toast.success("Email verified successfully! You can now log in.");
-      navigate("/login");
+      if (res.token) {
+        setStoredToken(res.token);
+        await refresh();
+      }
+
+      toast.success(res.message || "Account verified successfully! Welcome to PinkCityHomes.");
+      navigate("/");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Verification failed");
     } finally {
@@ -85,10 +110,21 @@ export default function RegisterPage() {
   };
 
   const handleResendOtp = async () => {
+    if (resendCooldown > 0) return;
+    setError(null);
+
     try {
-      await api.post("/auth/resend-otp", { email });
-      setOtpMsg("A fresh 6-digit OTP has been sent to your email.");
-      toast.info("A fresh OTP has been sent to your email.");
+      const res = await api.post<{ message: string; devOtp?: string; emailDelivered?: boolean }>(
+        "/auth/resend-otp",
+        { email: email.trim().toLowerCase() }
+      );
+      setOtpMsg(res.message || "A fresh 6-digit OTP has been dispatched.");
+      if (res.devOtp) {
+        setDevOtp(res.devOtp);
+        setOtp(res.devOtp);
+      }
+      setResendCooldown(60);
+      toast.info(res.message || "A fresh OTP has been sent to your email.");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to resend OTP");
     }
@@ -103,16 +139,57 @@ export default function RegisterPage() {
             P
           </div>
           <h1 className="font-display text-2xl sm:text-3xl font-bold text-navy">
-            Create an <span className="text-pink-600">Account</span>
+            {showOtp ? (
+              <>Verify Your <span className="text-pink-600">Email</span></>
+            ) : (
+              <>Create an <span className="text-pink-600">Account</span></>
+            )}
           </h1>
           <p className="text-xs text-slate-500">
-            {role === "SELLER"
+            {showOtp
+              ? "Complete verification to activate your buyer account immediately"
+              : role === "SELLER"
               ? "Apply to become a verified property seller or agency in Jaipur"
               : "Discover homes, schedule viewings, and save favorites in Jaipur"}
           </p>
         </div>
 
-        {/* Role Selector Tabs */}
+        {/* Step Indicator (Only for Customer) */}
+        {!sellerSubmitted && role === "CUSTOMER" && (
+          <div className="flex items-center justify-center gap-2 pt-1 pb-2">
+            <span
+              className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full ${
+                !showOtp
+                  ? "bg-pink-100 text-pink-700 border border-pink-200"
+                  : "bg-slate-100 text-slate-500"
+              }`}
+            >
+              <span className="w-4 h-4 rounded-full bg-pink-600 text-white text-[10px] inline-flex items-center justify-center">
+                1
+              </span>
+              Details
+            </span>
+            <span className="text-slate-300">&rarr;</span>
+            <span
+              className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full ${
+                showOtp
+                  ? "bg-pink-100 text-pink-700 border border-pink-200"
+                  : "bg-slate-100 text-slate-400"
+              }`}
+            >
+              <span
+                className={`w-4 h-4 rounded-full text-[10px] inline-flex items-center justify-center ${
+                  showOtp ? "bg-pink-600 text-white" : "bg-slate-300 text-slate-600"
+                }`}
+              >
+                2
+              </span>
+              Verify OTP
+            </span>
+          </div>
+        )}
+
+        {/* Role Selector Tabs (Step 1 only) */}
         {!showOtp && !sellerSubmitted && (
           <div className="space-y-2">
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-600">
@@ -154,8 +231,11 @@ export default function RegisterPage() {
         )}
 
         {error && (
-          <div className="rounded-2xl bg-rose-50 border border-rose-200 p-4 text-xs text-rose-800">
-            {error}
+          <div className="rounded-2xl bg-rose-50 border border-rose-200 p-4 text-xs text-rose-800 space-y-1">
+            <div className="font-semibold flex items-center gap-1.5">
+              <span>⚠️</span>
+              <span>{error}</span>
+            </div>
           </div>
         )}
 
@@ -193,6 +273,7 @@ export default function RegisterPage() {
             </Link>
           </div>
         ) : !showOtp ? (
+          /* Step 1: Registration Form */
           <form onSubmit={handleRegister} className="space-y-4">
             {role === "SELLER" && (
               <div className="rounded-2xl bg-amber-50/80 border border-amber-200/80 p-3.5 text-xs text-amber-900">
@@ -281,7 +362,7 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-2xl bg-navy py-3.5 font-semibold text-sm text-white shadow-md hover:bg-navy-800 transition active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+              className="w-full rounded-2xl bg-navy py-3.5 font-semibold text-sm text-white shadow-md hover:bg-navy-800 transition active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
             >
               {loading && (
                 <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -293,57 +374,92 @@ export default function RegisterPage() {
                 ? "Submitting..."
                 : role === "SELLER"
                 ? "Submit Seller Application"
-                : "Register as User / Buyer"}
+                : "Continue to Email Verification &rarr;"}
             </button>
           </form>
         ) : (
-          /* OTP Form (User/Buyer Only) */
+          /* Step 2: OTP Verification Form (Instant at Registration Time!) */
           <form onSubmit={handleVerifyOtp} className="space-y-4">
-            <div className="rounded-3xl bg-slate-50 p-5 border border-slate-200/80 text-xs text-slate-600 space-y-1">
-              <p className="font-bold text-navy">{otpMsg}</p>
-              <p>Sent to <span className="font-bold text-navy">{email}</span>.</p>
-              {devOtpHint && (
-                <p className="text-emerald-700 font-semibold pt-1">
-                  (Development mode: check your terminal console for the generated 6-digit OTP)
-                </p>
-              )}
+            <div className="rounded-3xl bg-pink-50/60 p-5 border border-pink-100 text-xs text-slate-700 space-y-1.5">
+              <p className="font-bold text-navy text-sm flex items-center gap-1.5">
+                <span>✉️</span>
+                <span>Enter Verification Code</span>
+              </p>
+              <p className="text-slate-600 leading-relaxed">
+                {otpMsg || "A 6-digit code has been issued for"}{" "}
+                <span className="font-bold text-navy">{email}</span>.
+              </p>
             </div>
 
+            {/* Quick-fill helper for development / test mode */}
+            {devOtp && (
+              <div className="rounded-2xl bg-amber-50 border border-amber-200 p-3.5 flex items-center justify-between text-xs text-amber-950">
+                <div className="space-y-0.5">
+                  <p className="font-bold text-[11px] uppercase tracking-wider text-amber-800">
+                    Test Mode Verification Code
+                  </p>
+                  <p className="font-mono text-base font-bold text-navy tracking-widest">{devOtp}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setOtp(devOtp)}
+                  className="px-3 py-1.5 rounded-xl bg-amber-200/80 hover:bg-amber-300 text-amber-900 font-bold text-xs transition cursor-pointer"
+                >
+                  Auto Fill
+                </button>
+              </div>
+            )}
+
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                6-Digit Verification Code
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5 text-center">
+                Enter 6-Digit Code
               </label>
               <input
                 type="text"
+                autoFocus
                 required
                 maxLength={6}
                 placeholder="123456"
                 value={otp}
-                onChange={(e) => setOtp(e.target.value)}
-                className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-center font-mono text-xl tracking-widest bg-white focus:outline-none focus:ring-2 focus:ring-pink-500 shadow-xs"
+                onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
+                className="w-full rounded-2xl border-2 border-pink-200 px-4 py-3.5 text-center font-mono text-2xl font-bold tracking-[0.35em] text-navy bg-white focus:outline-none focus:border-pink-500 focus:ring-4 focus:ring-pink-100 transition shadow-xs"
               />
             </div>
 
             <button
               type="submit"
-              disabled={verifying}
-              className="w-full rounded-2xl bg-navy py-3.5 font-semibold text-sm text-white shadow-md hover:bg-navy-800 transition active:scale-95 disabled:opacity-50"
+              disabled={verifying || otp.length < 4}
+              className="w-full rounded-2xl bg-navy py-3.5 font-semibold text-sm text-white shadow-md hover:bg-navy-800 transition active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
             >
+              {verifying && (
+                <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              )}
               {verifying ? "Verifying..." : "Verify & Complete Registration"}
             </button>
 
             <div className="flex items-center justify-between text-xs pt-2">
               <button
                 type="button"
+                disabled={resendCooldown > 0}
                 onClick={handleResendOtp}
-                className="text-pink-600 font-semibold hover:underline"
+                className={`font-semibold transition cursor-pointer ${
+                  resendCooldown > 0
+                    ? "text-slate-400 cursor-not-allowed"
+                    : "text-pink-600 hover:underline"
+                }`}
               >
-                Resend OTP
+                {resendCooldown > 0 ? `Resend Code in ${resendCooldown}s` : "Resend Code"}
               </button>
               <button
                 type="button"
-                onClick={() => setShowOtp(false)}
-                className="text-slate-500 hover:text-navy"
+                onClick={() => {
+                  setShowOtp(false);
+                  setError(null);
+                }}
+                className="text-slate-500 hover:text-navy transition cursor-pointer underline"
               >
                 Edit Information
               </button>
@@ -351,7 +467,7 @@ export default function RegisterPage() {
           </form>
         )}
 
-        {!sellerSubmitted && (
+        {!sellerSubmitted && !showOtp && (
           <div className="text-center text-xs text-slate-500 pt-3 border-t border-slate-100">
             Already registered?{" "}
             <Link to="/login" className="font-bold text-pink-600 underline">

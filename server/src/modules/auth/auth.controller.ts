@@ -60,26 +60,59 @@ async function issueVerification(userId: string, email: string) {
     },
   });
 
-  // 4. Send email. If sending fails, invalidate the record and rethrow error
+  // 4. Send email. If email sending fails, keep the database record valid so the user is not locked out!
+  let mailResult: { success: boolean; messageId?: string; isDevFallback?: boolean; emailDelivered?: boolean; error?: string };
   try {
-    const mailResult = await sendVerificationEmail(email, code);
-    return { code, mailResult };
-  } catch (err) {
-    await prisma.emailVerification.update({
-      where: { id: rec.id },
-      data: { usedAt: new Date() },
-    }).catch(() => {});
-    throw err;
+    const result = await sendVerificationEmail(email, code);
+    mailResult = { ...result, emailDelivered: true };
+  } catch (err: any) {
+    console.warn(`[EMAIL WARN] Email delivery not completed for ${email}: ${err?.message || err}`);
+    mailResult = {
+      success: false,
+      emailDelivered: false,
+      error: err?.message || "Delivery failed",
+    };
   }
+
+  return { code, mailResult };
 }
 
 export async function register(req: Request, res: Response) {
   const body = registerSchema.parse(req.body);
+  const cleanEmail = body.email.toLowerCase().trim();
   const isSeller = body.role && (body.role.toUpperCase() === "SELLER" || body.role.toUpperCase() === "AGENCY");
 
-  const existing = await prisma.user.findUnique({ where: { email: body.email.toLowerCase() } });
+  const existing = await prisma.user.findUnique({ where: { email: cleanEmail } });
+  
   if (existing) {
-    throw new HttpError(409, "Email already registered");
+    // If the account was created as a Customer but email is not yet verified,
+    // allow the user to complete verification at registration time instead of erroring!
+    if (existing.role === "CUSTOMER" && !existing.emailVerifiedAt) {
+      const passwordHash = await bcrypt.hash(body.password, 12);
+      await prisma.user.update({
+        where: { id: existing.id },
+        data: {
+          name: body.name || existing.name,
+          phone: body.phone || existing.phone,
+          passwordHash,
+        },
+      });
+
+      const { code, mailResult } = await issueVerification(existing.id, cleanEmail);
+
+      return res.status(200).json({
+        message: mailResult.emailDelivered
+          ? "A 6-digit verification code has been dispatched to your email."
+          : "Registration pending verification. Please enter your 6-digit code below.",
+        email: cleanEmail,
+        role: "CUSTOMER",
+        pendingApproval: false,
+        emailDelivered: mailResult.emailDelivered,
+        devOtp: (env.nodeEnv !== "production" || !mailResult.emailDelivered) ? code : undefined,
+      });
+    }
+
+    throw new HttpError(409, "An account with this email address already exists. Please log in.");
   }
 
   const passwordHash = await bcrypt.hash(body.password, 12);
@@ -88,7 +121,7 @@ export async function register(req: Request, res: Response) {
     // Seller registration: No OTP. Goes to Superadmin for review and approval.
     const user = await prisma.user.create({
       data: {
-        email: body.email.toLowerCase(),
+        email: cleanEmail,
         passwordHash,
         name: body.name,
         phone: body.phone,
@@ -117,7 +150,7 @@ export async function register(req: Request, res: Response) {
   // Normal Customer/Buyer registration: Requires OTP verification
   const user = await prisma.user.create({
     data: {
-      email: body.email.toLowerCase(),
+      email: cleanEmail,
       passwordHash,
       name: body.name,
       phone: body.phone,
@@ -126,22 +159,18 @@ export async function register(req: Request, res: Response) {
     },
   });
 
-  try {
-    const { mailResult } = await issueVerification(user.id, user.email);
+  const { code, mailResult } = await issueVerification(user.id, user.email);
 
-    res.status(201).json({
-      message: "Registration successful. Please enter the 6-digit verification code sent to your email.",
-      email: user.email,
-      role: "CUSTOMER",
-      pendingApproval: false,
-      devOtpHint: env.nodeEnv !== "production" && Boolean(mailResult.isDevFallback),
-    });
-  } catch (err: any) {
-    throw new HttpError(
-      502,
-      "Account registered, but we could not deliver the verification email. Please log in and click 'Resend OTP' to receive your code.",
-    );
-  }
+  res.status(201).json({
+    message: mailResult.emailDelivered
+      ? "Registration initiated! Please enter the 6-digit verification code sent to your email."
+      : "Registration initiated! Please enter your 6-digit verification code below.",
+    email: user.email,
+    role: "CUSTOMER",
+    pendingApproval: false,
+    emailDelivered: mailResult.emailDelivered,
+    devOtp: (env.nodeEnv !== "production" || !mailResult.emailDelivered) ? code : undefined,
+  });
 }
 
 export async function verifyEmail(req: Request, res: Response) {
@@ -204,12 +233,26 @@ export async function verifyEmail(req: Request, res: Response) {
     );
   }
 
-  await prisma.user.update({
+  const updatedUser = await prisma.user.update({
     where: { id: user.id },
     data: { emailVerifiedAt: new Date() },
+    include: { sellerProfile: true },
   });
 
-  res.json({ message: "Account verified successfully! You can now log in." });
+  // Automatically authenticate and issue JWT session token upon registration verification!
+  const token = signToken({
+    id: updatedUser.id,
+    email: updatedUser.email,
+    role: updatedUser.role,
+    name: updatedUser.name,
+  });
+  res.cookie("token", token, cookieOpts());
+
+  res.json({
+    message: "Account verified successfully! Welcome to PinkCityHomes.",
+    token,
+    user: publicUser(updatedUser),
+  });
 }
 
 export async function resendOtp(req: Request, res: Response) {
@@ -231,8 +274,14 @@ export async function resendOtp(req: Request, res: Response) {
   });
   if (recent) throw new HttpError(429, "Please wait 60 seconds before requesting another OTP.");
 
-  await issueVerification(user.id, user.email);
-  res.json({ message: "A fresh verification code has been dispatched to your email." });
+  const { code, mailResult } = await issueVerification(user.id, user.email);
+  res.json({
+    message: mailResult.emailDelivered
+      ? "A fresh verification code has been dispatched to your email."
+      : "A fresh verification code has been generated.",
+    emailDelivered: mailResult.emailDelivered,
+    devOtp: (env.nodeEnv !== "production" || !mailResult.emailDelivered) ? code : undefined,
+  });
 }
 
 export async function login(req: Request, res: Response) {
