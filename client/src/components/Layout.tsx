@@ -11,6 +11,13 @@ const navLink = ({ isActive }: { isActive: boolean }) =>
       : "text-slate-600 hover:text-navy hover:bg-slate-100/70"
   }`;
 
+const drawerNavLink = ({ isActive }: { isActive: boolean }) =>
+  `flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold tracking-wide transition-all duration-200 min-h-[42px] ${
+    isActive
+      ? "text-pink-600 bg-pink-50 font-bold border border-pink-100 shadow-xs"
+      : "text-slate-700 hover:text-navy hover:bg-slate-100"
+  }`;
+
 const adminNavLink = ({ isActive }: { isActive: boolean }) =>
   `relative px-3 py-1.5 rounded-xl text-xs font-semibold tracking-wide transition-all duration-200 ${
     isActive
@@ -49,6 +56,18 @@ export default function Layout() {
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Close menus on Escape key
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        setMobileMenuOpen(false);
+        setProfileDropdownOpen(false);
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
   // Sync cart & fav counts
@@ -372,10 +391,10 @@ export default function Layout() {
           />
 
           {/* Drawer panel */}
-          <div className="fixed inset-y-0 right-0 max-w-xs w-full bg-white shadow-2xl p-6 flex flex-col justify-between overflow-y-auto z-10 animate-slide-in-right">
-            <div className="space-y-6">
+          <div className="fixed inset-y-0 right-0 max-w-xs w-full bg-white shadow-2xl p-5 flex flex-col justify-between overflow-y-auto z-10 animate-slide-in-right pb-safe">
+            <div className="space-y-4">
               {/* Drawer Header */}
-              <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                 <div className="flex items-center gap-2">
                   <div className="h-7 w-7 rounded-xl bg-gradient-to-tr from-pink-600 to-amber-500 flex items-center justify-center text-white font-display font-bold text-xs">
                     P
@@ -398,18 +417,16 @@ export default function Layout() {
 
               {/* User Profile Summary */}
               {user ? (
-                <div className="rounded-2xl border border-slate-200/80 bg-slate-50 p-4 space-y-1">
-                  <div className="flex items-center gap-3">
-                    <div className="h-9 w-9 rounded-full bg-pink-600 text-white font-bold flex items-center justify-center text-sm">
+                <div className="rounded-2xl border border-slate-200/80 bg-slate-50 p-3 space-y-1">
+                  <div className="flex items-center gap-2.5">
+                    <div className="h-8 w-8 rounded-full bg-pink-600 text-white font-bold flex items-center justify-center text-xs">
                       {user.name.charAt(0).toUpperCase()}
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="font-bold text-xs text-navy truncate">{user.name}</p>
-                      <p className="text-[11px] text-slate-500 truncate">{user.email}</p>
+                      <p className="text-[10px] text-slate-500 truncate">{user.email}</p>
                     </div>
-                  </div>
-                  <div className="pt-2">
-                    <span className="inline-block rounded-full bg-navy-100 text-navy-800 text-[10px] font-bold px-2 py-0.5 uppercase tracking-wider">
+                    <span className="rounded-full bg-navy-100 text-navy-800 text-[9px] font-bold px-2 py-0.5 uppercase tracking-wider">
                       {user.role}
                     </span>
                   </div>
@@ -418,13 +435,13 @@ export default function Layout() {
                 <div className="grid grid-cols-2 gap-2">
                   <Link
                     to="/login"
-                    className="rounded-2xl border border-slate-200 px-3 py-2 text-center text-xs font-semibold text-navy hover:bg-slate-50 transition"
+                    className="rounded-xl border border-slate-200 px-3 py-2 text-center text-xs font-semibold text-navy hover:bg-slate-50 transition"
                   >
                     Log In
                   </Link>
                   <Link
                     to="/register"
-                    className="rounded-2xl bg-navy px-3 py-2 text-center text-xs font-semibold text-white shadow hover:bg-navy-800 transition"
+                    className="rounded-xl bg-navy px-3 py-2 text-center text-xs font-semibold text-white shadow hover:bg-navy-800 transition"
                   >
                     Register
                   </Link>
@@ -435,58 +452,58 @@ export default function Layout() {
               <div className="space-y-1 text-xs font-semibold">
                 {isSuperAdmin ? (
                   <>
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3 pt-2">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3 pt-1">
                       Administration
                     </p>
-                    <NavLink to="/admin/dashboard" className={navLink}>
+                    <NavLink to="/admin/dashboard" className={drawerNavLink}>
                       📊 Dashboard
                     </NavLink>
-                    <NavLink to="/admin/sellers" className={navLink}>
+                    <NavLink to="/admin/sellers" className={drawerNavLink}>
                       🏢 Sellers Management
                     </NavLink>
-                    <NavLink to="/admin/users" className={navLink}>
+                    <NavLink to="/admin/users" className={drawerNavLink}>
                       👥 Users Directory
                     </NavLink>
-                    <NavLink to="/admin/properties" className={navLink}>
+                    <NavLink to="/admin/properties" className={drawerNavLink}>
                       🏡 Inventory Governance
                     </NavLink>
-                    <NavLink to="/admin/disabled" className={navLink}>
+                    <NavLink to="/admin/disabled" className={drawerNavLink}>
                       ⛔ Disabled Records
                     </NavLink>
-                    <NavLink to="/admin/audit" className={navLink}>
+                    <NavLink to="/admin/audit" className={drawerNavLink}>
                       📜 Audit Logs
                     </NavLink>
                   </>
                 ) : (
                   <>
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3 pt-2">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3 pt-1">
                       Explore Properties
                     </p>
-                    <NavLink to="/properties" className={navLink}>
+                    <NavLink to="/properties" className={drawerNavLink}>
                       🔍 Buy Properties
                     </NavLink>
-                    <NavLink to="/rentals" className={navLink}>
+                    <NavLink to="/rentals" className={drawerNavLink}>
                       🔑 Rental Homes
                     </NavLink>
-                    <NavLink to="/insights" className={navLink}>
+                    <NavLink to="/insights" className={drawerNavLink}>
                       📈 Market Insights
                     </NavLink>
 
                     {isCustomer && (
                       <>
-                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3 pt-4">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3 pt-3">
                           Buyer Account
                         </p>
-                        <NavLink to="/customer/favourites" className={navLink}>
-                          ❤️ Saved Properties ({favCount})
+                        <NavLink to="/customer/favourites" className={drawerNavLink}>
+                          ❤️ Saved Properties {favCount > 0 && `(${favCount})`}
                         </NavLink>
-                        <NavLink to="/customer/cart" className={navLink}>
-                          🛒 Purchase Cart ({cartCount})
+                        <NavLink to="/customer/cart" className={drawerNavLink}>
+                          🛒 Purchase Cart {cartCount > 0 && `(${cartCount})`}
                         </NavLink>
-                        <NavLink to="/customer/orders" className={navLink}>
-                          📦 Orders & Purchases
+                        <NavLink to="/customer/orders" className={drawerNavLink}>
+                          📦 Orders &amp; Purchases
                         </NavLink>
-                        <NavLink to="/customer/profile" className={navLink}>
+                        <NavLink to="/customer/profile" className={drawerNavLink}>
                           👤 My Profile
                         </NavLink>
                       </>
@@ -494,19 +511,19 @@ export default function Layout() {
 
                     {isSeller && (
                       <>
-                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3 pt-4">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3 pt-3">
                           Seller Workspace
                         </p>
-                        <NavLink to="/seller/dashboard" className={navLink}>
+                        <NavLink to="/seller/dashboard" className={drawerNavLink}>
                           📊 Dashboard
                         </NavLink>
-                        <NavLink to="/seller/properties" className={navLink}>
+                        <NavLink to="/seller/properties" className={drawerNavLink}>
                           🏡 Manage Listings
                         </NavLink>
-                        <NavLink to="/seller/clients" className={navLink}>
-                          👥 CRM Leads & Clients
+                        <NavLink to="/seller/clients" className={drawerNavLink}>
+                          👥 CRM Leads &amp; Clients
                         </NavLink>
-                        <NavLink to="/customer/profile" className={navLink}>
+                        <NavLink to="/customer/profile" className={drawerNavLink}>
                           👤 Seller Profile
                         </NavLink>
                       </>
@@ -518,11 +535,11 @@ export default function Layout() {
 
             {/* Drawer Logout */}
             {user && (
-              <div className="pt-6 border-t border-slate-100">
+              <div className="pt-4 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={handleLogout}
-                  className="w-full rounded-2xl border border-rose-200 bg-rose-50/50 py-2.5 text-center text-xs font-semibold text-rose-700 hover:bg-rose-100 transition active:scale-95"
+                  className="w-full rounded-xl border border-rose-200 bg-rose-50/50 py-2.5 text-center text-xs font-semibold text-rose-700 hover:bg-rose-100 transition active:scale-95"
                 >
                   Sign Out
                 </button>
@@ -533,12 +550,12 @@ export default function Layout() {
       )}
 
       {/* ── Main Content ──────────────────────────────────────────── */}
-      <main className="flex-1 mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8 pb-24 md:pb-8">
+      <main className="flex-1 mx-auto w-full max-w-7xl px-3 sm:px-6 lg:px-8 pb-20 md:pb-8">
         <Outlet />
       </main>
 
       {/* ── Mobile Bottom App Bar (Fixed at bottom on phones) ───────── */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 border-t border-slate-200/80 backdrop-blur-md md:hidden px-2 py-1 shadow-lg">
+      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 border-t border-slate-200/80 backdrop-blur-md md:hidden px-2 py-1 shadow-lg pb-safe">
         <div className="flex items-center justify-around text-center">
           {isSuperAdmin ? (
             <>
@@ -738,7 +755,8 @@ export default function Layout() {
 
       {/* ── Footer ────────────────────────────────────────────────── */}
       <footer className="bg-navy-950 text-slate-300 border-t border-navy-900 mt-auto">
-        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+        {/* Desktop 4-column footer (hidden on mobile < md) */}
+        <div className="hidden md:block mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 pb-8 border-b border-navy-800">
             {/* Brand column */}
             <div className="space-y-3">
@@ -769,12 +787,12 @@ export default function Layout() {
                 </li>
                 <li>
                   <Link to="/rentals" className="hover:text-pink-400 transition">
-                    Rental Apartments & Flats
+                    Rental Apartments &amp; Flats
                   </Link>
                 </li>
                 <li>
                   <Link to="/insights" className="hover:text-pink-400 transition">
-                    Locality Price Trends & Insights
+                    Locality Price Trends &amp; Insights
                   </Link>
                 </li>
               </ul>
@@ -782,7 +800,7 @@ export default function Layout() {
 
             {/* Sellers column */}
             <div className="space-y-2">
-              <p className="text-xs font-bold uppercase tracking-wider text-white">For Sellers & Agencies</p>
+              <p className="text-xs font-bold uppercase tracking-wider text-white">For Sellers &amp; Agencies</p>
               <ul className="space-y-1.5 text-xs text-slate-400">
                 <li>
                   <Link to="/register" className="hover:text-pink-400 transition">
@@ -791,7 +809,7 @@ export default function Layout() {
                 </li>
                 <li>
                   <Link to="/seller/dashboard" className="hover:text-pink-400 transition">
-                    Seller CRM & Inventory Portal
+                    Seller CRM &amp; Inventory Portal
                   </Link>
                 </li>
                 <li>
@@ -804,13 +822,13 @@ export default function Layout() {
 
             {/* Company & Support column */}
             <div className="space-y-2">
-              <p className="text-xs font-bold uppercase tracking-wider text-white">Platform & Trust</p>
+              <p className="text-xs font-bold uppercase tracking-wider text-white">Platform &amp; Trust</p>
               <ul className="space-y-1.5 text-xs text-slate-400">
                 <li className="flex items-center gap-1.5 text-emerald-400">
                   <span>✓</span> 100% Verified Jaipur Inventory
                 </li>
                 <li className="flex items-center gap-1.5 text-emerald-400">
-                  <span>✓</span> Direct Seller Contacts & Tours
+                  <span>✓</span> Direct Seller Contacts &amp; Tours
                 </li>
                 <li className="flex items-center gap-1.5 text-emerald-400">
                   <span>✓</span> Legal Title Verification Assistance
@@ -825,6 +843,20 @@ export default function Layout() {
               <span className="text-[11px] text-slate-400">Jaipur Verified Real Estate Marketplace</span>
             </div>
           </div>
+        </div>
+
+        {/* Minimal Mobile Footer (visible on mobile < md, compact height ~100-150px) */}
+        <div className="md:hidden px-4 py-6 text-center space-y-2 pb-24 border-t border-navy-900/50">
+          <div className="flex items-center justify-center gap-2">
+            <div className="h-6 w-6 rounded-lg bg-gradient-to-tr from-pink-600 to-amber-500 flex items-center justify-center text-white font-display font-bold text-xs shadow-xs">
+              P
+            </div>
+            <span className="font-display text-base font-bold tracking-tight text-white">
+              <span className="text-pink-600">Pink</span>CityHomes
+            </span>
+          </div>
+          <p className="text-[11px] text-slate-400 font-medium">Verified real estate in Jaipur, Rajasthan</p>
+          <p className="text-[10px] text-slate-500">© {new Date().getFullYear()} PinkCityHomes. All rights reserved.</p>
         </div>
       </footer>
     </div>

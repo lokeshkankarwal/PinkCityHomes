@@ -141,13 +141,13 @@ export function PropertyFilterBar({
   }
 
   return (
-    <div className="space-y-4 rounded-4xl border border-slate-200/80 bg-white p-5 sm:p-6 shadow-card">
+    <div className="space-y-4 rounded-3xl border border-slate-200/80 bg-white p-4 sm:p-6 shadow-card">
       {/* Top row: Results count & Sorting */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
         <div>
-          <h2 className="font-display text-lg font-bold text-navy flex items-center gap-2">
+          <h2 className="font-display text-base sm:text-lg font-bold text-navy flex items-center gap-2">
             <span>{loading ? "Searching..." : `${totalCount} ${listingType === "RENT" ? "rental homes" : "homes"} found`}</span>
-            {totalCount > 0 && <span className="text-xs font-bold text-pink-700 bg-pink-50 px-2.5 py-0.5 rounded-full border border-pink-200">Jaipur</span>}
+            {totalCount > 0 && <span className="text-[11px] font-bold text-pink-700 bg-pink-50 px-2 py-0.5 rounded-full border border-pink-200">Jaipur</span>}
           </h2>
         </div>
 
@@ -156,7 +156,7 @@ export function PropertyFilterBar({
           <select
             value={filters.sort}
             onChange={(e) => onChange({ ...filters, sort: e.target.value })}
-            className="rounded-2xl border border-slate-200 bg-slate-50 px-3.5 py-1.5 font-semibold text-navy focus:outline-none focus:ring-2 focus:ring-pink-500"
+            className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 font-semibold text-navy focus:outline-none focus:ring-2 focus:ring-pink-500"
           >
             <option value="recommended">Recommended</option>
             <option value="newest">Newest First</option>
@@ -181,7 +181,7 @@ export function PropertyFilterBar({
                 key={preset.label}
                 type="button"
                 onClick={() => handlePresetClick(preset.min, preset.max)}
-                className={`rounded-2xl px-3.5 py-1.5 text-xs font-semibold transition-all border active:scale-95 ${
+                className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-all border active:scale-95 ${
                   isActive
                     ? "bg-pink-600 text-white border-pink-600 shadow-sm"
                     : "bg-slate-50 text-slate-700 border-slate-200 hover:border-pink-300 hover:bg-pink-50/50 hover:text-pink-700"
@@ -212,7 +212,7 @@ export function PropertyFilterBar({
                 key={item.label}
                 type="button"
                 onClick={() => handleBhkClick(item.val)}
-                className={`rounded-2xl px-3.5 py-1.5 text-xs font-semibold transition-all border active:scale-95 ${
+                className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-all border active:scale-95 ${
                   isActive
                     ? "bg-navy text-white border-navy shadow-sm"
                     : "bg-slate-50 text-slate-700 border-slate-200 hover:border-slate-300 hover:bg-slate-100"
@@ -227,7 +227,7 @@ export function PropertyFilterBar({
 
       {/* Property Type Chips */}
       <div>
-        <label className="text-[11px] font-bold uppercase tracking-wider text-ink/50">Property Type</label>
+        <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Property Type</label>
         <div className="mt-1.5 flex flex-wrap gap-1.5">
           {[
             { label: "Any", val: "" },
@@ -243,10 +243,10 @@ export function PropertyFilterBar({
                 key={item.label}
                 type="button"
                 onClick={() => handlePropertyTypeClick(item.val)}
-                className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition border ${
+                className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition border active:scale-95 ${
                   isActive
                     ? "bg-pink-600 text-white border-pink-600 shadow-sm"
-                    : "bg-sand/30 text-ink/80 border-ink/10 hover:border-pink-300 hover:bg-pink-50/50 hover:text-pink-700"
+                    : "bg-slate-50 text-slate-700 border-slate-200 hover:border-pink-300 hover:bg-pink-50/50 hover:text-pink-700"
                 }`}
               >
                 {item.label}
@@ -258,7 +258,7 @@ export function PropertyFilterBar({
 
       {/* Furnishing Status Chips */}
       <div>
-        <label className="text-[11px] font-bold uppercase tracking-wider text-ink/50">Furnishing</label>
+        <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Furnishing</label>
         <div className="mt-1.5 flex flex-wrap gap-1.5">
           {[
             { label: "Any", val: "" },
@@ -272,10 +272,10 @@ export function PropertyFilterBar({
                 key={item.label}
                 type="button"
                 onClick={() => handleFurnishingClick(item.val)}
-                className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition border ${
+                className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition border active:scale-95 ${
                   isActive
-                    ? "bg-ink text-sand border-ink shadow-sm"
-                    : "bg-sand/30 text-ink/80 border-ink/10 hover:border-ink/30 hover:bg-sand/60"
+                    ? "bg-navy text-white border-navy shadow-sm"
+                    : "bg-slate-50 text-slate-700 border-slate-200 hover:border-slate-300 hover:bg-slate-100"
                 }`}
               >
                 {item.label}
@@ -292,50 +292,50 @@ export function PropertyFilterBar({
           onClick={() => setShowMore(!showMore)}
           className="flex items-center gap-1.5 text-xs font-bold text-pink-700 hover:text-pink-800 transition"
         >
-          <span>{showMore ? "Fewer Filters ▲" : "More Filters ▼"}</span>
+          <span>{showMore ? "Fewer Filters ▲" : "More Filters (Area, Baths, Price Inputs) ▼"}</span>
         </button>
 
         {showMore && (
-          <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-2xl bg-sand/30 p-4 border border-ink/5 text-xs">
+          <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-2xl bg-slate-50 p-4 border border-slate-200 text-xs">
             <div>
-              <label className="font-semibold text-ink/70">Min Price (₹)</label>
+              <label className="font-semibold text-slate-700">Min Price (₹)</label>
               <input
                 type="number"
                 placeholder="e.g. 2500000"
                 value={filters.minPrice}
                 onChange={(e) => onChange({ ...filters, minPrice: e.target.value })}
-                className="mt-1 w-full rounded-xl border border-ink/15 px-3 py-1.5 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-pink-300"
+                className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 bg-white text-xs text-navy focus:outline-none focus:ring-2 focus:ring-pink-300"
               />
             </div>
 
             <div>
-              <label className="font-semibold text-ink/70">Max Price (₹)</label>
+              <label className="font-semibold text-slate-700">Max Price (₹)</label>
               <input
                 type="number"
                 placeholder="e.g. 9500000"
                 value={filters.maxPrice}
                 onChange={(e) => onChange({ ...filters, maxPrice: e.target.value })}
-                className="mt-1 w-full rounded-xl border border-ink/15 px-3 py-1.5 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-pink-300"
+                className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 bg-white text-xs text-navy focus:outline-none focus:ring-2 focus:ring-pink-300"
               />
             </div>
 
             <div>
-              <label className="font-semibold text-ink/70">Min Carpet Area (sq ft)</label>
+              <label className="font-semibold text-slate-700">Min Carpet Area (sq ft)</label>
               <input
                 type="number"
                 placeholder="e.g. 1000"
                 value={filters.minArea ?? ""}
                 onChange={(e) => onChange({ ...filters, minArea: e.target.value })}
-                className="mt-1 w-full rounded-xl border border-ink/15 px-3 py-1.5 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-pink-300"
+                className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 bg-white text-xs text-navy focus:outline-none focus:ring-2 focus:ring-pink-300"
               />
             </div>
 
             <div>
-              <label className="font-semibold text-ink/70">Bathrooms</label>
+              <label className="font-semibold text-slate-700">Bathrooms</label>
               <select
                 value={filters.bathrooms ?? ""}
                 onChange={(e) => onChange({ ...filters, bathrooms: e.target.value })}
-                className="mt-1 w-full rounded-xl border border-ink/15 px-3 py-1.5 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-pink-300"
+                className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 bg-white text-xs text-navy focus:outline-none focus:ring-2 focus:ring-pink-300"
               >
                 <option value="">Any</option>
                 <option value="1">1+ Bath</option>
@@ -349,8 +349,8 @@ export function PropertyFilterBar({
 
       {/* Active Filter Chips & Clear All */}
       {activeChips.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2 border-t border-ink/5 pt-3">
-          <span className="text-[11px] font-bold text-ink/50 uppercase tracking-wider mr-1">Active Filters:</span>
+        <div className="flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3">
+          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1">Active Filters:</span>
           {activeChips.map((chip, idx) => (
             <span
               key={idx}
@@ -360,7 +360,7 @@ export function PropertyFilterBar({
               <button
                 type="button"
                 onClick={chip.onRemove}
-                className="hover:text-pink-950 font-bold"
+                className="hover:text-pink-950 font-bold ml-1"
                 title="Remove filter"
               >
                 &times;
@@ -371,7 +371,7 @@ export function PropertyFilterBar({
           <button
             type="button"
             onClick={handleClearAll}
-            className="text-xs font-semibold text-ink/60 hover:text-red-700 underline transition ml-auto"
+            className="text-xs font-semibold text-slate-500 hover:text-red-700 underline transition ml-auto"
           >
             Clear all
           </button>

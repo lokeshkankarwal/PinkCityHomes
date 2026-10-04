@@ -103,8 +103,8 @@ export function LocationSearchBar({
       )}
 
       {/* Input Field */}
-      <div className="relative flex items-center">
-        <span className="absolute left-3.5 text-ink/40 text-base">📍</span>
+      <div className="relative flex items-center w-full min-w-0">
+        <span className="absolute left-3.5 text-slate-400 text-base pointer-events-none">📍</span>
         <input
           type="text"
           value={inputVal}
@@ -115,13 +115,13 @@ export function LocationSearchBar({
           onFocus={() => setShowDropdown(true)}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
-          className="w-full rounded-2xl border border-ink/15 bg-white py-3 pl-10 pr-10 text-sm font-medium text-ink placeholder:text-ink/40 shadow-sm focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-200 transition"
+          className="w-full rounded-2xl border border-slate-200 bg-white py-3 pl-10 pr-20 text-xs sm:text-sm font-medium text-navy placeholder:text-slate-400 shadow-sm focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-200 transition min-w-0"
         />
         {inputVal ? (
           <button
             type="button"
             onClick={handleClear}
-            className="absolute right-3.5 flex h-5 w-5 items-center justify-center rounded-full bg-ink/10 text-xs text-ink/70 hover:bg-ink/20"
+            className="absolute right-3 flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-xs text-slate-600 hover:bg-slate-200 active:scale-95"
             title="Clear location"
           >
             &times;
@@ -130,7 +130,7 @@ export function LocationSearchBar({
           <button
             type="button"
             onClick={() => onChange(inputVal.trim())}
-            className="absolute right-2 rounded-xl bg-ink px-3 py-1.5 text-xs font-semibold text-sand hover:bg-pink-700 transition"
+            className="absolute right-2 rounded-xl bg-navy px-3 py-1.5 text-xs font-semibold text-white hover:bg-pink-600 transition active:scale-95 shadow-xs"
           >
             Search
           </button>
@@ -138,10 +138,10 @@ export function LocationSearchBar({
 
         {/* Autocomplete Dropdown */}
         {showDropdown && (
-          <div className="absolute top-full left-0 right-0 z-50 mt-1.5 max-h-64 overflow-y-auto rounded-2xl border border-ink/10 bg-white p-2 shadow-2xl space-y-1 divide-y divide-ink/5">
-            <div className="px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-ink/40 flex justify-between items-center">
+          <div className="absolute top-full left-0 right-0 z-50 mt-1.5 max-h-64 overflow-y-auto rounded-2xl border border-slate-200 bg-white p-2 shadow-2xl space-y-1 divide-y divide-slate-100">
+            <div className="px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-slate-400 flex justify-between items-center">
               <span>{inputVal.trim() ? "Matching Jaipur Locations" : "Popular Localities in Jaipur"}</span>
-              <span className="text-[10px] text-ink/40 font-normal">Jaipur, Rajasthan</span>
+              <span className="text-[10px] text-slate-400 font-normal">Jaipur, Rajasthan</span>
             </div>
 
             <div className="pt-1 space-y-0.5">
@@ -151,24 +151,24 @@ export function LocationSearchBar({
                     key={loc.name}
                     type="button"
                     onClick={() => handleSelect(loc.name)}
-                    className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-medium text-ink hover:bg-pink-50 hover:text-pink-700 transition"
+                    className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-medium text-navy hover:bg-pink-50 hover:text-pink-700 transition"
                   >
-                    <div className="flex items-center gap-2">
-                      <span className="text-pink-600">📍</span>
-                      <div>
-                        <p className="text-sm font-semibold">{renderHighlighted(loc.name, inputVal)}</p>
-                        <p className="text-[11px] text-ink/50">Jaipur, Rajasthan</p>
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="text-pink-600 flex-shrink-0">📍</span>
+                      <div className="min-w-0 truncate">
+                        <p className="text-xs sm:text-sm font-semibold truncate">{renderHighlighted(loc.name, inputVal)}</p>
+                        <p className="text-[10px] text-slate-400">Jaipur, Rajasthan</p>
                       </div>
                     </div>
-                    <span className="text-[10px] font-semibold text-ink/40 bg-sand/60 rounded px-1.5 py-0.5">
+                    <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 rounded px-1.5 py-0.5 flex-shrink-0 ml-2">
                       {loc.category}
                     </span>
                   </button>
                 ))
               ) : (
-                <div className="px-3 py-3 text-xs text-ink/60">
-                  <p className="font-semibold text-ink/80">No exact location found for "{inputVal}".</p>
-                  <p className="text-[11px] text-ink/50 mt-0.5">
+                <div className="px-3 py-3 text-xs text-slate-600">
+                  <p className="font-semibold text-navy">No exact location found for "{inputVal}".</p>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
                     Press Enter to search listings with "{inputVal}" in address.
                   </p>
                 </div>
@@ -181,16 +181,16 @@ export function LocationSearchBar({
       {/* Popular Locality Quick Chips */}
       {showPopularChips && (
         <div className="flex flex-wrap items-center gap-1.5 pt-1 text-xs">
-          <span className="text-ink/50 text-[11px] font-semibold mr-1">Popular:</span>
+          <span className="text-slate-400 text-[11px] font-semibold mr-1">Popular:</span>
           {popularList.slice(0, 8).map((loc) => (
             <button
               key={loc.name}
               type="button"
               onClick={() => handleSelect(loc.name)}
-              className={`rounded-full px-2.5 py-1 text-[11px] font-semibold transition border ${
+              className={`rounded-full px-2.5 py-1 text-[11px] font-semibold transition border active:scale-95 ${
                 value.toLowerCase() === loc.name.toLowerCase()
-                  ? "bg-pink-600 text-white border-pink-600 shadow-sm"
-                  : "bg-white text-ink/70 border-ink/10 hover:border-pink-300 hover:bg-pink-50/50 hover:text-pink-700"
+                  ? "bg-pink-600 text-white border-pink-600 shadow-xs"
+                  : "bg-white text-slate-700 border-slate-200 hover:border-pink-300 hover:bg-pink-50/50 hover:text-pink-700"
               }`}
             >
               {loc.name}

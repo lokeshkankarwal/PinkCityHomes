@@ -268,23 +268,23 @@ export default function PropertyDetailPage() {
           </div>
 
           {/* ── Quick Specs Ribbon ── */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 rounded-3xl border border-slate-200/80 bg-white p-5 shadow-card text-center">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 rounded-3xl border border-slate-200/80 bg-white p-3.5 sm:p-5 shadow-card text-center">
             <div className="space-y-0.5">
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Bedrooms</span>
-              <p className="font-display text-xl font-bold text-navy">{property.bhk} BHK</p>
+              <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider">Bedrooms</span>
+              <p className="font-display text-lg sm:text-xl font-bold text-navy">{property.bhk} BHK</p>
             </div>
             <div className="space-y-0.5">
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Carpet Area</span>
-              <p className="font-display text-xl font-bold text-navy">{property.carpetArea} sq ft</p>
+              <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider">Carpet Area</span>
+              <p className="font-display text-lg sm:text-xl font-bold text-navy">{property.carpetArea} sq ft</p>
             </div>
             <div className="space-y-0.5">
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Bathrooms</span>
-              <p className="font-display text-xl font-bold text-navy">{property.bathrooms}</p>
+              <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider">Bathrooms</span>
+              <p className="font-display text-lg sm:text-xl font-bold text-navy">{property.bathrooms}</p>
             </div>
             <div className="space-y-0.5">
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Furnishing</span>
-              <p className="font-display text-base font-bold text-navy capitalize truncate">
-                {property.furnishing.replace(/_/g, " ").toLowerCase()}
+              <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider">Furnishing</span>
+              <p className="font-display text-xs sm:text-base font-bold text-navy capitalize truncate">
+                {property.furnishing ? property.furnishing.replace(/_/g, " ").toLowerCase() : "N/A"}
               </p>
             </div>
           </div>
@@ -343,7 +343,7 @@ export default function PropertyDetailPage() {
 
         {/* ── Right Column: Sticky Price & Action Sidebar ── */}
         <div className="space-y-6">
-          <div className="sticky top-20 rounded-3xl border border-slate-200/80 bg-white p-6 shadow-card space-y-6">
+          <div className="static lg:sticky lg:top-20 rounded-3xl border border-slate-200/80 bg-white p-4 sm:p-6 shadow-card space-y-6">
             <div>
               <span className="text-xs uppercase tracking-wider text-pink-600 font-bold">
                 {isRent ? "Monthly Lease" : "Outright Purchase"}

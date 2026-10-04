@@ -73,39 +73,39 @@ export default function InsightsPage() {
 
       {/* Live Market Metrics */}
       {stats && (
-        <section className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        <section className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3">
           <Link
             to="/properties"
-            className="group rounded-3xl border border-slate-200/80 bg-white p-4 shadow-card text-center hover:border-pink-500 hover:shadow-card-hover transition active:scale-95"
+            className="group rounded-2xl sm:rounded-3xl border border-slate-200/80 bg-white p-3 sm:p-4 shadow-card text-center hover:border-pink-500 hover:shadow-card-hover transition active:scale-95"
           >
-            <p className="font-display text-2xl font-bold text-pink-600 group-hover:scale-105 transition">{stats.properties}</p>
-            <p className="text-xs text-slate-500 mt-1 font-semibold">Active Listings</p>
+            <p className="font-display text-xl sm:text-2xl font-bold text-pink-600 group-hover:scale-105 transition">{stats.properties}</p>
+            <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5 sm:mt-1 font-semibold">Active Listings</p>
           </Link>
           <Link
             to="/properties"
-            className="group rounded-3xl border border-slate-200/80 bg-white p-4 shadow-card text-center hover:border-navy hover:shadow-card-hover transition active:scale-95"
+            className="group rounded-2xl sm:rounded-3xl border border-slate-200/80 bg-white p-3 sm:p-4 shadow-card text-center hover:border-navy hover:shadow-card-hover transition active:scale-95"
           >
-            <p className="font-display text-2xl font-bold text-navy group-hover:scale-105 transition">{stats.buyCount}</p>
-            <p className="text-xs text-slate-500 mt-1 font-semibold">For Sale</p>
+            <p className="font-display text-xl sm:text-2xl font-bold text-navy group-hover:scale-105 transition">{stats.buyCount}</p>
+            <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5 sm:mt-1 font-semibold">For Sale</p>
           </Link>
           <Link
             to="/rentals"
-            className="group rounded-3xl border border-slate-200/80 bg-white p-4 shadow-card text-center hover:border-emerald-500 hover:shadow-card-hover transition active:scale-95"
+            className="group rounded-2xl sm:rounded-3xl border border-slate-200/80 bg-white p-3 sm:p-4 shadow-card text-center hover:border-emerald-500 hover:shadow-card-hover transition active:scale-95"
           >
-            <p className="font-display text-2xl font-bold text-emerald-700 group-hover:scale-105 transition">{stats.rentCount}</p>
-            <p className="text-xs text-slate-500 mt-1 font-semibold">For Rent</p>
+            <p className="font-display text-xl sm:text-2xl font-bold text-emerald-700 group-hover:scale-105 transition">{stats.rentCount}</p>
+            <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5 sm:mt-1 font-semibold">For Rent</p>
           </Link>
-          <div className="rounded-3xl border border-slate-200/80 bg-white p-4 shadow-card text-center">
-            <p className="font-display text-2xl font-bold text-navy">{stats.sellers}</p>
-            <p className="text-xs text-slate-500 mt-1 font-semibold">Verified Sellers</p>
+          <div className="rounded-2xl sm:rounded-3xl border border-slate-200/80 bg-white p-3 sm:p-4 shadow-card text-center">
+            <p className="font-display text-xl sm:text-2xl font-bold text-navy">{stats.sellers}</p>
+            <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5 sm:mt-1 font-semibold">Verified Sellers</p>
           </div>
-          <div className="rounded-3xl border border-slate-200/80 bg-white p-4 shadow-card text-center">
-            <p className="font-display text-xl font-bold text-navy mt-1 truncate">{inr(stats.avgBuyPrice)}</p>
-            <p className="text-xs text-slate-500 mt-1 font-semibold">Avg. Sale Price</p>
+          <div className="rounded-2xl sm:rounded-3xl border border-slate-200/80 bg-white p-3 sm:p-4 shadow-card text-center">
+            <p className="font-display text-base sm:text-xl font-bold text-navy mt-1 truncate">{inr(stats.avgBuyPrice)}</p>
+            <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5 sm:mt-1 font-semibold">Avg. Sale Price</p>
           </div>
-          <div className="rounded-3xl border border-slate-200/80 bg-white p-4 shadow-card text-center">
-            <p className="font-display text-xl font-bold text-navy mt-1 truncate">{inr(stats.avgRentPrice)}/mo</p>
-            <p className="text-xs text-slate-500 mt-1 font-semibold">Avg. Rent</p>
+          <div className="rounded-2xl sm:rounded-3xl border border-slate-200/80 bg-white p-3 sm:p-4 shadow-card text-center">
+            <p className="font-display text-base sm:text-xl font-bold text-navy mt-1 truncate">{inr(stats.avgRentPrice)}/mo</p>
+            <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5 sm:mt-1 font-semibold">Avg. Rent</p>
           </div>
         </section>
       )}
@@ -115,28 +115,28 @@ export default function InsightsPage() {
         <div className="space-y-6 animate-fade-in">
           {/* Top Localities Table */}
           {stats?.topLocalities && stats.topLocalities.length > 0 && (
-            <div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-card space-y-4">
-              <h2 className="font-display text-xl font-bold text-navy">Top Localities by Inventory</h2>
-              <div className="overflow-x-auto">
+            <div className="rounded-3xl border border-slate-200/80 bg-white p-4 sm:p-6 shadow-card space-y-3 sm:space-y-4">
+              <h2 className="font-display text-lg sm:text-xl font-bold text-navy">Top Localities by Inventory</h2>
+              <div className="overflow-x-auto -mx-2 sm:mx-0 px-2 sm:px-0">
                 <table className="w-full text-left text-xs sm:text-sm">
                   <thead>
-                    <tr className="border-b border-slate-100 text-slate-400 uppercase text-[11px] font-bold">
-                      <th className="pb-3">Locality</th>
-                      <th className="pb-3 text-center">Active Listings</th>
-                      <th className="pb-3 text-right">Avg. Listed Price</th>
-                      <th className="pb-3 text-right">Action</th>
+                    <tr className="border-b border-slate-100 text-slate-400 uppercase text-[10px] sm:text-[11px] font-bold">
+                      <th className="pb-3 px-2">Locality</th>
+                      <th className="pb-3 px-2 text-center">Active Listings</th>
+                      <th className="pb-3 px-2 text-right">Avg. Listed Price</th>
+                      <th className="pb-3 px-2 text-right">Action</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 font-medium">
                     {stats.topLocalities.map((loc) => (
                       <tr key={loc.name} className="hover:bg-slate-50/70 transition">
-                        <td className="py-3 font-bold text-navy capitalize">{loc.name}</td>
-                        <td className="py-3 text-center text-slate-600">{loc.count} homes</td>
-                        <td className="py-3 text-right text-navy font-bold font-display">{inr(loc.avgPrice)}</td>
-                        <td className="py-3 text-right">
+                        <td className="py-3 px-2 font-bold text-navy capitalize">{loc.name}</td>
+                        <td className="py-3 px-2 text-center text-slate-600">{loc.count} homes</td>
+                        <td className="py-3 px-2 text-right text-navy font-bold font-display">{inr(loc.avgPrice)}</td>
+                        <td className="py-3 px-2 text-right">
                           <Link
                             to={`/properties?locality=${encodeURIComponent(loc.name)}`}
-                            className="rounded-xl bg-slate-100 hover:bg-navy hover:text-white px-3 py-1.5 text-xs font-semibold text-navy transition"
+                            className="inline-block rounded-xl bg-slate-100 hover:bg-navy hover:text-white px-2.5 py-1.5 text-xs font-semibold text-navy transition"
                           >
                             Explore &rarr;
                           </Link>
@@ -150,20 +150,23 @@ export default function InsightsPage() {
           )}
 
           {/* Benchmark Facts */}
-          <div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-card space-y-4">
-            <h2 className="font-display text-xl font-bold text-navy">Price Benchmarks in Jaipur</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="rounded-3xl border border-slate-200/80 bg-white p-4 sm:p-6 shadow-card space-y-3 sm:space-y-4">
+            <div>
+              <h2 className="font-display text-lg sm:text-xl font-bold text-navy">Price Benchmarks in Jaipur</h2>
+              <p className="text-xs text-slate-500 mt-0.5">Verified micro-market capital &amp; rental rates across primary residential belts.</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
               {marketFacts.map((fact) => (
                 <div
                   key={fact.label}
-                  className="rounded-2xl border border-slate-100 bg-slate-50/60 p-4 space-y-1"
+                  className="w-full rounded-2xl border border-slate-100 bg-slate-50/80 p-3.5 sm:p-4 space-y-1 transition hover:border-pink-200"
                 >
                   <p className="text-xs text-slate-500 font-medium">{fact.label}</p>
-                  <p className="font-display text-lg font-bold text-navy">{fact.value}</p>
+                  <p className="font-display text-base sm:text-lg font-bold text-navy">{fact.value}</p>
                   {fact.locality && (
                     <Link
                       to={`/properties?locality=${encodeURIComponent(fact.locality)}`}
-                      className="text-[11px] font-bold text-pink-600 hover:underline block pt-1"
+                      className="text-[11px] font-bold text-pink-600 hover:underline block pt-0.5"
                     >
                       View in {fact.locality} &rarr;
                     </Link>
@@ -177,11 +180,11 @@ export default function InsightsPage() {
 
       {/* Tab: Localities */}
       {activeTab === "localities" && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 animate-fade-in">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 animate-fade-in">
           {jaipurLocalities.map((loc) => (
             <div
               key={loc.name}
-              className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-card space-y-2 hover:border-pink-300 transition"
+              className="rounded-3xl border border-slate-200/80 bg-white p-4 sm:p-5 shadow-card space-y-2 hover:border-pink-300 transition"
             >
               <div className="flex items-center justify-between">
                 <h3 className="font-display text-base font-bold text-navy">{loc.name}</h3>
@@ -193,13 +196,13 @@ export default function InsightsPage() {
               <div className="pt-2 flex gap-2">
                 <Link
                   to={`/properties?locality=${encodeURIComponent(loc.name)}`}
-                  className="flex-1 rounded-xl bg-slate-100 hover:bg-navy hover:text-white py-1.5 text-center text-xs font-semibold text-navy transition"
+                  className="flex-1 rounded-xl bg-slate-100 hover:bg-navy hover:text-white py-2 text-center text-xs font-semibold text-navy transition"
                 >
                   Buy Here
                 </Link>
                 <Link
                   to={`/rentals?locality=${encodeURIComponent(loc.name)}`}
-                  className="flex-1 rounded-xl border border-slate-200 hover:bg-slate-50 py-1.5 text-center text-xs font-semibold text-slate-700 transition"
+                  className="flex-1 rounded-xl border border-slate-200 hover:bg-slate-50 py-2 text-center text-xs font-semibold text-slate-700 transition"
                 >
                   Rent Here
                 </Link>
@@ -211,24 +214,27 @@ export default function InsightsPage() {
 
       {/* Tab: Guide */}
       {activeTab === "guide" && (
-        <div className="rounded-3xl border border-slate-200/80 bg-white p-6 sm:p-8 shadow-card space-y-6 animate-fade-in">
-          <h2 className="font-display text-2xl font-bold text-navy">Jaipur Homebuyer's Essential Guide</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs sm:text-sm text-slate-600">
-            <div className="space-y-2 rounded-2xl bg-slate-50/70 p-5 border border-slate-100">
+        <div className="rounded-3xl border border-slate-200/80 bg-white p-4 sm:p-8 shadow-card space-y-4 sm:space-y-6 animate-fade-in">
+          <div>
+            <h2 className="font-display text-xl sm:text-2xl font-bold text-navy">Jaipur Homebuyer's Essential Guide</h2>
+            <p className="text-xs text-slate-500 mt-0.5">Crucial legal and financial checks for purchasing properties in Rajasthan.</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 text-xs sm:text-sm text-slate-600">
+            <div className="space-y-2 rounded-2xl bg-slate-50/80 p-4 sm:p-5 border border-slate-100">
               <span className="text-2xl">📜</span>
               <h3 className="font-display text-base font-bold text-navy">1. Title &amp; JDA Verification</h3>
               <p className="leading-relaxed">
                 Always verify whether the land is JDA-approved or 90A converted. Ensure clear demarcation, patta title deed, and non-encumbrance certificate.
               </p>
             </div>
-            <div className="space-y-2 rounded-2xl bg-slate-50/70 p-5 border border-slate-100">
+            <div className="space-y-2 rounded-2xl bg-slate-50/80 p-4 sm:p-5 border border-slate-100">
               <span className="text-2xl">🏦</span>
               <h3 className="font-display text-base font-bold text-navy">2. Home Loan Approval</h3>
               <p className="leading-relaxed">
                 Leading banks (SBI, HDFC, ICICI) pre-approve projects with clear JDA titles. Check with the seller for approved project APF codes.
               </p>
             </div>
-            <div className="space-y-2 rounded-2xl bg-slate-50/70 p-5 border border-slate-100">
+            <div className="space-y-2 rounded-2xl bg-slate-50/80 p-4 sm:p-5 border border-slate-100">
               <span className="text-2xl">🤝</span>
               <h3 className="font-display text-base font-bold text-navy">3. Direct Registration</h3>
               <p className="leading-relaxed">

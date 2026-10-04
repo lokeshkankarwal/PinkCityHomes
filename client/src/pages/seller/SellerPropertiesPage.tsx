@@ -517,15 +517,16 @@ export default function SellerPropertiesPage() {
                   return (
                     <div
                       key={s.num}
-                      className={`text-center py-1.5 rounded-xl border text-[11px] font-bold transition ${
+                      className={`text-center py-1.5 px-1 rounded-xl border text-[10px] sm:text-[11px] font-bold transition ${
                         isCurrent
                           ? "bg-pink-600 text-white border-pink-600 shadow-sm"
                           : isDone
                           ? "bg-emerald-50 text-emerald-800 border-emerald-300"
-                          : "bg-sand/30 text-ink/40 border-ink/10"
+                          : "bg-slate-50 text-slate-400 border-slate-200"
                       }`}
                     >
-                      <span>{isDone ? `✓ ${s.label}` : `${s.num}. ${s.label}`}</span>
+                      <span className="hidden sm:inline">{isDone ? `✓ ${s.label}` : `${s.num}. ${s.label}`}</span>
+                      <span className="sm:hidden">{isDone ? "✓" : s.num}</span>
                     </div>
                   );
                 })}
