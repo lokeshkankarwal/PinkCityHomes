@@ -69,14 +69,6 @@ function UsersIcon({ className }: { className?: string }) {
   );
 }
 
-function TrendIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className || "w-5 h-5"} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-    </svg>
-  );
-}
-
 function MenuIcon({ className }: { className?: string }) {
   return (
     <svg className={className || "w-6 h-6"} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -296,9 +288,6 @@ export default function Layout() {
                 </NavLink>
                 <NavLink to="/rentals" className={navLink}>
                   Rent
-                </NavLink>
-                <NavLink to="/insights" className={navLink}>
-                  Market
                 </NavLink>
 
                 {/* Customer Links */}
@@ -548,30 +537,20 @@ export default function Layout() {
                     </NavLink>
                   </>
                 ) : isSeller ? (
-                  // Seller Secondary Actions (Home, Listings, Leads, Insights, Profile are in bottom nav)
+                  // Seller Secondary Actions (Home, Listings, Leads, Profile are in bottom nav)
                   <NavLink to="/customer/profile" className={drawerNavLink}>
                     <UserIcon className="w-4 h-4 text-slate-500" />
                     <span>My Profile &amp; Settings</span>
                   </NavLink>
                 ) : isCustomer ? (
                   // Customer Secondary Actions (Buy, Rent, Saved, Orders, Profile are in bottom nav)
-                  <>
-                    <NavLink to="/customer/profile" className={drawerNavLink}>
-                      <UserIcon className="w-4 h-4 text-slate-500" />
-                      <span>My Profile &amp; Settings</span>
-                    </NavLink>
-                    <NavLink to="/insights" className={drawerNavLink}>
-                      <TrendIcon className="w-4 h-4 text-slate-500" />
-                      <span>Jaipur Market Intelligence</span>
-                    </NavLink>
-                  </>
+                  <NavLink to="/customer/profile" className={drawerNavLink}>
+                    <UserIcon className="w-4 h-4 text-slate-500" />
+                    <span>My Profile &amp; Settings</span>
+                  </NavLink>
                 ) : (
                   // Guest Secondary Actions (Home, Buy, Rent, Saved, Sign In are in bottom nav)
                   <>
-                    <NavLink to="/insights" className={drawerNavLink}>
-                      <TrendIcon className="w-4 h-4 text-slate-500" />
-                      <span>Market Insights &amp; Trends</span>
-                    </NavLink>
                     <NavLink to="/register" className={drawerNavLink}>
                       <BuildingIcon className="w-4 h-4 text-slate-500" />
                       <span>Apply as Seller Partner</span>
@@ -665,7 +644,7 @@ export default function Layout() {
               </button>
             </>
           ) : isSeller ? (
-            // Seller Bottom Nav (Strictly Seller-Only: Home, Listings, Leads, Insights, Profile)
+            // Seller Bottom Nav (Strictly Seller-Only: Home, Listings, Leads, Profile)
             <>
               <NavLink to="/seller/dashboard" className={bottomNavLink}>
                 {({ isActive }) => (
@@ -688,14 +667,6 @@ export default function Layout() {
                   <>
                     <UsersIcon className={`w-5 h-5 mb-0.5 transition-transform duration-150 ${isActive ? "scale-110 text-pink-600" : ""}`} />
                     <span>Leads</span>
-                  </>
-                )}
-              </NavLink>
-              <NavLink to="/insights" className={bottomNavLink}>
-                {({ isActive }) => (
-                  <>
-                    <TrendIcon className={`w-5 h-5 mb-0.5 transition-transform duration-150 ${isActive ? "scale-110 text-pink-600" : ""}`} />
-                    <span>Insights</span>
                   </>
                 )}
               </NavLink>
@@ -844,11 +815,6 @@ export default function Layout() {
                 <li>
                   <Link to="/rentals" className="hover:text-pink-400 transition">
                     Rental Apartments &amp; Flats
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/insights" className="hover:text-pink-400 transition">
-                    Locality Price Trends &amp; Insights
                   </Link>
                 </li>
               </ul>
