@@ -13,6 +13,14 @@ function HomeIcon({ className }: { className?: string }) {
   );
 }
 
+function DashboardIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className || "w-5 h-5"} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4 5a1 1 0 011-1h4a1 1 0 011 1v5a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v2a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zM14 12a1 1 0 011-1h4a1 1 0 011 1v7a1 1 0 01-1 1h-4a1 1 0 01-1-1v-7z" />
+    </svg>
+  );
+}
+
 function SearchIcon({ className }: { className?: string }) {
   return (
     <svg className={className || "w-5 h-5"} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
@@ -116,7 +124,7 @@ const drawerNavLink = ({ isActive }: { isActive: boolean }) =>
   }`;
 
 const bottomNavLink = ({ isActive }: { isActive: boolean }) =>
-  `flex flex-col items-center justify-center flex-1 py-1 px-1 text-[10px] font-semibold tracking-tight transition duration-150 ${
+  `flex flex-col items-center justify-center flex-1 py-1 px-0.5 sm:px-1 text-[9.5px] sm:text-[10px] font-semibold tracking-tight transition duration-150 ${
     isActive ? "text-pink-600 font-bold" : "text-slate-500 hover:text-navy"
   }`;
 
@@ -537,11 +545,21 @@ export default function Layout() {
                     </NavLink>
                   </>
                 ) : isSeller ? (
-                  // Seller Secondary Actions (Home, Listings, Leads, Profile are in bottom nav)
-                  <NavLink to="/customer/profile" className={drawerNavLink}>
-                    <UserIcon className="w-4 h-4 text-slate-500" />
-                    <span>My Profile &amp; Settings</span>
-                  </NavLink>
+                  // Seller Secondary Actions
+                  <>
+                    <NavLink to="/properties" className={drawerNavLink}>
+                      <SearchIcon className="w-4 h-4 text-slate-500" />
+                      <span>Buy Properties</span>
+                    </NavLink>
+                    <NavLink to="/rentals" className={drawerNavLink}>
+                      <KeyIcon className="w-4 h-4 text-slate-500" />
+                      <span>Rental Homes</span>
+                    </NavLink>
+                    <NavLink to="/customer/profile" className={drawerNavLink}>
+                      <UserIcon className="w-4 h-4 text-slate-500" />
+                      <span>My Profile &amp; Settings</span>
+                    </NavLink>
+                  </>
                 ) : isCustomer ? (
                   // Customer Secondary Actions (Buy, Rent, Saved, Orders, Profile are in bottom nav)
                   <NavLink to="/customer/profile" className={drawerNavLink}>
@@ -644,13 +662,29 @@ export default function Layout() {
               </button>
             </>
           ) : isSeller ? (
-            // Seller Bottom Nav (Strictly Seller-Only: Home, Listings, Leads, Profile)
+            // Seller Bottom Nav (Dashboard, Buy, Rent, Listings, Leads, Profile)
             <>
               <NavLink to="/seller/dashboard" className={bottomNavLink}>
                 {({ isActive }) => (
                   <>
-                    <HomeIcon className={`w-5 h-5 mb-0.5 transition-transform duration-150 ${isActive ? "scale-110 text-pink-600" : ""}`} />
-                    <span>Home</span>
+                    <DashboardIcon className={`w-5 h-5 mb-0.5 transition-transform duration-150 ${isActive ? "scale-110 text-pink-600" : ""}`} />
+                    <span className="truncate">Dashboard</span>
+                  </>
+                )}
+              </NavLink>
+              <NavLink to="/properties" className={bottomNavLink}>
+                {({ isActive }) => (
+                  <>
+                    <SearchIcon className={`w-5 h-5 mb-0.5 transition-transform duration-150 ${isActive ? "scale-110 text-pink-600" : ""}`} />
+                    <span>Buy</span>
+                  </>
+                )}
+              </NavLink>
+              <NavLink to="/rentals" className={bottomNavLink}>
+                {({ isActive }) => (
+                  <>
+                    <KeyIcon className={`w-5 h-5 mb-0.5 transition-transform duration-150 ${isActive ? "scale-110 text-pink-600" : ""}`} />
+                    <span>Rent</span>
                   </>
                 )}
               </NavLink>
