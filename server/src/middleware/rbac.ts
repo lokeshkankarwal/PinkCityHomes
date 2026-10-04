@@ -1,6 +1,6 @@
 import type { Request } from "express";
 import { HttpError } from "./error.js";
-import type { Role } from "@prisma/client";
+import type { Role } from "../config/prisma.js";
 
 export function assertUser(req: Request) {
   if (!req.user) throw new HttpError(401, "Authentication required");

@@ -29,7 +29,7 @@ The platform provides:
 
 ### Backend (`server/`)
 - **Runtime**: Node.js (ESM) + Express 5 + TypeScript
-- **Database & ORM**: PostgreSQL + Prisma ORM
+- **Database**: MongoDB (Primary Application, Relational & 2dsphere Geospatial Search)
 - **Authentication**: JWT with HTTP-only cookies (`token`) or Authorization Bearer header
 - **Email Service**: Nodemailer (supporting Gmail SMTP, custom SMTP relays, or dev-console logging)
 - **Security**: Helmet, CORS origin restriction, Bcrypt password hashing, and Express Rate Limit
@@ -49,9 +49,9 @@ The platform provides:
    ┌────┴──────────────────────────┐
    ▼                               ▼
 [ Auth & Verification ]     [ Property & CRM Engine ]
-   │ (Nodemailer / Bcrypt)         │ (Prisma Client)
+   │ (Nodemailer / Bcrypt)         │ (Native MongoDB Driver)
    ▼                               ▼
-[ SMTP Mailer ]             [ PostgreSQL Database ]
+[ SMTP Mailer ]             [ MongoDB Database ]
 ```
 
 ---
@@ -104,7 +104,7 @@ JWT_SECRET=your-secure-jwt-secret-key
 CLIENT_ORIGIN=http://localhost:5173
 
 # ── DATABASE ─────────────────────────────────────────────────
-DATABASE_URL=postgresql://username:password@localhost:5432/pinkcityhomes
+MONGODB_URI=mongodb://127.0.0.1:27017/pinkcityhomes
 
 # ── SUPERADMIN BOOTSTRAP ─────────────────────────────────────
 SUPERADMIN_EMAIL=lokeshkankarwal456@gmail.com
@@ -134,7 +134,7 @@ PASSWORD_RESET_RATE_LIMIT_MAX=5
 
 ### Prerequisites
 - Node.js 18+ (Node 20+ recommended)
-- PostgreSQL database running locally or via a cloud provider (e.g. Neon)
+- MongoDB instance running locally or via MongoDB Atlas
 - Git
 
 ### 1. Clone the Repository
@@ -151,16 +151,7 @@ npm install
 ### 3. Setup Environment Variables
 ```bash
 cp .env.example .env
-# Edit .env and supply your DATABASE_URL and SUPERADMIN_PASSWORD
-```
-
-### 4. Database Setup & Prisma Generation
-```bash
-# Push schema migrations to the database
-npm run db:migrate
-
-# Seed initial system configuration
-npm run db:seed
+# Edit .env and supply your MONGODB_URI and SUPERADMIN_PASSWORD
 ```
 
 ### 5. Start Development Servers
@@ -195,9 +186,9 @@ npm run build
 
 ## 9. Deployment Notes
 
-- **Backend**: Can be deployed to Render, Railway, Fly.io, or AWS ECS. Ensure environment variables (`DATABASE_URL`, `JWT_SECRET`, `SUPERADMIN_EMAIL`, `SUPERADMIN_PASSWORD`, `SMTP_*`) are set in the platform dashboard.
+- **Backend**: Can be deployed to Render, Railway, Fly.io, or AWS ECS. Ensure environment variables (`MONGODB_URI`, `JWT_SECRET`, `SUPERADMIN_EMAIL`, `SUPERADMIN_PASSWORD`, `SMTP_*`) are set in the platform dashboard.
 - **Frontend**: Deployable to Vercel or Netlify. Set `VITE_API_URL` to point to the live backend domain.
-- **Database**: Compatible with any PostgreSQL 14+ instance (AWS RDS, Neon, Supabase).
+- **Database**: Compatible with any MongoDB 6+ instance (MongoDB Atlas, self-hosted mongod).
 
 ---
 

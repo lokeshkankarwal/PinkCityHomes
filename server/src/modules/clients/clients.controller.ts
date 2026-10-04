@@ -56,8 +56,8 @@ export async function get(req: Request, res: Response) {
   if (!client) throw new HttpError(404, "Client not found");
 
   const propIds = [
-    ...client.interests.map((i) => i.propertyId),
-    ...client.visits.map((v) => v.propertyId),
+    ...(client.interests || []).map((i: any) => i.propertyId),
+    ...(client.visits || []).map((v: any) => v.propertyId),
   ];
 
   const col = getPropertiesCollection();
@@ -66,8 +66,8 @@ export async function get(req: Request, res: Response) {
 
   const hydrated = {
     ...client,
-    interests: client.interests.map((i) => ({ ...i, property: propMap.get(i.propertyId) || null })),
-    visits: client.visits.map((v) => ({ ...v, property: propMap.get(v.propertyId) || null })),
+    interests: (client.interests || []).map((i: any) => ({ ...i, property: propMap.get(i.propertyId) || null })),
+    visits: (client.visits || []).map((v: any) => ({ ...v, property: propMap.get(v.propertyId) || null })),
   };
 
   res.json(hydrated);

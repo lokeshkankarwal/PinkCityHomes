@@ -147,7 +147,7 @@ export async function listPublic(req: Request, res: Response) {
   }
   const docs = await cursor.skip((page - 1) * limit).limit(limit).toArray();
 
-  // Hydrate seller contact details from PostgreSQL User
+  // Hydrate seller contact details from MongoDB User
   const sellerIds = [...new Set(docs.map((d) => d.sellerId).filter((id): id is string => Boolean(id)))];
   const sellers = sellerIds.length > 0
     ? await prisma.user.findMany({
@@ -194,7 +194,7 @@ export async function getPublic(req: Request, res: Response) {
   // Increment views in MongoDB
   await col.updateOne({ propertyId: id }, { $inc: { views: 1 } });
 
-  // Hydrate seller info from PostgreSQL
+  // Hydrate seller info from MongoDB
   const seller = doc.sellerId
     ? await prisma.user.findUnique({
         where: { id: doc.sellerId },

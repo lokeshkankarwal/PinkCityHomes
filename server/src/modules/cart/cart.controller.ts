@@ -12,14 +12,14 @@ async function getCart(userId: string) {
     include: { items: true },
   });
 
-  const propIds = cart.items.map((i) => i.propertyId);
+  const propIds = (cart.items || []).map((i: any) => i.propertyId);
   const col = getPropertiesCollection();
   const docs = await col.find({ propertyId: { $in: propIds } }).toArray();
   const propMap = new Map(docs.map((p) => [p.propertyId, formatMongoProperty(p)]));
 
   return {
     ...cart,
-    items: cart.items.map((item) => ({
+    items: (cart.items || []).map((item: any) => ({
       ...item,
       property: propMap.get(item.propertyId) || null,
     })),
@@ -75,7 +75,7 @@ export async function checkout(req: Request, res: Response) {
     throw new HttpError(400, "Your cart is empty");
   }
 
-  const propIds = cart.items.map((i) => i.propertyId);
+  const propIds = (cart.items || []).map((i: any) => i.propertyId);
   const col = getPropertiesCollection();
   const docs = await col.find({ propertyId: { $in: propIds } }).toArray();
   const propMap = new Map(docs.map((p) => [p.propertyId, p]));

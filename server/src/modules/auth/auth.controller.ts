@@ -1,13 +1,12 @@
 import bcrypt from "bcryptjs";
 import { z } from "zod";
-import { prisma } from "../../config/prisma.js";
+import { prisma, type Role } from "../../config/prisma.js";
 import { HttpError } from "../../middleware/error.js";
 import { signToken } from "../../middleware/auth.js";
 import { sendVerificationEmail } from "../../services/email.service.js";
 import { env } from "../../config/env.js";
 import { saveFile, deleteLocalFile } from "../../services/storage.service.js";
 import type { Request, Response } from "express";
-import type { Role } from "@prisma/client";
 
 const registerSchema = z.object({
   name: z.string().min(2),

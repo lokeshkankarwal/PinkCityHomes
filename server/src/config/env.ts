@@ -18,7 +18,6 @@ export const env = {
     .split(",")
     .map((o) => o.trim())
     .filter(Boolean),
-  databaseUrl: process.env.DATABASE_URL ?? "",
   superadminEmail: process.env.SUPERADMIN_EMAIL ?? "lokeshkankarwal456@gmail.com",
   superadminPassword: process.env.SUPERADMIN_PASSWORD ?? "",
   smtpHost: process.env.SMTP_HOST ?? "",

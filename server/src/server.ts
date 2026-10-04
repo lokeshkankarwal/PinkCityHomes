@@ -1,6 +1,6 @@
 import { createApp } from "./app.js";
 import { env } from "./config/env.js";
-import { prisma } from "./config/prisma.js";
+import { prisma, initMongoPrisma } from "./config/prisma.js";
 import { connectMongo } from "./config/mongo.js";
 import bcrypt from "bcryptjs";
 
@@ -61,10 +61,10 @@ async function seedSuperadmin() {
 }
 
 async function main() {
-  await seedSuperadmin();
-
-  // Connect to MongoDB as primary property database with 2dsphere geospatial index
+  // Connect to MongoDB as exclusive application database
   await connectMongo();
+  await initMongoPrisma();
+  await seedSuperadmin();
 
   const app = createApp();
   const port = Number(process.env.PORT || env.port || 4000);
