@@ -2,18 +2,30 @@ import type { Request, Response } from "express";
 import { z } from "zod";
 import { prisma } from "../../config/prisma.js";
 import { HttpError } from "../../middleware/error.js";
+import { getPropertiesCollection, formatMongoProperty } from "../../config/mongo.js";
 
 export async function list(req: Request, res: Response) {
   if (!req.user) throw new HttpError(401, "Authentication required");
   const upcoming = req.query.upcoming === "true";
-  const items = await prisma.propertyVisit.findMany({
+  const visits = await prisma.propertyVisit.findMany({
     where: {
       sellerId: req.user.id,
       ...(upcoming ? { scheduledAt: { gte: new Date() }, status: "SCHEDULED" } : {}),
     },
-    include: { client: true, property: true },
+    include: { client: true },
     orderBy: { scheduledAt: "asc" },
   });
+
+  const propIds = visits.map((v) => v.propertyId);
+  const col = getPropertiesCollection();
+  const docs = await col.find({ propertyId: { $in: propIds } }).toArray();
+  const propMap = new Map(docs.map((p) => [p.propertyId, formatMongoProperty(p)]));
+
+  const items = visits.map((v) => ({
+    ...v,
+    property: propMap.get(v.propertyId) || null,
+  }));
+
   res.json({ results: items });
 }
 
@@ -28,12 +40,14 @@ export async function create(req: Request, res: Response) {
     })
     .parse(req.body);
   const client = await prisma.client.findFirst({ where: { id: body.clientId, sellerId: req.user.id } });
-  const property = await prisma.property.findFirst({ where: { id: body.propertyId, sellerId: req.user.id } });
+  const col = getPropertiesCollection();
+  const property = await col.findOne({ propertyId: body.propertyId, sellerId: req.user.id });
   if (!client || !property) throw new HttpError(404, "Client or property not found");
+
   const visit = await prisma.propertyVisit.create({
     data: {
       clientId: client.id,
-      propertyId: property.id,
+      propertyId: property.propertyId,
       sellerId: req.user.id,
       scheduledAt: new Date(body.scheduledAt),
       notes: body.notes,
@@ -42,7 +56,7 @@ export async function create(req: Request, res: Response) {
   await prisma.clientInteraction.create({
     data: {
       clientId: client.id,
-      propertyId: property.id,
+      propertyId: property.propertyId,
       sellerId: req.user.id,
       type: "VISIT",
       notes: body.notes || `Visit scheduled for ${body.scheduledAt}`,
@@ -69,8 +83,11 @@ export async function requestVisit(req: Request, res: Response) {
   const body = z
     .object({ propertyId: z.string(), scheduledAt: z.string(), notes: z.string().optional(), name: z.string().optional(), phone: z.string().optional() })
     .parse(req.body);
-  const property = await prisma.property.findUnique({ where: { id: body.propertyId } });
+
+  const col = getPropertiesCollection();
+  const property = await col.findOne({ propertyId: body.propertyId });
   if (!property || property.status !== "ACTIVE") throw new HttpError(400, "Property not available");
+
   let client = await prisma.client.findFirst({
     where: { sellerId: property.sellerId, phone: req.user.email },
   });
@@ -89,7 +106,7 @@ export async function requestVisit(req: Request, res: Response) {
   const visit = await prisma.propertyVisit.create({
     data: {
       clientId: client.id,
-      propertyId: property.id,
+      propertyId: property.propertyId,
       sellerId: property.sellerId,
       scheduledAt: new Date(body.scheduledAt),
       notes: body.notes,
@@ -97,3 +114,4 @@ export async function requestVisit(req: Request, res: Response) {
   });
   res.status(201).json(visit);
 }
+

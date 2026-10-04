@@ -95,6 +95,21 @@ export default function ProfilePage() {
     }
   };
 
+  const handleRemoveAvatar = async () => {
+    if (!confirm("Are you sure you want to remove your profile photo?")) return;
+    setAvatarLoading(true);
+    setMsg(null);
+    try {
+      await api.del("/auth/profile/avatar");
+      await refresh();
+      setMsg({ type: "success", text: "Profile photo removed." });
+    } catch (err: unknown) {
+      setMsg({ type: "error", text: err instanceof Error ? err.message : "Failed to remove photo" });
+    } finally {
+      setAvatarLoading(false);
+    }
+  };
+
   // Helper for role label
   const roleLabel =
     user.role === "SUPERADMIN"
@@ -287,15 +302,29 @@ export default function ProfilePage() {
                 className="hidden"
               />
 
-              <button
-                type="button"
-                disabled={avatarLoading}
-                onClick={() => fileInputRef.current?.click()}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-white border border-ink/20 px-4 py-2 text-xs font-bold text-ink shadow-sm hover:bg-sand transition disabled:opacity-50"
-              >
-                <span>📷</span>
-                <span>{user.avatarUrl ? "Change Photo" : "Upload Photo"}</span>
-              </button>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  disabled={avatarLoading}
+                  onClick={() => fileInputRef.current?.click()}
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-white border border-ink/20 px-4 py-2 text-xs font-bold text-ink shadow-sm hover:bg-sand transition disabled:opacity-50"
+                >
+                  <span>📷</span>
+                  <span>{user.avatarUrl ? "Change Photo" : "Upload Photo"}</span>
+                </button>
+
+                {user.avatarUrl && (
+                  <button
+                    type="button"
+                    disabled={avatarLoading}
+                    onClick={handleRemoveAvatar}
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-red-50 border border-red-200 px-3 py-2 text-xs font-bold text-red-700 hover:bg-red-100 transition disabled:opacity-50"
+                  >
+                    <span>🗑️</span>
+                    <span>Remove Photo</span>
+                  </button>
+                )}
+              </div>
             </div>
           </div>
 

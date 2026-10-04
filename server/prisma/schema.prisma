@@ -26,7 +26,6 @@ model User {
   verifications   EmailVerification[]
   favourites      Favourite[]
   orders          Order[]
-  properties      Property[]
   projects        Project[]
   visits          PropertyVisit[]
   sellerProfile   SellerProfile?
@@ -63,74 +62,16 @@ model EmailVerification {
   @@index([userId])
 }
 
-model Property {
-  id               String                   @id @default(cuid())
-  sellerId         String
-  title            String
-  description      String
-  propertyType     PropertyType
-  bhk              Int
-  bathrooms        Int                      @default(1)
-  price            Int
-  carpetArea       Int
-  superBuiltUpArea Int
-  furnishing       Furnishing
-  floor            Int?
-  totalFloors      Int?
-  parking          Int                      @default(0)
-  address          String
-  locality         String
-  city             String
-  latitude         Float
-  longitude        Float
-  contactName      String
-  contactPhone     String
-  listingType      String                   @default("BUY")
-  projectName      String?
-  status           PropertyStatus           @default(DRAFT)
-  views            Int                      @default(0)
-  createdAt        DateTime                 @default(now())
-  updatedAt        DateTime                 @updatedAt
-  cartItems        CartItem[]
-  interactions     ClientInteraction[]
-  interests        ClientPropertyInterest[]
-  favourites       Favourite[]
-  orders           Order[]
-  seller           User                     @relation(fields: [sellerId], references: [id], onDelete: Cascade)
-  images           PropertyImage[]
-  visits           PropertyVisit[]
-
-  @@index([locality])
-  @@index([price])
-  @@index([bhk])
-  @@index([status])
-  @@index([sellerId])
-  @@index([propertyType])
-  @@index([furnishing])
-}
-
-model PropertyImage {
-  id         String   @id @default(cuid())
-  propertyId String
-  path       String
-  sortOrder  Int      @default(0)
-  isPrimary  Boolean  @default(false)
-  createdAt  DateTime @default(now())
-  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-
-  @@index([propertyId])
-}
-
 model Favourite {
-  id         String    @id @default(cuid())
+  id         String   @id @default(cuid())
   userId     String
-  propertyId String?
-  createdAt  DateTime  @default(now())
-  property   Property? @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  propertyId String
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, propertyId])
   @@index([userId])
+  @@index([propertyId])
 }
 
 model Cart {
@@ -147,9 +88,9 @@ model CartItem {
   propertyId String
   createdAt  DateTime @default(now())
   cart       Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
-  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 
   @@unique([cartId, propertyId])
+  @@index([propertyId])
 }
 
 model Client {
@@ -182,7 +123,6 @@ model ClientPropertyInterest {
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
   client        Client        @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  property      Property      @relation(fields: [propertyId], references: [id], onDelete: Cascade)
   seller        User          @relation(fields: [sellerId], references: [id], onDelete: Cascade)
 
   @@unique([clientId, propertyId])
@@ -199,7 +139,6 @@ model ClientInteraction {
   notes      String
   timestamp  DateTime        @default(now())
   client     Client          @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  property   Property?       @relation(fields: [propertyId], references: [id], onDelete: Cascade)
   seller     User            @relation(fields: [sellerId], references: [id], onDelete: Cascade)
 
   @@index([clientId])
@@ -218,7 +157,6 @@ model PropertyVisit {
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
   client      Client      @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  property    Property    @relation(fields: [propertyId], references: [id], onDelete: Cascade)
   seller      User        @relation(fields: [sellerId], references: [id], onDelete: Cascade)
 
   @@index([propertyId])
@@ -234,7 +172,6 @@ model Order {
   soldPrice  Int
   createdAt  DateTime    @default(now())
   customer   User?       @relation(fields: [customerId], references: [id])
-  property   Property    @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 
   @@index([customerId])
   @@index([propertyId])

@@ -4,6 +4,7 @@ import { api } from "../../api/client";
 import { inr, imgSrc } from "../../lib/format";
 import { useAuth } from "../../auth";
 import type { Property } from "../../types";
+import { PropertyLocationMap } from "../../components/PropertyLocationMap";
 
 export default function PropertyDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -234,6 +235,18 @@ export default function PropertyDetailPage() {
               </div>
             </div>
           </div>
+
+          {/* Dedicated Property Location Map */}
+          <PropertyLocationMap
+            latitude={property.latitude}
+            longitude={property.longitude}
+            title={property.title}
+            price={property.price}
+            locality={property.locality}
+            city={property.city || "Jaipur"}
+            address={property.address}
+            listingType={property.listingType}
+          />
         </div>
 
         {/* Right Sidebar: Price & Actions */}

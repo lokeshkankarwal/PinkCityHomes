@@ -20,3 +20,4 @@ authRouter.get("/me", requireAuth, c.me);
 authRouter.patch("/me", requireAuth, c.updateProfile);
 authRouter.patch("/profile", requireAuth, c.updateProfile);
 authRouter.post("/profile/avatar", requireAuth, upload.single("avatar"), c.uploadAvatar);
+authRouter.delete("/profile/avatar", requireAuth, c.removeAvatar);

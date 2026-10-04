@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import { api } from "../../api/client";
 import { inr, imgSrc } from "../../lib/format";
 import type { Property } from "../../types";
+import { LocationPickerMap } from "../../components/LocationPickerMap";
+import { searchJaipurLocations, type JaipurLocation } from "../../services/jaipurLocations";
 
 export default function SellerPropertiesPage() {
   const [properties, setProperties] = useState<Property[]>([]);
@@ -18,11 +20,19 @@ export default function SellerPropertiesPage() {
   const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
   const [uploading, setUploading] = useState(false);
 
+  // Wizard state (Steps 1 to 6)
+  const [step, setStep] = useState(1);
+  const [isLocationConfirmed, setIsLocationConfirmed] = useState(false);
+
+  // Locality autocomplete state
+  const [localitySuggestions, setLocalitySuggestions] = useState<JaipurLocation[]>([]);
+  const [showLocalityDropdown, setShowLocalityDropdown] = useState(false);
+
   // Form state
   const initialForm = {
     title: "",
     description: "",
-    propertyType: "APARTMENT",
+    propertyType: "APARTMENT" as Property["propertyType"],
     listingType: "BUY" as "BUY" | "RENT",
     projectName: "",
     bhk: 2,
@@ -30,7 +40,7 @@ export default function SellerPropertiesPage() {
     price: 7500000,
     carpetArea: 1150,
     superBuiltUpArea: 1400,
-    furnishing: "SEMI_FURNISHED",
+    furnishing: "SEMI_FURNISHED" as Property["furnishing"],
     floor: 4,
     totalFloors: 14,
     parking: 1,
@@ -66,6 +76,8 @@ export default function SellerPropertiesPage() {
     setFormData(initialForm);
     setEditingProperty(null);
     setFormError(null);
+    setStep(1);
+    setIsLocationConfirmed(false);
     setShowAddModal(true);
   };
 
@@ -95,7 +107,97 @@ export default function SellerPropertiesPage() {
     });
     setEditingProperty(p);
     setFormError(null);
+    setStep(1);
+    setIsLocationConfirmed(true);
     setShowAddModal(true);
+  };
+
+  // Locality input handler with autocomplete
+  const handleLocalityInput = (text: string) => {
+    setFormData((prev) => ({ ...prev, locality: text }));
+    setIsLocationConfirmed(false);
+    if (text.trim().length >= 2) {
+      const matches = searchJaipurLocations(text);
+      setLocalitySuggestions(matches.slice(0, 6));
+      setShowLocalityDropdown(true);
+    } else {
+      setLocalitySuggestions([]);
+      setShowLocalityDropdown(false);
+    }
+  };
+
+  const handleSelectLocality = (loc: JaipurLocation) => {
+    setFormData((prev) => ({
+      ...prev,
+      locality: loc.name,
+      latitude: loc.latitude,
+      longitude: loc.longitude,
+    }));
+    setShowLocalityDropdown(false);
+    setIsLocationConfirmed(true);
+  };
+
+  // Validation before going to next wizard step
+  const handleNextStep = () => {
+    setFormError(null);
+
+    if (step === 1) {
+      if (!formData.title.trim()) {
+        setFormError("Please enter a property title.");
+        return;
+      }
+      if (!formData.description.trim()) {
+        setFormError("Please provide a property description.");
+        return;
+      }
+    }
+
+    if (step === 2) {
+      if (formData.carpetArea <= 0) {
+        setFormError("Please enter a valid carpet area.");
+        return;
+      }
+    }
+
+    if (step === 3) {
+      if (!formData.locality.trim()) {
+        setFormError("Please specify a locality in Jaipur.");
+        return;
+      }
+      if (!formData.address.trim()) {
+        setFormError("Please provide the street or residential address.");
+        return;
+      }
+      if (!isLocationConfirmed) {
+        setFormError("Please click 'Confirm Location' to verify the map coordinates.");
+        return;
+      }
+    }
+
+    if (step === 4) {
+      if (formData.price <= 0) {
+        setFormError("Please enter a valid price / monthly rent.");
+        return;
+      }
+    }
+
+    if (step === 5) {
+      if (!formData.contactName.trim()) {
+        setFormError("Please provide a representative contact name.");
+        return;
+      }
+      if (!formData.contactPhone.trim()) {
+        setFormError("Please provide a valid contact phone number.");
+        return;
+      }
+    }
+
+    setStep((s) => Math.min(6, s + 1));
+  };
+
+  const handlePrevStep = () => {
+    setFormError(null);
+    setStep((s) => Math.max(1, s - 1));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -161,8 +263,18 @@ export default function SellerPropertiesPage() {
     }
   };
 
+  const stepsList = [
+    { num: 1, label: "Basic" },
+    { num: 2, label: "Specs" },
+    { num: 3, label: "Location" },
+    { num: 4, label: "Pricing" },
+    { num: 5, label: "Contact" },
+    { num: 6, label: "Review" },
+  ];
+
   return (
     <div className="space-y-6 pb-16">
+      {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="font-serif text-3xl font-bold">My Property Listings</h1>
@@ -172,7 +284,7 @@ export default function SellerPropertiesPage() {
         </div>
         <button
           onClick={handleOpenAdd}
-          className="rounded-xl bg-ink px-5 py-2.5 text-sm font-semibold text-sand shadow hover:bg-ink/90"
+          className="rounded-xl bg-ink px-5 py-2.5 text-sm font-semibold text-sand shadow hover:bg-ink/90 transition"
         >
           + Add New Property
         </button>
@@ -292,315 +404,527 @@ export default function SellerPropertiesPage() {
         </div>
       )}
 
-      {/* Add / Edit Property Modal */}
+      {/* 6-STEP PROPERTY CREATION & EDIT WIZARD MODAL */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/60 p-4 backdrop-blur-sm overflow-y-auto">
-          <div className="w-full max-w-2xl rounded-3xl bg-white p-6 sm:p-8 shadow-2xl space-y-4 my-8 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-ink/10 pb-3">
-              <div>
-                <h2 className="font-serif text-2xl font-bold">
-                  {editingProperty ? "Edit Property Listing" : "Add New Property Listing"}
-                </h2>
-                <p className="text-xs text-ink/60 mt-0.5">
-                  {editingProperty
-                    ? "Update property specifications, pricing, and project details"
-                    : "Fill out the specifications below to publish on the platform"}
-                </p>
+          <div className="w-full max-w-2xl rounded-3xl bg-white p-6 sm:p-8 shadow-2xl space-y-5 my-8 max-h-[92vh] overflow-y-auto flex flex-col justify-between">
+            {/* Modal Header */}
+            <div>
+              <div className="flex items-center justify-between border-b border-ink/10 pb-3">
+                <div>
+                  <h2 className="font-serif text-2xl font-bold">
+                    {editingProperty ? "Edit Property Listing" : "Add Property Listing"}
+                  </h2>
+                  <p className="text-xs text-ink/60 mt-0.5">
+                    Step {step} of 6: {stepsList[step - 1].label} Details
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowAddModal(false)}
+                  className="text-2xl text-ink/40 hover:text-ink font-light"
+                >
+                  &times;
+                </button>
               </div>
-              <button onClick={() => setShowAddModal(false)} className="text-xl text-ink/50 hover:text-ink">
-                &times;
-              </button>
+
+              {/* Wizard Steps Progress Indicator */}
+              <div className="grid grid-cols-6 gap-1.5 pt-4">
+                {stepsList.map((s) => {
+                  const isCurrent = s.num === step;
+                  const isDone = s.num < step;
+                  return (
+                    <div
+                      key={s.num}
+                      className={`text-center py-1.5 rounded-xl border text-[11px] font-bold transition ${
+                        isCurrent
+                          ? "bg-pink-600 text-white border-pink-600 shadow-sm"
+                          : isDone
+                          ? "bg-emerald-50 text-emerald-800 border-emerald-300"
+                          : "bg-sand/30 text-ink/40 border-ink/10"
+                      }`}
+                    >
+                      <span>{isDone ? `✓ ${s.label}` : `${s.num}. ${s.label}`}</span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
 
-            {/* Error Banner displayed directly on the modal */}
+            {/* Error Banner */}
             {formError && (
               <div className="rounded-2xl bg-red-50 border border-red-200 p-3.5 text-xs text-red-800 flex items-start gap-2.5 animate-fade-in">
                 <span className="text-base leading-none">⚠️</span>
                 <div>
-                  <p className="font-bold text-red-900">Validation / Error Notice</p>
+                  <p className="font-bold text-red-900">Please review:</p>
                   <p className="mt-0.5">{formError}</p>
                 </div>
               </div>
             )}
 
+            {/* Form Steps Body */}
             <form onSubmit={handleSubmit} className="space-y-4 text-xs">
-              {/* Listing Purpose: Buy vs Rent */}
-              <div>
-                <label className="block font-semibold text-ink/70 mb-1">Listing Purpose</label>
-                <div className="flex rounded-xl bg-ink/5 p-1 text-xs font-semibold">
-                  <button
-                    type="button"
-                    onClick={() => setFormData({ ...formData, listingType: "BUY" })}
-                    className={`flex-1 rounded-lg py-2 transition ${
-                      formData.listingType === "BUY" ? "bg-white shadow text-ink" : "text-ink/60 hover:text-ink"
-                    }`}
-                  >
-                    🏷️ For Sale (Buy)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setFormData({ ...formData, listingType: "RENT" })}
-                    className={`flex-1 rounded-lg py-2 transition ${
-                      formData.listingType === "RENT" ? "bg-white shadow text-ink" : "text-ink/60 hover:text-ink"
-                    }`}
-                  >
-                    🔑 For Rent (Lease)
-                  </button>
-                </div>
-              </div>
+              {/* ── STEP 1: BASIC DETAILS ────────────────────────────────────── */}
+              {step === 1 && (
+                <div className="space-y-4 animate-fade-in">
+                  <div>
+                    <label className="block font-semibold text-ink/70 mb-1.5">Listing Purpose</label>
+                    <div className="flex rounded-xl bg-ink/5 p-1 text-xs font-semibold">
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, listingType: "BUY" })}
+                        className={`flex-1 rounded-lg py-2.5 transition ${
+                          formData.listingType === "BUY" ? "bg-white shadow text-ink" : "text-ink/60 hover:text-ink"
+                        }`}
+                      >
+                        🏷️ For Sale (Buy)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, listingType: "RENT" })}
+                        className={`flex-1 rounded-lg py-2.5 transition ${
+                          formData.listingType === "RENT" ? "bg-white shadow text-ink" : "text-ink/60 hover:text-ink"
+                        }`}
+                      >
+                        🔑 For Rent (Lease)
+                      </button>
+                    </div>
+                  </div>
 
-              {/* Project / Society Name */}
-              <div>
-                <label className="block font-semibold text-ink/70 mb-1">
-                  Project / Society Name <span className="font-normal text-ink/50">(Optional — group multiple units under a project)</span>
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. Prestige Lakeside Habitat, Sobha City, Jagat Enclave..."
-                  value={formData.projectName}
-                  onChange={(e) => setFormData({ ...formData, projectName: e.target.value })}
-                  className="w-full rounded-xl border border-ink/20 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass"
-                />
-              </div>
+                  <div>
+                    <label className="block font-semibold text-ink/70 mb-1">Property Type</label>
+                    <select
+                      value={formData.propertyType}
+                      onChange={(e) => setFormData({ ...formData, propertyType: e.target.value as Property["propertyType"] })}
+                      className="w-full rounded-xl border border-ink/20 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300"
+                    >
+                      <option value="APARTMENT">Apartment</option>
+                      <option value="VILLA">Villa</option>
+                      <option value="INDEPENDENT_HOUSE">Independent House</option>
+                      <option value="PLOT">Plot</option>
+                      <option value="BUILDER_FLOOR">Builder Floor</option>
+                    </select>
+                  </div>
 
-              <div>
-                <label className="block font-semibold text-ink/70 mb-1">Listing Title</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Luxurious 3 BHK with Balcony in Malviya Nagar"
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  className="w-full rounded-xl border border-ink/20 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass"
-                />
-              </div>
-
-              <div>
-                <label className="block font-semibold text-ink/70 mb-1">Detailed Description</label>
-                <textarea
-                  rows={3}
-                  required
-                  minLength={3}
-                  placeholder="Describe highlights, view, facing, ventilation, connectivity..."
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full rounded-xl border border-ink/20 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div>
-                  <label className="block font-semibold text-ink/70 mb-1">Property Type</label>
-                  <select
-                    value={formData.propertyType}
-                    onChange={(e) => setFormData({ ...formData, propertyType: e.target.value as Property["propertyType"] })}
-                    className="w-full rounded-xl border border-ink/20 px-3 py-2 text-sm"
-                  >
-                    <option value="APARTMENT">Apartment</option>
-                    <option value="VILLA">Villa</option>
-                    <option value="INDEPENDENT_HOUSE">Independent House</option>
-                    <option value="PLOT">Plot</option>
-                    <option value="BUILDER_FLOOR">Builder Floor</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block font-semibold text-ink/70 mb-1">Bedrooms (BHK)</label>
-                  <input
-                    type="number"
-                    min={0}
-                    value={formData.bhk}
-                    onChange={(e) => setFormData({ ...formData, bhk: Number(e.target.value) })}
-                    className="w-full rounded-xl border border-ink/20 px-3 py-2 text-sm"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-semibold text-ink/70 mb-1">Bathrooms</label>
-                  <input
-                    type="number"
-                    min={1}
-                    value={formData.bathrooms}
-                    onChange={(e) => setFormData({ ...formData, bathrooms: Number(e.target.value) })}
-                    className="w-full rounded-xl border border-ink/20 px-3 py-2 text-sm"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div>
-                  <label className="block font-semibold text-ink/70 mb-1">
-                    {formData.listingType === "RENT" ? "Monthly Rent (₹ INR / month)" : "Price (₹ INR)"}
-                  </label>
-                  <input
-                    type="number"
-                    required
-                    min={1}
-                    value={formData.price}
-                    onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
-                    className="w-full rounded-xl border border-ink/20 px-3 py-2 text-sm"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-semibold text-ink/70 mb-1">Carpet Area (sq ft)</label>
-                  <input
-                    type="number"
-                    required
-                    min={1}
-                    value={formData.carpetArea}
-                    onChange={(e) => setFormData({ ...formData, carpetArea: Number(e.target.value) })}
-                    className="w-full rounded-xl border border-ink/20 px-3 py-2 text-sm"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-semibold text-ink/70 mb-1">Super Built-up Area</label>
-                  <input
-                    type="number"
-                    value={formData.superBuiltUpArea}
-                    onChange={(e) => setFormData({ ...formData, superBuiltUpArea: Number(e.target.value) })}
-                    className="w-full rounded-xl border border-ink/20 px-3 py-2 text-sm"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div>
-                  <label className="block font-semibold text-ink/70 mb-1">Furnishing</label>
-                  <select
-                    value={formData.furnishing}
-                    onChange={(e) => setFormData({ ...formData, furnishing: e.target.value as Property["furnishing"] })}
-                    className="w-full rounded-xl border border-ink/20 px-3 py-2 text-sm"
-                  >
-                    <option value="UNFURNISHED">Unfurnished</option>
-                    <option value="SEMI_FURNISHED">Semi-Furnished</option>
-                    <option value="FULLY_FURNISHED">Fully Furnished</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block font-semibold text-ink/70 mb-1">Floor / Total Floors</label>
-                  <div className="flex gap-2">
+                  <div>
+                    <label className="block font-semibold text-ink/70 mb-1">
+                      Project / Society Name <span className="font-normal text-ink/50">(Optional)</span>
+                    </label>
                     <input
-                      type="number"
-                      placeholder="Floor"
-                      value={formData.floor}
-                      onChange={(e) => setFormData({ ...formData, floor: Number(e.target.value) })}
-                      className="w-1/2 rounded-xl border border-ink/20 px-3 py-2 text-sm"
+                      type="text"
+                      placeholder="e.g. Mahima Panache, Manglam Grand City, Royal Oasis..."
+                      value={formData.projectName}
+                      onChange={(e) => setFormData({ ...formData, projectName: e.target.value })}
+                      className="w-full rounded-xl border border-ink/20 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300"
                     />
+                  </div>
+
+                  <div>
+                    <label className="block font-semibold text-ink/70 mb-1">Listing Title *</label>
                     <input
-                      type="number"
-                      placeholder="Total"
-                      value={formData.totalFloors}
-                      onChange={(e) => setFormData({ ...formData, totalFloors: Number(e.target.value) })}
-                      className="w-1/2 rounded-xl border border-ink/20 px-3 py-2 text-sm"
+                      type="text"
+                      required
+                      placeholder="e.g. Spacious 3 BHK with Modular Kitchen & Park View in Malviya Nagar"
+                      value={formData.title}
+                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                      className="w-full rounded-xl border border-ink/20 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-semibold text-ink/70 mb-1">Detailed Description *</label>
+                    <textarea
+                      rows={4}
+                      required
+                      placeholder="Highlight property amenities, ventilation, natural light, proximity to schools, metro, hospitals..."
+                      value={formData.description}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      className="w-full rounded-xl border border-ink/20 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300"
                     />
                   </div>
                 </div>
+              )}
 
-                <div>
-                  <label className="block font-semibold text-ink/70 mb-1">Parking Slots</label>
-                  <input
-                    type="number"
-                    min={0}
-                    value={formData.parking}
-                    onChange={(e) => setFormData({ ...formData, parking: Number(e.target.value) })}
-                    className="w-full rounded-xl border border-ink/20 px-3 py-2 text-sm"
-                  />
+              {/* ── STEP 2: PROPERTY SPECIFICATIONS ────────────────────────────── */}
+              {step === 2 && (
+                <div className="space-y-4 animate-fade-in">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block font-semibold text-ink/70 mb-1">Bedrooms (BHK)</label>
+                      <input
+                        type="number"
+                        min={0}
+                        value={formData.bhk}
+                        onChange={(e) => setFormData({ ...formData, bhk: Number(e.target.value) })}
+                        className="w-full rounded-xl border border-ink/20 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-ink/70 mb-1">Bathrooms</label>
+                      <input
+                        type="number"
+                        min={1}
+                        value={formData.bathrooms}
+                        onChange={(e) => setFormData({ ...formData, bathrooms: Number(e.target.value) })}
+                        className="w-full rounded-xl border border-ink/20 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block font-semibold text-ink/70 mb-1">Carpet Area (sq ft) *</label>
+                      <input
+                        type="number"
+                        required
+                        min={1}
+                        value={formData.carpetArea}
+                        onChange={(e) => setFormData({ ...formData, carpetArea: Number(e.target.value) })}
+                        className="w-full rounded-xl border border-ink/20 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-ink/70 mb-1">Super Built-up Area (sq ft)</label>
+                      <input
+                        type="number"
+                        min={1}
+                        value={formData.superBuiltUpArea}
+                        onChange={(e) => setFormData({ ...formData, superBuiltUpArea: Number(e.target.value) })}
+                        className="w-full rounded-xl border border-ink/20 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <label className="block font-semibold text-ink/70 mb-1">Furnishing</label>
+                      <select
+                        value={formData.furnishing}
+                        onChange={(e) => setFormData({ ...formData, furnishing: e.target.value as Property["furnishing"] })}
+                        className="w-full rounded-xl border border-ink/20 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300"
+                      >
+                        <option value="UNFURNISHED">Unfurnished</option>
+                        <option value="SEMI_FURNISHED">Semi-Furnished</option>
+                        <option value="FULLY_FURNISHED">Fully Furnished</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-ink/70 mb-1">Floor / Total</label>
+                      <div className="flex gap-2">
+                        <input
+                          type="number"
+                          placeholder="Floor"
+                          value={formData.floor}
+                          onChange={(e) => setFormData({ ...formData, floor: Number(e.target.value) })}
+                          className="w-1/2 rounded-xl border border-ink/20 px-2 py-2 text-sm"
+                        />
+                        <input
+                          type="number"
+                          placeholder="Total"
+                          value={formData.totalFloors}
+                          onChange={(e) => setFormData({ ...formData, totalFloors: Number(e.target.value) })}
+                          className="w-1/2 rounded-xl border border-ink/20 px-2 py-2 text-sm"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-ink/70 mb-1">Parking Slots</label>
+                      <input
+                        type="number"
+                        min={0}
+                        value={formData.parking}
+                        onChange={(e) => setFormData({ ...formData, parking: Number(e.target.value) })}
+                        className="w-full rounded-xl border border-ink/20 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300"
+                      />
+                    </div>
+                  </div>
                 </div>
-              </div>
+              )}
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div>
-                  <label className="block font-semibold text-ink/70 mb-1">Locality (lowercase)</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. malviya nagar, mansarovar"
-                    value={formData.locality}
-                    onChange={(e) => setFormData({ ...formData, locality: e.target.value.toLowerCase() })}
-                    className="w-full rounded-xl border border-ink/20 px-3 py-2 text-sm"
-                  />
+              {/* ── STEP 3: LOCATION & INTERACTIVE MAP ──────────────────────────── */}
+              {step === 3 && (
+                <div className="space-y-4 animate-fade-in">
+                  {/* Locality Autocomplete */}
+                  <div className="relative">
+                    <label className="block font-semibold text-ink/70 mb-1">
+                      Jaipur Locality * <span className="font-normal text-ink/50">(Type to search micro-markets)</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Mansarovar, Malviya Nagar, Jagatpura, Vaishali Nagar..."
+                      value={formData.locality}
+                      onChange={(e) => handleLocalityInput(e.target.value)}
+                      onFocus={() => {
+                        if (formData.locality.trim().length >= 2) {
+                          setLocalitySuggestions(searchJaipurLocations(formData.locality).slice(0, 6));
+                          setShowLocalityDropdown(true);
+                        }
+                      }}
+                      className="w-full rounded-xl border border-ink/20 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300"
+                    />
+
+                    {/* Suggestions Dropdown */}
+                    {showLocalityDropdown && localitySuggestions.length > 0 && (
+                      <div className="absolute top-full left-0 right-0 z-50 mt-1 max-h-48 overflow-y-auto rounded-2xl border border-ink/10 bg-white shadow-xl">
+                        {localitySuggestions.map((loc) => (
+                          <button
+                            key={loc.name}
+                            type="button"
+                            onClick={() => handleSelectLocality(loc)}
+                            className="flex w-full items-center justify-between px-3.5 py-2.5 text-left text-xs hover:bg-sand/50 transition border-b border-ink/5 last:border-0"
+                          >
+                            <span className="font-semibold text-ink">📍 {loc.name}</span>
+                            <span className="text-[10px] text-pink-700 bg-pink-50 px-2 py-0.5 rounded-full border border-pink-200">
+                              {loc.category}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block font-semibold text-ink/70 mb-1">City</label>
+                      <input
+                        type="text"
+                        disabled
+                        value="Jaipur, Rajasthan"
+                        className="w-full rounded-xl border border-ink/15 bg-sand/30 px-3 py-2 text-sm text-ink/70"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-ink/70 mb-1">Full Street Address *</label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="Plot / Flat No., Road, Landmark"
+                        value={formData.address}
+                        onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                        className="w-full rounded-xl border border-ink/20 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Leaflet Location Picker Map */}
+                  <div>
+                    <label className="block font-semibold text-ink/70 mb-1">
+                      Set Exact Pin on Map * <span className="font-normal text-ink/50">(Drag pin or tap map)</span>
+                    </label>
+                    <LocationPickerMap
+                      latitude={formData.latitude}
+                      longitude={formData.longitude}
+                      onChange={({ latitude, longitude }) => {
+                        setFormData((prev) => ({ ...prev, latitude, longitude }));
+                        setIsLocationConfirmed(false);
+                      }}
+                      isConfirmed={isLocationConfirmed}
+                      onConfirm={() => setIsLocationConfirmed(true)}
+                      locality={formData.locality}
+                    />
+                  </div>
                 </div>
+              )}
 
-                <div>
-                  <label className="block font-semibold text-ink/70 mb-1">City</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Jaipur"
-                    value={formData.city}
-                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                    className="w-full rounded-xl border border-ink/20 px-3 py-2 text-sm"
-                  />
+              {/* ── STEP 4: PRICING & FINANCIALS ──────────────────────────────── */}
+              {step === 4 && (
+                <div className="space-y-4 animate-fade-in">
+                  <div>
+                    <label className="block font-semibold text-ink/70 mb-1">
+                      {formData.listingType === "RENT" ? "Monthly Rent (₹ INR / month) *" : "Total Property Price (₹ INR) *"}
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      min={1}
+                      value={formData.price}
+                      onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
+                      className="w-full rounded-xl border border-ink/20 px-3 py-2 text-sm font-serif font-bold text-ink focus:outline-none focus:ring-2 focus:ring-pink-300"
+                    />
+                    <p className="mt-1 text-xs font-serif font-bold text-pink-700">
+                      Formatted: {inr(formData.price)} {formData.listingType === "RENT" ? "/ month" : ""}
+                    </p>
+                  </div>
+
+                  {/* Financial calculation snippet */}
+                  {formData.carpetArea > 0 && formData.listingType !== "RENT" && (
+                    <div className="rounded-2xl bg-sand/30 border border-ink/5 p-4 space-y-1">
+                      <p className="font-semibold text-ink">Estimated Unit Rate</p>
+                      <p className="text-sm font-serif font-bold text-ink">
+                        ₹{Math.round(formData.price / formData.carpetArea).toLocaleString("en-IN")} / sq ft
+                      </p>
+                      <p className="text-[11px] text-ink/60">
+                        Based on {formData.carpetArea} sq ft carpet area.
+                      </p>
+                    </div>
+                  )}
                 </div>
+              )}
 
-                <div>
-                  <label className="block font-semibold text-ink/70 mb-1">Address</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Full street / district address"
-                    value={formData.address}
-                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                    className="w-full rounded-xl border border-ink/20 px-3 py-2 text-sm"
-                  />
+              {/* ── STEP 5: CONTACT REPRESENTATIVE ────────────────────────────── */}
+              {step === 5 && (
+                <div className="space-y-4 animate-fade-in">
+                  <div>
+                    <label className="block font-semibold text-ink/70 mb-1">Contact Name *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Rahul Sharma"
+                      value={formData.contactName}
+                      onChange={(e) => setFormData({ ...formData, contactName: e.target.value })}
+                      className="w-full rounded-xl border border-ink/20 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-semibold text-ink/70 mb-1">Contact Phone *</label>
+                    <input
+                      type="tel"
+                      required
+                      placeholder="e.g. +91 98290 12345"
+                      value={formData.contactPhone}
+                      onChange={(e) => setFormData({ ...formData, contactPhone: e.target.value })}
+                      className="w-full rounded-xl border border-ink/20 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300"
+                    />
+                  </div>
+
+                  <div className="rounded-2xl bg-emerald-50 border border-emerald-200 p-4 text-xs text-emerald-800">
+                    <p className="font-bold">Representative Inquiries:</p>
+                    <p className="mt-0.5">
+                      Interested buyers or tenants will contact this phone number and arrange scheduled site visits.
+                    </p>
+                  </div>
                 </div>
-              </div>
+              )}
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-semibold text-ink/70 mb-1">Contact Name</label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.contactName}
-                    onChange={(e) => setFormData({ ...formData, contactName: e.target.value })}
-                    className="w-full rounded-xl border border-ink/20 px-3 py-2 text-sm"
-                  />
+              {/* ── STEP 6: REVIEW & PUBLISH ─────────────────────────────────── */}
+              {step === 6 && (
+                <div className="space-y-4 animate-fade-in">
+                  <div className="rounded-2xl bg-sand/30 border border-ink/10 p-5 space-y-3">
+                    <h3 className="font-serif text-lg font-bold text-ink border-b border-ink/10 pb-2">
+                      Listing Summary
+                    </h3>
+
+                    <div className="grid grid-cols-2 gap-3 text-xs">
+                      <div>
+                        <span className="text-ink/60">Title:</span>
+                        <p className="font-bold text-ink">{formData.title}</p>
+                      </div>
+
+                      <div>
+                        <span className="text-ink/60">Purpose:</span>
+                        <p className="font-bold text-ink">
+                          {formData.listingType === "RENT" ? "For Rent" : "For Sale"} ({formData.propertyType})
+                        </p>
+                      </div>
+
+                      <div>
+                        <span className="text-ink/60">Specs:</span>
+                        <p className="font-bold text-ink">
+                          {formData.bhk} BHK · {formData.bathrooms} Baths · {formData.carpetArea} sq ft
+                        </p>
+                      </div>
+
+                      <div>
+                        <span className="text-ink/60">Price:</span>
+                        <p className="font-bold text-pink-700 font-serif text-base">
+                          {inr(formData.price)} {formData.listingType === "RENT" ? "/mo" : ""}
+                        </p>
+                      </div>
+
+                      <div>
+                        <span className="text-ink/60">Location:</span>
+                        <p className="font-bold text-ink capitalize">
+                          📍 {formData.locality}, Jaipur
+                        </p>
+                        <p className="text-[11px] text-ink/60 truncate">{formData.address}</p>
+                      </div>
+
+                      <div>
+                        <span className="text-ink/60">Contact:</span>
+                        <p className="font-bold text-ink">{formData.contactName}</p>
+                        <p className="text-[11px] text-ink/60">{formData.contactPhone}</p>
+                      </div>
+                    </div>
+
+                    {/* Verification Checklist */}
+                    <div className="pt-3 border-t border-ink/10 space-y-1.5">
+                      <div className="flex items-center gap-2 text-xs font-semibold text-emerald-800">
+                        <span>✓</span>
+                        <span>Basic details &amp; specifications complete</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs font-semibold text-emerald-800">
+                        <span>✓</span>
+                        <span>Map coordinates verified</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs font-semibold text-emerald-800">
+                        <span>✓</span>
+                        <span>Representative contact details attached</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
+              )}
 
-                <div>
-                  <label className="block font-semibold text-ink/70 mb-1">Contact Phone</label>
-                  <input
-                    type="tel"
-                    required
-                    value={formData.contactPhone}
-                    onChange={(e) => setFormData({ ...formData, contactPhone: e.target.value })}
-                    className="w-full rounded-xl border border-ink/20 px-3 py-2 text-sm"
-                  />
-                </div>
-              </div>
+              {/* Wizard Bottom Controls */}
+              <div className="flex items-center justify-between pt-4 border-t border-ink/10">
+                {step > 1 ? (
+                  <button
+                    type="button"
+                    onClick={handlePrevStep}
+                    className="rounded-xl border border-ink/20 px-4 py-2 text-xs font-bold text-ink hover:bg-sand/60 transition"
+                  >
+                    &larr; Back
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setShowAddModal(false)}
+                    className="rounded-xl border border-ink/20 px-4 py-2 text-xs font-bold text-ink/70 hover:bg-sand/60 transition"
+                  >
+                    Cancel
+                  </button>
+                )}
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-ink/10">
-                <button
-                  type="button"
-                  onClick={() => setShowAddModal(false)}
-                  className="rounded-xl px-4 py-2 text-sm font-semibold text-ink/70 hover:bg-ink/5"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="rounded-xl bg-ink px-6 py-2 text-sm font-semibold text-sand hover:bg-ink/90 disabled:opacity-50"
-                >
-                  {submitting ? "Saving..." : editingProperty ? "Save Changes" : "Publish Property"}
-                </button>
+                {step < 6 ? (
+                  <button
+                    type="button"
+                    onClick={handleNextStep}
+                    className="rounded-xl bg-ink px-6 py-2.5 text-xs font-bold text-sand hover:bg-pink-700 transition shadow"
+                  >
+                    Next: {stepsList[step].label} &rarr;
+                  </button>
+                ) : (
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="rounded-xl bg-pink-600 px-7 py-2.5 text-xs font-bold text-white hover:bg-pink-700 transition shadow disabled:opacity-50"
+                  >
+                    {submitting ? "Publishing..." : editingProperty ? "Save Changes" : "Publish Property Listing"}
+                  </button>
+                )}
               </div>
             </form>
           </div>
         </div>
       )}
 
-      {/* Upload Images Modal */}
+      {/* Upload Photos Modal */}
       {showUploadModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/60 p-4 backdrop-blur-sm">
           <div className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="font-serif text-xl font-bold">Property Photos</h3>
-              <button onClick={() => setShowUploadModal(null)} className="text-xl text-ink/50 hover:text-ink">
+              <button
+                onClick={() => setShowUploadModal(null)}
+                className="text-xl text-ink/50 hover:text-ink"
+              >
                 &times;
               </button>
             </div>
@@ -619,12 +943,12 @@ export default function SellerPropertiesPage() {
                         Primary
                       </span>
                     )}
-                    <div className="absolute inset-0 bg-ink/70 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-1 p-1">
+                    <div className="absolute inset-0 bg-ink/50 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-1.5 p-1">
                       {!img.isPrimary && (
                         <button
                           type="button"
                           onClick={() => void handleSetPrimary(img.id)}
-                          className="text-[10px] bg-white text-ink px-1.5 py-0.5 rounded font-bold hover:bg-sand"
+                          className="bg-white text-ink text-[10px] font-bold px-2 py-1 rounded shadow hover:bg-sand"
                         >
                           Star
                         </button>
@@ -632,7 +956,7 @@ export default function SellerPropertiesPage() {
                       <button
                         type="button"
                         onClick={() => void handleDeleteImage(img.id)}
-                        className="text-[10px] bg-red-600 text-white px-1.5 py-0.5 rounded font-bold hover:bg-red-700"
+                        className="bg-red-600 text-white text-[10px] font-bold px-2 py-1 rounded shadow hover:bg-red-700"
                       >
                         Del
                       </button>
@@ -642,22 +966,22 @@ export default function SellerPropertiesPage() {
               </div>
             )}
 
-            {/* Upload Form */}
-            <form onSubmit={handleUploadImages} className="space-y-3 pt-2 border-t border-ink/10">
+            {/* Upload Input */}
+            <form onSubmit={handleUploadImages} className="space-y-4 pt-2 border-t border-ink/10">
               <div>
                 <label className="block text-xs font-semibold text-ink/70 mb-1">
-                  Upload Photos (JPEG, PNG, WebP &lt; 5MB)
+                  Upload High-Resolution Photos
                 </label>
                 <input
                   type="file"
                   multiple
-                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  accept="image/jpeg,image/png,image/webp"
                   onChange={(e) => setSelectedFiles(e.target.files)}
-                  className="w-full text-xs text-ink/80 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-ink file:text-sand hover:file:bg-ink/90 cursor-pointer"
+                  className="w-full text-xs text-ink/70 file:mr-3 file:rounded-xl file:border-0 file:bg-ink file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-sand hover:file:bg-ink/80"
                 />
               </div>
 
-              <div className="flex justify-end gap-2 pt-2">
+              <div className="flex justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setShowUploadModal(null)}

@@ -2,7 +2,7 @@ import type { Request, Response } from "express";
 import { z } from "zod";
 import { prisma } from "../../config/prisma.js";
 import { HttpError } from "../../middleware/error.js";
-import { deletePropertyFromMongo } from "../../config/mongo.js";
+import { getPropertiesCollection, formatMongoProperty } from "../../config/mongo.js";
 
 async function audit(req: Request, action: string, entityType: string, entityId?: string, metadata?: unknown) {
   await prisma.auditLog.create({
@@ -17,11 +17,12 @@ async function audit(req: Request, action: string, entityType: string, entityId?
 }
 
 export async function dashboard(_req: Request, res: Response) {
+  const col = getPropertiesCollection();
   const [sellers, customers, properties, sold, pending, orders] = await Promise.all([
     prisma.user.count({ where: { role: "SELLER" } }),
     prisma.user.count({ where: { role: "CUSTOMER" } }),
-    prisma.property.count(),
-    prisma.property.count({ where: { status: "SOLD" } }),
+    col.countDocuments({}),
+    col.countDocuments({ status: "SOLD" }),
     prisma.sellerProfile.count({ where: { status: "PENDING_APPROVAL" } }),
     prisma.order.count(),
   ]);
@@ -55,10 +56,21 @@ export async function users(_req: Request, res: Response) {
 }
 
 export async function properties(_req: Request, res: Response) {
-  const results = await prisma.property.findMany({
-    include: { images: true, seller: { select: { email: true, name: true } } },
-    orderBy: { createdAt: "desc" },
+  const col = getPropertiesCollection();
+  const docs = await col.find({}).sort({ createdAt: -1 }).toArray();
+
+  const sellerIds = [...new Set(docs.map((d) => d.sellerId))];
+  const sellersList = await prisma.user.findMany({
+    where: { id: { in: sellerIds } },
+    select: { id: true, email: true, name: true },
   });
+  const sellerMap = new Map(sellersList.map((s) => [s.id, s]));
+
+  const results = docs.map((doc) => ({
+    ...formatMongoProperty(doc),
+    seller: sellerMap.get(doc.sellerId),
+  }));
+
   res.json({ results });
 }
 
@@ -87,29 +99,27 @@ export async function markSold(req: Request, res: Response) {
   if (req.user?.role !== "SUPERADMIN") throw new HttpError(403, "Forbidden");
   const id = String(req.params.id);
   const { customerId } = z.object({ customerId: z.string().optional() }).parse(req.body ?? {});
-  const property = await prisma.property.findUnique({ where: { id } });
+  const col = getPropertiesCollection();
+
+  const property = await col.findOne({ propertyId: id });
   if (!property) throw new HttpError(404, "Property not found");
   if (property.status === "SOLD") throw new HttpError(400, "Already sold");
 
-  const result = await prisma.$transaction(async (tx) => {
-    const updated = await tx.property.update({
-      where: { id: property.id },
-      data: { status: "SOLD" },
-    });
-    await tx.cartItem.deleteMany({ where: { propertyId: property.id } });
-    const order = await tx.order.create({
-      data: {
-        propertyId: property.id,
-        customerId: customerId ?? null,
-        status: "SOLD",
-        soldPrice: property.price,
-      },
-    });
-    return { property: updated, order };
+  await col.updateOne({ propertyId: id }, { $set: { status: "SOLD", updatedAt: new Date() } });
+  await prisma.cartItem.deleteMany({ where: { propertyId: property.propertyId } });
+
+  const order = await prisma.order.create({
+    data: {
+      propertyId: property.propertyId,
+      customerId: customerId ?? null,
+      status: "SOLD",
+      soldPrice: property.price,
+    },
   });
-  await audit(req, "PROPERTY_SOLD", "Property", property.id, { orderId: result.order.id });
-  await deletePropertyFromMongo(property.id).catch(() => {});
-  res.json(result);
+
+  await audit(req, "PROPERTY_SOLD", "Property", property.propertyId, { orderId: order.id });
+  const updated = await col.findOne({ propertyId: id });
+  res.json({ property: formatMongoProperty(updated!), order });
 }
 
 export async function auditLogs(_req: Request, res: Response) {
@@ -124,53 +134,74 @@ export async function auditLogs(_req: Request, res: Response) {
 export async function sellerDashboard(req: Request, res: Response) {
   if (!req.user) throw new HttpError(401, "Authentication required");
   const sellerId = req.user.id;
-  const [totalProperties, activeProperties, totalClients, visits, high, medium, low, properties, upcoming, recent] =
+  const col = getPropertiesCollection();
+
+  const [totalProperties, activeProperties, totalClients, visits, high, medium, low, propDocs, upcoming, recent] =
     await Promise.all([
-      prisma.property.count({ where: { sellerId } }),
-      prisma.property.count({ where: { sellerId, status: "ACTIVE" } }),
+      col.countDocuments({ sellerId }),
+      col.countDocuments({ sellerId, status: "ACTIVE" }),
       prisma.client.count({ where: { sellerId } }),
       prisma.propertyVisit.count({ where: { sellerId } }),
       prisma.client.count({ where: { sellerId, interestLevel: "HIGH" } }),
       prisma.client.count({ where: { sellerId, interestLevel: "MEDIUM" } }),
       prisma.client.count({ where: { sellerId, interestLevel: "LOW" } }),
-      prisma.property.findMany({
-        where: { sellerId },
-        include: { interests: true, visits: true },
-      }),
+      col.find({ sellerId }).toArray(),
       prisma.propertyVisit.findMany({
         where: { sellerId, scheduledAt: { gte: new Date() }, status: "SCHEDULED" },
-        include: { client: true, property: true },
+        include: { client: true },
         orderBy: { scheduledAt: "asc" },
         take: 10,
       }),
       prisma.clientInteraction.findMany({
         where: { sellerId },
-        include: { client: true, property: true },
+        include: { client: true },
         orderBy: { timestamp: "desc" },
         take: 15,
       }),
     ]);
-  const leads = await prisma.clientPropertyInterest.count({ where: { sellerId } });
+  const [allInterests, allVisits] = await Promise.all([
+    prisma.clientPropertyInterest.findMany({ where: { sellerId } }),
+    prisma.propertyVisit.findMany({ where: { sellerId } }),
+  ]);
+
+  const interestsByProp = new Map<string, typeof allInterests>();
+  for (const item of allInterests) {
+    const list = interestsByProp.get(item.propertyId) || [];
+    list.push(item);
+    interestsByProp.set(item.propertyId, list);
+  }
+
+  const visitsByProp = new Map<string, typeof allVisits>();
+  for (const item of allVisits) {
+    const list = visitsByProp.get(item.propertyId) || [];
+    list.push(item);
+    visitsByProp.set(item.propertyId, list);
+  }
+
   res.json({
     stats: {
       totalProperties,
       activeProperties,
       totalClients,
-      totalLeads: leads,
+      totalLeads: allInterests.length,
       totalVisits: visits,
       highInterest: high,
       mediumInterest: medium,
       lowInterest: low,
     },
-    properties: properties.map((p) => ({
-      id: p.id,
-      title: p.title,
-      views: p.views,
-      leads: p.interests.length,
-      visits: p.visits.length,
-      interestedClients: p.interests.filter((i) => i.interestLevel !== "LOW").length,
-      status: p.status,
-    })),
+    properties: propDocs.map((p) => {
+      const pInterests = interestsByProp.get(p.propertyId) || [];
+      const pVisits = visitsByProp.get(p.propertyId) || [];
+      return {
+        id: p.propertyId,
+        title: p.title,
+        views: p.views || 0,
+        leads: pInterests.length,
+        visits: pVisits.length,
+        interestedClients: pInterests.filter((i) => i.interestLevel !== "LOW").length,
+        status: p.status,
+      };
+    }),
     clients: {
       high: await prisma.client.findMany({ where: { sellerId, interestLevel: "HIGH" } }),
       medium: await prisma.client.findMany({ where: { sellerId, interestLevel: "MEDIUM" } }),

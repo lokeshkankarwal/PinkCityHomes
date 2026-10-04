@@ -2,14 +2,28 @@ import type { Request, Response } from "express";
 import { z } from "zod";
 import { prisma } from "../../config/prisma.js";
 import { HttpError } from "../../middleware/error.js";
+import { getPropertiesCollection, formatMongoProperty } from "../../config/mongo.js";
 
 async function getCart(userId: string) {
-  return prisma.cart.upsert({
+  const cart = await prisma.cart.upsert({
     where: { userId },
     update: {},
     create: { userId },
-    include: { items: { include: { property: { include: { images: true } } } } },
+    include: { items: true },
   });
+
+  const propIds = cart.items.map((i) => i.propertyId);
+  const col = getPropertiesCollection();
+  const docs = await col.find({ propertyId: { $in: propIds } }).toArray();
+  const propMap = new Map(docs.map((p) => [p.propertyId, formatMongoProperty(p)]));
+
+  return {
+    ...cart,
+    items: cart.items.map((item) => ({
+      ...item,
+      property: propMap.get(item.propertyId) || null,
+    })),
+  };
 }
 
 export async function get(req: Request, res: Response) {
@@ -21,10 +35,15 @@ export async function get(req: Request, res: Response) {
 export async function add(req: Request, res: Response) {
   if (!req.user) throw new HttpError(401, "Authentication required");
   const { propertyId } = z.object({ propertyId: z.string() }).parse(req.body);
-  const p = await prisma.property.findUnique({ where: { id: propertyId } });
+  const col = getPropertiesCollection();
+  const p = await col.findOne({ propertyId });
   if (!p) throw new HttpError(404, "Property not found");
   if (p.status === "SOLD" || p.status !== "ACTIVE") throw new HttpError(400, "Property is not available");
-  const cart = await getCart(req.user.id);
+  const cart = await prisma.cart.upsert({
+    where: { userId: req.user.id },
+    update: {},
+    create: { userId: req.user.id },
+  });
   await prisma.cartItem.upsert({
     where: { cartId_propertyId: { cartId: cart.id, propertyId } },
     update: {},
@@ -35,7 +54,11 @@ export async function add(req: Request, res: Response) {
 
 export async function remove(req: Request, res: Response) {
   if (!req.user) throw new HttpError(401, "Authentication required");
-  const cart = await getCart(req.user.id);
+  const cart = await prisma.cart.upsert({
+    where: { userId: req.user.id },
+    update: {},
+    create: { userId: req.user.id },
+  });
   const propertyId = String(req.params.propertyId);
   await prisma.cartItem.deleteMany({ where: { cartId: cart.id, propertyId } });
   res.json(await getCart(req.user.id));
@@ -45,18 +68,17 @@ export async function checkout(req: Request, res: Response) {
   if (!req.user) throw new HttpError(401, "Authentication required");
   const cart = await prisma.cart.findUnique({
     where: { userId: req.user.id },
-    include: {
-      items: {
-        include: {
-          property: true,
-        },
-      },
-    },
+    include: { items: true },
   });
 
   if (!cart || cart.items.length === 0) {
     throw new HttpError(400, "Your cart is empty");
   }
+
+  const propIds = cart.items.map((i) => i.propertyId);
+  const col = getPropertiesCollection();
+  const docs = await col.find({ propertyId: { $in: propIds } }).toArray();
+  const propMap = new Map(docs.map((p) => [p.propertyId, p]));
 
   const customer = await prisma.user.findUnique({ where: { id: req.user.id } });
   const customerName = customer?.name || req.user.name || "Customer";
@@ -66,14 +88,14 @@ export async function checkout(req: Request, res: Response) {
   const createdOrders = [];
 
   for (const item of cart.items) {
-    const prop = item.property;
+    const prop = propMap.get(item.propertyId);
     if (!prop) continue;
 
     // 1. Create the Order
     const order = await prisma.order.create({
       data: {
         customerId: req.user.id,
-        propertyId: prop.id,
+        propertyId: prop.propertyId,
         status: "INITIATED",
         soldPrice: prop.price,
       },
@@ -119,7 +141,7 @@ export async function checkout(req: Request, res: Response) {
         where: {
           clientId_propertyId: {
             clientId: client.id,
-            propertyId: prop.id,
+            propertyId: prop.propertyId,
           },
         },
         update: {
@@ -129,7 +151,7 @@ export async function checkout(req: Request, res: Response) {
         },
         create: {
           clientId: client.id,
-          propertyId: prop.id,
+          propertyId: prop.propertyId,
           sellerId: prop.sellerId,
           interestLevel: "HIGH",
           budget: prop.price,
@@ -142,7 +164,7 @@ export async function checkout(req: Request, res: Response) {
         data: {
           clientId: client.id,
           sellerId: prop.sellerId,
-          propertyId: prop.id,
+          propertyId: prop.propertyId,
           type: "NOTE",
           notes: `Purchase Closing Order placed for "${prop.title}" (Valuation: ₹${prop.price.toLocaleString("en-IN")}). Buyer: ${customerName} (${customerEmail}).`,
         },
@@ -155,7 +177,7 @@ export async function checkout(req: Request, res: Response) {
         actorId: req.user.id,
         action: "PURCHASE_CLOSING_ORDER",
         entityType: "PROPERTY",
-        entityId: prop.id,
+        entityId: prop.propertyId,
         metadata: { orderId: order.id, price: prop.price, sellerId: prop.sellerId },
       },
     });

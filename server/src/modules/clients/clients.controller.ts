@@ -2,6 +2,7 @@ import type { Request, Response } from "express";
 import { z } from "zod";
 import { prisma } from "../../config/prisma.js";
 import { HttpError } from "../../middleware/error.js";
+import { getPropertiesCollection, formatMongoProperty } from "../../config/mongo.js";
 
 const clientInput = z.object({
   name: z.string().min(2),
@@ -47,13 +48,29 @@ export async function get(req: Request, res: Response) {
   const client = await prisma.client.findFirst({
     where: { id, sellerId: req.user.id },
     include: {
-      interests: { include: { property: true } },
+      interests: true,
       interactions: { orderBy: { timestamp: "desc" } },
-      visits: { include: { property: true }, orderBy: { scheduledAt: "desc" } },
+      visits: { orderBy: { scheduledAt: "desc" } },
     },
   });
   if (!client) throw new HttpError(404, "Client not found");
-  res.json(client);
+
+  const propIds = [
+    ...client.interests.map((i) => i.propertyId),
+    ...client.visits.map((v) => v.propertyId),
+  ];
+
+  const col = getPropertiesCollection();
+  const propDocs = await col.find({ propertyId: { $in: propIds } }).toArray();
+  const propMap = new Map(propDocs.map((p) => [p.propertyId, formatMongoProperty(p)]));
+
+  const hydrated = {
+    ...client,
+    interests: client.interests.map((i) => ({ ...i, property: propMap.get(i.propertyId) || null })),
+    visits: client.visits.map((v) => ({ ...v, property: propMap.get(v.propertyId) || null })),
+  };
+
+  res.json(hydrated);
 }
 
 export async function update(req: Request, res: Response) {
@@ -82,14 +99,17 @@ export async function addInterest(req: Request, res: Response) {
       notes: z.string().optional(),
     })
     .parse(req.body);
-  const prop = await prisma.property.findFirst({ where: { id: body.propertyId, sellerId: req.user.id } });
+
+  const col = getPropertiesCollection();
+  const prop = await col.findOne({ propertyId: body.propertyId, sellerId: req.user.id });
   if (!prop) throw new HttpError(404, "Property not found");
+
   const rec = await prisma.clientPropertyInterest.upsert({
-    where: { clientId_propertyId: { clientId: client.id, propertyId: prop.id } },
+    where: { clientId_propertyId: { clientId: client.id, propertyId: prop.propertyId } },
     update: { interestLevel: body.interestLevel, budget: body.budget, notes: body.notes },
     create: {
       clientId: client.id,
-      propertyId: prop.id,
+      propertyId: prop.propertyId,
       sellerId: req.user.id,
       interestLevel: body.interestLevel,
       budget: body.budget,

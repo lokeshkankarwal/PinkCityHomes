@@ -1,8 +1,7 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { api } from "../../api/client";
 import { PropertyCard } from "../../components/PropertyCard";
-import { PropertyMap, type MapProperty, type MapBounds } from "../../components/PropertyMap";
 import { LocationSearchBar } from "../../components/LocationSearchBar";
 import { PropertyFilterBar, type FilterState } from "../../components/PropertyFilterBar";
 import { useAuth } from "../../auth";
@@ -30,14 +29,6 @@ export default function RentalsPage() {
   const [loading, setLoading] = useState(true);
   const [actionMsg, setActionMsg] = useState<string | null>(null);
 
-  // Map state
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [hoveredId, setHoveredId] = useState<string | null>(null);
-  const [mapBounds, setMapBounds] = useState<MapBounds | null>(null);
-
-  // Mobile view mode
-  const [mobileTab, setMobileTab] = useState<"list" | "map">("list");
-
   // Pagination
   const [page, setPage] = useState(1);
   const pageSize = 12;
@@ -46,7 +37,6 @@ export default function RentalsPage() {
   const updateFilters = (newFilters: FilterState) => {
     setFilters(newFilters);
     setPage(1);
-    setMapBounds(null);
 
     const p = new URLSearchParams();
     if (newFilters.locality) p.set("locality", newFilters.locality);
@@ -61,7 +51,7 @@ export default function RentalsPage() {
     setSearchParams(p);
   };
 
-  // Fetch rental properties (geospatial or filter query)
+  // Fetch rental properties
   useEffect(() => {
     let isMounted = true;
     setLoading(true);
@@ -79,14 +69,6 @@ export default function RentalsPage() {
     if (filters.furnishing) queryParts.set("furnishing", filters.furnishing);
     if (filters.bathrooms) queryParts.set("bathrooms", filters.bathrooms);
     if (filters.sort) queryParts.set("sort", filters.sort);
-
-    // Apply map bounding box if "Search this area" was triggered
-    if (mapBounds) {
-      queryParts.set("north", String(mapBounds.north));
-      queryParts.set("south", String(mapBounds.south));
-      queryParts.set("east", String(mapBounds.east));
-      queryParts.set("west", String(mapBounds.west));
-    }
 
     api
       .get<{ total: number; results: Property[] }>(`/properties/search?${queryParts.toString()}`)
@@ -107,12 +89,7 @@ export default function RentalsPage() {
     return () => {
       isMounted = false;
     };
-  }, [filters, page, mapBounds]);
-
-  const handleSearchArea = (bounds: MapBounds) => {
-    setMapBounds(bounds);
-    setPage(1);
-  };
+  }, [filters, page]);
 
   const handleFav = async (propertyId: string, title: string) => {
     if (!user) {
@@ -130,30 +107,10 @@ export default function RentalsPage() {
     }
   };
 
-  // Prepare map properties
-  const mapPoints: MapProperty[] = useMemo(() => {
-    return rentals.map((r) => ({
-      id: r.id,
-      title: r.title,
-      price: r.price,
-      latitude: r.latitude,
-      longitude: r.longitude,
-      locality: r.locality,
-      city: r.city,
-      bhk: r.bhk,
-      bathrooms: r.bathrooms,
-      carpetArea: r.carpetArea,
-      propertyType: r.propertyType,
-      listingType: "RENT",
-      primaryImage: r.images?.[0]?.path || r.primaryImage,
-      href: `/properties/${r.id}`,
-    }));
-  }, [rentals]);
-
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
   return (
-    <div className="space-y-6 pb-12">
+    <div className="space-y-6 pb-16">
       {/* Header & Location Search */}
       <div className="space-y-4">
         <div>
@@ -180,160 +137,109 @@ export default function RentalsPage() {
         </div>
       )}
 
-      {/* Mobile Tab Switcher */}
-      <div className="lg:hidden flex rounded-2xl bg-ink/5 p-1 text-sm font-semibold">
-        <button
-          type="button"
-          onClick={() => setMobileTab("list")}
-          className={`flex-1 rounded-xl py-2 transition flex items-center justify-center gap-2 ${
-            mobileTab === "list" ? "bg-white shadow text-ink" : "text-ink/60"
-          }`}
-        >
-          <span>📋</span> List View ({totalCount})
-        </button>
-        <button
-          type="button"
-          onClick={() => setMobileTab("map")}
-          className={`flex-1 rounded-xl py-2 transition flex items-center justify-center gap-2 ${
-            mobileTab === "map" ? "bg-white shadow text-ink" : "text-ink/60"
-          }`}
-        >
-          <span>🗺️</span> Interactive Map
-        </button>
-      </div>
+      {/* Filter Bar (Card- & Filter-first) */}
+      <PropertyFilterBar
+        filters={filters}
+        onChange={updateFilters}
+        listingType="RENT"
+        totalCount={totalCount}
+        loading={loading}
+      />
 
-      {/* Main Split Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Left Side: Filters + Rental List */}
-        <div
-          className={`lg:col-span-7 xl:col-span-7 space-y-6 ${
-            mobileTab === "map" ? "hidden lg:block" : "block"
-          }`}
-        >
-          {/* Filter Bar */}
-          <PropertyFilterBar
-            filters={filters}
-            onChange={updateFilters}
-            listingType="RENT"
-            totalCount={totalCount}
-            loading={loading}
-          />
+      {/* Rentals Grid */}
+      {loading ? (
+        <div className="py-24 text-center space-y-3">
+          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-emerald-600 border-r-transparent"></div>
+          <p className="text-sm font-semibold text-ink/60">Searching verified rental homes in Jaipur...</p>
+        </div>
+      ) : rentals.length === 0 ? (
+        /* Friendly Empty State */
+        <div className="rounded-3xl border border-ink/10 bg-white p-8 sm:p-12 text-center space-y-4 shadow-sm max-w-2xl mx-auto">
+          <span className="text-4xl">🔑</span>
+          <h3 className="font-serif text-2xl font-bold text-ink">No rental homes found with these filters</h3>
+          <div className="text-sm text-ink/70 text-left space-y-2 bg-sand/40 p-5 rounded-2xl border border-ink/5">
+            <p className="font-semibold text-ink">Helpful suggestions:</p>
+            <ul className="list-disc list-inside text-xs space-y-1.5 text-ink/70">
+              <li>Try increasing your monthly rent budget range</li>
+              <li>Consider semi-furnished or unfurnished options</li>
+              <li>Explore nearby localities with good metro connectivity</li>
+            </ul>
+          </div>
+          <button
+            type="button"
+            onClick={() =>
+              updateFilters({
+                locality: "",
+                minPrice: "",
+                maxPrice: "",
+                bhk: "",
+                propertyType: "",
+                furnishing: "",
+                bathrooms: "",
+                minArea: "",
+                sort: "recommended",
+              })
+            }
+            className="inline-block rounded-xl bg-ink px-6 py-2.5 text-xs font-bold text-sand hover:bg-ink/90 transition shadow"
+          >
+            Clear Filters & Show All Rentals
+          </button>
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {rentals.map((item) => (
+              <PropertyCard
+                key={item.id}
+                id={item.id}
+                title={item.title}
+                price={item.price}
+                locality={item.locality}
+                city={item.city || "Jaipur"}
+                bhk={item.bhk}
+                bathrooms={item.bathrooms}
+                area={item.carpetArea}
+                propertyType={item.propertyType}
+                image={item.images?.[0]?.path}
+                href={`/properties/${item.id}`}
+                sold={item.status === "SOLD"}
+                projectName={item.projectName || undefined}
+                listingType="RENT"
+                onFav={user?.role === "SELLER" ? undefined : () => void handleFav(item.id, item.title)}
+              />
+            ))}
+          </div>
 
-          {/* Properties List */}
-          {loading ? (
-            <div className="py-24 text-center space-y-3">
-              <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-emerald-600 border-r-transparent"></div>
-              <p className="text-sm font-semibold text-ink/60">Searching verified rental homes in Jaipur...</p>
-            </div>
-          ) : rentals.length === 0 ? (
-            /* Friendly Empty State */
-            <div className="rounded-3xl border border-ink/10 bg-white p-8 sm:p-12 text-center space-y-4 shadow-sm">
-              <span className="text-4xl">🔑</span>
-              <h3 className="font-serif text-2xl font-bold text-ink">No rental homes found with these filters</h3>
-              <div className="text-sm text-ink/70 max-w-md mx-auto text-left space-y-2 bg-sand/40 p-4 rounded-2xl border border-ink/5">
-                <p className="font-semibold text-ink">Helpful suggestions:</p>
-                <ul className="list-disc list-inside text-xs space-y-1 text-ink/70">
-                  <li>Try increasing your monthly rent budget range</li>
-                  <li>Consider semi-furnished or unfurnished options</li>
-                  <li>Explore nearby localities with good metro connectivity</li>
-                </ul>
-              </div>
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2 pt-6">
               <button
-                type="button"
-                onClick={() =>
-                  updateFilters({
-                    locality: "",
-                    minPrice: "",
-                    maxPrice: "",
-                    bhk: "",
-                    propertyType: "",
-                    furnishing: "",
-                    bathrooms: "",
-                    minArea: "",
-                    sort: "recommended",
-                  })
-                }
-                className="inline-block rounded-xl bg-ink px-6 py-2.5 text-xs font-bold text-sand hover:bg-ink/90 transition shadow"
+                disabled={page <= 1}
+                onClick={() => {
+                  setPage((p) => Math.max(1, p - 1));
+                  window.scrollTo({ top: 120, behavior: "smooth" });
+                }}
+                className="rounded-xl border border-ink/20 bg-white px-4 py-2 text-xs font-bold disabled:opacity-40 hover:bg-sand transition shadow-sm"
               >
-                Clear Filters & Show All Rentals
+                &larr; Previous
+              </button>
+              <span className="text-xs font-bold text-ink/70 px-3">
+                Page {page} of {totalPages}
+              </span>
+              <button
+                disabled={page >= totalPages}
+                onClick={() => {
+                  setPage((p) => Math.min(totalPages, p + 1));
+                  window.scrollTo({ top: 120, behavior: "smooth" });
+                }}
+                className="rounded-xl border border-ink/20 bg-white px-4 py-2 text-xs font-bold disabled:opacity-40 hover:bg-sand transition shadow-sm"
+              >
+                Next &rarr;
               </button>
             </div>
-          ) : (
-            <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                {rentals.map((item) => (
-                  <PropertyCard
-                    key={item.id}
-                    id={item.id}
-                    title={item.title}
-                    price={item.price}
-                    locality={item.locality}
-                    city={item.city || "Jaipur"}
-                    bhk={item.bhk}
-                    bathrooms={item.bathrooms}
-                    area={item.carpetArea}
-                    propertyType={item.propertyType}
-                    image={item.images?.[0]?.path}
-                    href={`/properties/${item.id}`}
-                    sold={item.status === "SOLD"}
-                    projectName={item.projectName || undefined}
-                    listingType="RENT"
-                    isSelected={selectedId === item.id}
-                    onMouseEnter={() => setHoveredId(item.id)}
-                    onMouseLeave={() => setHoveredId(null)}
-                    onFav={user?.role === "SELLER" ? undefined : () => void handleFav(item.id, item.title)}
-                  />
-                ))}
-              </div>
-
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="flex items-center justify-center gap-2 pt-4">
-                  <button
-                    disabled={page <= 1}
-                    onClick={() => {
-                      setPage((p) => Math.max(1, p - 1));
-                      window.scrollTo({ top: 120, behavior: "smooth" });
-                    }}
-                    className="rounded-xl border border-ink/20 px-4 py-2 text-xs font-bold disabled:opacity-40 hover:bg-sand transition"
-                  >
-                    &larr; Previous
-                  </button>
-                  <span className="text-xs font-bold text-ink/70 px-3">
-                    Page {page} of {totalPages}
-                  </span>
-                  <button
-                    disabled={page >= totalPages}
-                    onClick={() => {
-                      setPage((p) => Math.min(totalPages, p + 1));
-                      window.scrollTo({ top: 120, behavior: "smooth" });
-                    }}
-                    className="rounded-xl border border-ink/20 px-4 py-2 text-xs font-bold disabled:opacity-40 hover:bg-sand transition"
-                  >
-                    Next &rarr;
-                  </button>
-                </div>
-              )}
-            </>
           )}
-        </div>
-
-        {/* Right Side: Sticky Interactive Map */}
-        <div
-          className={`lg:col-span-5 xl:col-span-5 sticky top-20 ${
-            mobileTab === "list" ? "hidden lg:block" : "block"
-          } h-[550px] lg:h-[calc(100vh-140px)]`}
-        >
-          <PropertyMap
-            properties={mapPoints}
-            selectedId={selectedId}
-            hoveredId={hoveredId}
-            onSelectProperty={setSelectedId}
-            onSearchArea={handleSearchArea}
-            listingType="RENT"
-          />
-        </div>
-      </div>
+        </>
+      )}
     </div>
   );
 }

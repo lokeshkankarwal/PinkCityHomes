@@ -203,6 +203,22 @@ export async function uploadAvatar(req: Request, res: Response) {
   res.json({ user: publicUser(updated) });
 }
 
+export async function removeAvatar(req: Request, res: Response) {
+  if (!req.user) throw new HttpError(401, "Authentication required");
+  const current = await prisma.user.findUnique({ where: { id: req.user.id }, select: { avatarUrl: true } });
+  if (current?.avatarUrl && current.avatarUrl.startsWith("/uploads/")) {
+    deleteLocalFile(current.avatarUrl);
+  }
+
+  const updated = await prisma.user.update({
+    where: { id: req.user.id },
+    data: { avatarUrl: null },
+    include: { sellerProfile: true },
+  });
+
+  res.json({ user: publicUser(updated) });
+}
+
 function publicUser(user: {
   id: string;
   email: string;

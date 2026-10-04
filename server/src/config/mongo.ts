@@ -1,26 +1,52 @@
-import { MongoClient, type Db, type Collection } from "mongodb";
+import { MongoClient, ObjectId, type Db, type Collection } from "mongodb";
 import { env } from "./env.js";
-import { prisma } from "./prisma.js";
 
-export interface GeoPropertyDoc {
+export interface MongoPropertyImage {
+  id: string;
+  path: string;
+  isPrimary: boolean;
+  sortOrder: number;
+}
+
+export interface MongoProperty {
+  _id?: ObjectId;
   propertyId: string;
-  listingType: string;
+  sellerId: string;
+  listingType: "BUY" | "RENT";
   title: string;
-  locality: string;
-  city: string;
-  price: number;
+  description: string;
+  propertyType: "APARTMENT" | "VILLA" | "INDEPENDENT_HOUSE" | "PLOT" | "BUILDER_FLOOR";
+  bhk: number;
   bedrooms: number;
   bathrooms: number;
+  price: number;
   carpetArea: number;
-  propertyType: string;
-  furnishing: string;
-  status: string;
-  address?: string;
-  primaryImage?: string;
+  superBuiltUpArea?: number;
+  builtUpArea?: number;
+  furnishing: "UNFURNISHED" | "SEMI_FURNISHED" | "FULLY_FURNISHED";
+  floor?: number;
+  totalFloors?: number;
+  parking: number;
+  parkingSlots?: number;
+  amenities: string[];
+  projectName?: string;
+  locality: string;
+  city: string;
+  address: string;
   location: {
     type: "Point";
-    coordinates: [number, number]; // GeoJSON [longitude, latitude]
+    coordinates: [number, number]; // GeoJSON strictly [longitude, latitude]
   };
+  latitude: number;
+  longitude: number;
+  images: MongoPropertyImage[];
+  primaryImage?: string;
+  status: "DRAFT" | "ACTIVE" | "INACTIVE" | "SOLD";
+  verified: boolean;
+  views: number;
+  contactName: string;
+  contactPhone: string;
+  createdAt: Date;
   updatedAt: Date;
 }
 
@@ -32,25 +58,28 @@ export async function connectMongo(): Promise<Db | null> {
   if (db && isConnected) return db;
   try {
     client = new MongoClient(env.mongoUri, {
-      serverSelectionTimeoutMS: 3000,
+      serverSelectionTimeoutMS: 4000,
       connectTimeoutMS: 5000,
     });
     await client.connect();
     db = client.db();
     isConnected = true;
 
-    // Ensure indexes
-    const col = db.collection<GeoPropertyDoc>("properties");
+    // Ensure geospatial and performance indexes
+    const col = db.collection<MongoProperty>("properties");
     await col.createIndex({ location: "2dsphere" });
     await col.createIndex({ propertyId: 1 }, { unique: true });
     await col.createIndex({ listingType: 1, status: 1 });
     await col.createIndex({ locality: 1 });
     await col.createIndex({ price: 1 });
+    await col.createIndex({ bhk: 1 });
+    await col.createIndex({ sellerId: 1 });
+    await col.createIndex({ createdAt: -1 });
 
-    console.log("[MongoDB] Connected successfully. 2dsphere geospatial index verified.");
+    console.log("[MongoDB] Connected successfully to primary properties database. 2dsphere verified.");
     return db;
   } catch (err) {
-    console.warn("[MongoDB] Connection warning (geospatial queries will fall back to PostgreSQL):", (err as Error).message);
+    console.error("[MongoDB] Connection error:", (err as Error).message);
     isConnected = false;
     db = null;
     return null;
@@ -61,100 +90,58 @@ export function getMongoDb(): Db | null {
   return isConnected ? db : null;
 }
 
-export function getGeoCollection(): Collection<GeoPropertyDoc> | null {
-  return isConnected && db ? db.collection<GeoPropertyDoc>("properties") : null;
+export function getPropertiesCollection(): Collection<MongoProperty> {
+  if (!isConnected || !db) {
+    throw new Error("MongoDB properties database is not connected.");
+  }
+  return db.collection<MongoProperty>("properties");
 }
 
-/**
- * Synchronize a single property from PostgreSQL to MongoDB.
- * Ensures [longitude, latitude] GeoJSON format with 2dsphere index compatibility.
- */
-export async function syncPropertyToMongo(property: {
-  id: string;
-  listingType?: string;
-  title: string;
-  locality: string;
-  city: string;
-  price: number;
-  bhk: number;
-  bathrooms?: number;
-  carpetArea: number;
-  propertyType: string;
-  furnishing: string;
-  status: string;
-  address?: string;
-  primaryImage?: string;
-  images?: { path: string; isPrimary: boolean; sortOrder: number }[];
-  latitude: number;
-  longitude: number;
-}) {
-  const col = getGeoCollection();
-  if (!col) return;
-
-  // Don't index non-active properties in discovery
-  if (property.status !== "ACTIVE") {
-    await col.deleteOne({ propertyId: property.id }).catch(() => {});
-    return;
-  }
-
+export function formatMongoProperty(doc: MongoProperty) {
+  const images = [...(doc.images || [])].sort((a, b) => a.sortOrder - b.sortOrder);
   const primary =
-    property.primaryImage ||
-    property.images?.find((i) => i.isPrimary)?.path ||
-    property.images?.[0]?.path;
+    doc.primaryImage ||
+    images.find((i) => i.isPrimary)?.path ||
+    images[0]?.path ||
+    "/defaults/apartment.svg";
 
-  // GeoJSON requires [longitude, latitude]
-  const doc: GeoPropertyDoc = {
-    propertyId: property.id,
-    listingType: (property.listingType || "BUY").toUpperCase(),
-    title: property.title,
-    locality: property.locality.toLowerCase(),
-    city: property.city || "Jaipur",
-    price: property.price,
-    bedrooms: property.bhk,
-    bathrooms: property.bathrooms ?? 1,
-    carpetArea: property.carpetArea,
-    propertyType: property.propertyType,
-    furnishing: property.furnishing,
-    status: property.status,
-    address: property.address,
+  return {
+    id: doc.propertyId,
+    propertyId: doc.propertyId,
+    sellerId: doc.sellerId,
+    title: doc.title,
+    description: doc.description,
+    propertyType: doc.propertyType,
+    listingType: doc.listingType,
+    projectName: doc.projectName,
+    bhk: doc.bhk,
+    bedrooms: doc.bedrooms,
+    bathrooms: doc.bathrooms,
+    price: doc.price,
+    carpetArea: doc.carpetArea,
+    superBuiltUpArea: doc.superBuiltUpArea ?? doc.carpetArea,
+    builtUpArea: doc.builtUpArea ?? doc.superBuiltUpArea ?? doc.carpetArea,
+    furnishing: doc.furnishing,
+    floor: doc.floor,
+    totalFloors: doc.totalFloors,
+    parking: doc.parking ?? doc.parkingSlots ?? 0,
+    parkingSlots: doc.parkingSlots ?? doc.parking ?? 0,
+    amenities: doc.amenities || [],
+    address: doc.address,
+    locality: doc.locality,
+    city: doc.city || "Jaipur",
+    latitude: doc.latitude,
+    longitude: doc.longitude,
+    location: doc.location,
+    images,
     primaryImage: primary,
-    location: {
-      type: "Point",
-      coordinates: [property.longitude, property.latitude],
-    },
-    updatedAt: new Date(),
+    status: doc.status,
+    verified: doc.verified ?? true,
+    views: doc.views || 0,
+    contactName: doc.contactName,
+    contactPhone: doc.contactPhone,
+    createdAt: doc.createdAt instanceof Date ? doc.createdAt.toISOString() : doc.createdAt,
+    updatedAt: doc.updatedAt instanceof Date ? doc.updatedAt.toISOString() : doc.updatedAt,
   };
-
-  await col.updateOne({ propertyId: property.id }, { $set: doc }, { upsert: true });
 }
 
-/**
- * Delete a property from MongoDB discovery collection.
- */
-export async function deletePropertyFromMongo(propertyId: string) {
-  const col = getGeoCollection();
-  if (!col) return;
-  await col.deleteOne({ propertyId }).catch(() => {});
-}
-
-/**
- * Bootstraps initial synchronization from PostgreSQL to MongoDB on server startup.
- */
-export async function bootstrapSyncFromPostgres() {
-  const col = getGeoCollection();
-  if (!col) return;
-
-  try {
-    const activeProperties = await prisma.property.findMany({
-      where: { status: "ACTIVE" },
-      include: { images: true },
-    });
-
-    for (const prop of activeProperties) {
-      await syncPropertyToMongo(prop);
-    }
-    console.log(`[MongoDB] Initial sync complete. Synced ${activeProperties.length} active properties.`);
-  } catch (err) {
-    console.warn("[MongoDB] Bootstrap sync warning:", (err as Error).message);
-  }
-}

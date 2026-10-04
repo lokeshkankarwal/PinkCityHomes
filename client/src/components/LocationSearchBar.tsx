@@ -1,21 +1,12 @@
 import { useState, useEffect, useRef } from "react";
+import {
+  searchJaipurLocations,
+  getPopularJaipurLocalities,
+  type JaipurLocation,
+  JAIPUR_LOCATIONS,
+} from "../services/jaipurLocations";
 
-export const JAIPUR_LOCALITIES = [
-  "Malviya Nagar",
-  "Mansarovar",
-  "Vaishali Nagar",
-  "C-Scheme",
-  "Jagatpura",
-  "Tonk Road",
-  "Ajmer Road",
-  "Civil Lines",
-  "Shyam Nagar",
-  "Murlipura",
-  "Raja Park",
-  "Bapu Nagar",
-  "Gopalpura",
-  "Vidyadhar Nagar",
-];
+export const JAIPUR_LOCALITIES = JAIPUR_LOCATIONS.map((l) => l.name);
 
 type Props = {
   value: string;
@@ -27,7 +18,7 @@ type Props = {
 export function LocationSearchBar({
   value,
   onChange,
-  placeholder = 'Try "Malviya Nagar", "Mansarovar", or "Vaishali Nagar"',
+  placeholder = "Search Jaipur locality, colony, road or area...",
   showPopularChips = true,
 }: Props) {
   const [inputVal, setInputVal] = useState(value);
@@ -38,7 +29,6 @@ export function LocationSearchBar({
     setInputVal(value);
   }, [value]);
 
-  // Close dropdown on outside click
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
@@ -49,14 +39,13 @@ export function LocationSearchBar({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const suggestions = JAIPUR_LOCALITIES.filter((loc) =>
-    loc.toLowerCase().includes(inputVal.trim().toLowerCase()),
-  );
+  const suggestions = searchJaipurLocations(inputVal, 10);
+  const popularList = getPopularJaipurLocalities();
 
-  const handleSelect = (loc: string) => {
-    setInputVal(loc);
+  const handleSelect = (locName: string) => {
+    setInputVal(locName);
     setShowDropdown(false);
-    onChange(loc);
+    onChange(locName);
   };
 
   const handleClear = () => {
@@ -68,12 +57,52 @@ export function LocationSearchBar({
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
       setShowDropdown(false);
-      onChange(inputVal.trim());
+      if (suggestions.length > 0 && inputVal.trim()) {
+        handleSelect(suggestions[0].name);
+      } else {
+        onChange(inputVal.trim());
+      }
     }
+  };
+
+  // Helper to highlight matching text
+  const renderHighlighted = (text: string, query: string) => {
+    if (!query.trim()) return <span>{text}</span>;
+    const q = query.trim().toLowerCase();
+    const idx = text.toLowerCase().indexOf(q);
+    if (idx === -1) return <span>{text}</span>;
+    return (
+      <span>
+        {text.substring(0, idx)}
+        <span className="font-bold text-pink-700 bg-pink-100 rounded px-0.5">
+          {text.substring(idx, idx + q.length)}
+        </span>
+        {text.substring(idx + q.length)}
+      </span>
+    );
   };
 
   return (
     <div ref={containerRef} className="space-y-2 w-full">
+      {/* Selected Location Chip if active */}
+      {value && (
+        <div className="flex items-center gap-2">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-pink-50 border border-pink-200 px-3 py-1 text-xs font-semibold text-pink-800 shadow-sm animate-fade-in">
+            <span>📍</span>
+            <span>{value}, Jaipur</span>
+            <button
+              type="button"
+              onClick={handleClear}
+              className="ml-1 flex h-4 w-4 items-center justify-center rounded-full hover:bg-pink-200 text-pink-700 text-xs font-bold"
+              title="Remove location filter"
+            >
+              &times;
+            </button>
+          </span>
+        </div>
+      )}
+
+      {/* Input Field */}
       <div className="relative flex items-center">
         <span className="absolute left-3.5 text-ink/40 text-base">📍</span>
         <input
@@ -93,7 +122,7 @@ export function LocationSearchBar({
             type="button"
             onClick={handleClear}
             className="absolute right-3.5 flex h-5 w-5 items-center justify-center rounded-full bg-ink/10 text-xs text-ink/70 hover:bg-ink/20"
-            title="Clear locality"
+            title="Clear location"
           >
             &times;
           </button>
@@ -103,53 +132,68 @@ export function LocationSearchBar({
             onClick={() => onChange(inputVal.trim())}
             className="absolute right-2 rounded-xl bg-ink px-3 py-1.5 text-xs font-semibold text-sand hover:bg-pink-700 transition"
           >
-            Find
+            Search
           </button>
         )}
 
         {/* Autocomplete Dropdown */}
         {showDropdown && (
-          <div className="absolute top-full left-0 right-0 z-50 mt-1 max-h-56 overflow-y-auto rounded-2xl border border-ink/10 bg-white p-2 shadow-2xl space-y-1">
-            <p className="px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-ink/40">
-              Popular Localities in Jaipur
-            </p>
-            {suggestions.length > 0 ? (
-              suggestions.map((loc) => (
-                <button
-                  key={loc}
-                  type="button"
-                  onClick={() => handleSelect(loc)}
-                  className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm font-medium text-ink hover:bg-pink-50 hover:text-pink-700 transition"
-                >
-                  <span className="text-pink-600">📍</span>
-                  <span>{loc}, Jaipur</span>
-                </button>
-              ))
-            ) : (
-              <div className="px-3 py-2 text-xs text-ink/60">
-                No matching locality found. Press Enter to search "{inputVal}".
-              </div>
-            )}
+          <div className="absolute top-full left-0 right-0 z-50 mt-1.5 max-h-64 overflow-y-auto rounded-2xl border border-ink/10 bg-white p-2 shadow-2xl space-y-1 divide-y divide-ink/5">
+            <div className="px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-ink/40 flex justify-between items-center">
+              <span>{inputVal.trim() ? "Matching Jaipur Locations" : "Popular Localities in Jaipur"}</span>
+              <span className="text-[10px] text-ink/40 font-normal">Jaipur, Rajasthan</span>
+            </div>
+
+            <div className="pt-1 space-y-0.5">
+              {suggestions.length > 0 ? (
+                suggestions.map((loc: JaipurLocation) => (
+                  <button
+                    key={loc.name}
+                    type="button"
+                    onClick={() => handleSelect(loc.name)}
+                    className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-medium text-ink hover:bg-pink-50 hover:text-pink-700 transition"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="text-pink-600">📍</span>
+                      <div>
+                        <p className="text-sm font-semibold">{renderHighlighted(loc.name, inputVal)}</p>
+                        <p className="text-[11px] text-ink/50">Jaipur, Rajasthan</p>
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-semibold text-ink/40 bg-sand/60 rounded px-1.5 py-0.5">
+                      {loc.category}
+                    </span>
+                  </button>
+                ))
+              ) : (
+                <div className="px-3 py-3 text-xs text-ink/60">
+                  <p className="font-semibold text-ink/80">No exact location found for "{inputVal}".</p>
+                  <p className="text-[11px] text-ink/50 mt-0.5">
+                    Press Enter to search listings with "{inputVal}" in address.
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>
 
-      {/* Quick locality chips */}
+      {/* Popular Locality Quick Chips */}
       {showPopularChips && (
         <div className="flex flex-wrap items-center gap-1.5 pt-1 text-xs">
           <span className="text-ink/50 text-[11px] font-semibold mr-1">Popular:</span>
-          {["Malviya Nagar", "Mansarovar", "Vaishali Nagar", "C-Scheme", "Jagatpura"].map((loc) => (
+          {popularList.slice(0, 8).map((loc) => (
             <button
-              key={loc}
+              key={loc.name}
               type="button"
-              onClick={() => handleSelect(loc)}
+              onClick={() => handleSelect(loc.name)}
               className={`rounded-full px-2.5 py-1 text-[11px] font-semibold transition border ${
-                value.toLowerCase() === loc.toLowerCase()
+                value.toLowerCase() === loc.name.toLowerCase()
                   ? "bg-pink-600 text-white border-pink-600 shadow-sm"
                   : "bg-white text-ink/70 border-ink/10 hover:border-pink-300 hover:bg-pink-50/50 hover:text-pink-700"
               }`}
             >
-              {loc}
+              {loc.name}
             </button>
           ))}
         </div>
@@ -157,3 +201,4 @@ export function LocationSearchBar({
     </div>
   );
 }
+

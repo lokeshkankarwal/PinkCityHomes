@@ -2,6 +2,7 @@ import type { Request, Response } from "express";
 import { z } from "zod";
 import { prisma } from "../../config/prisma.js";
 import { HttpError } from "../../middleware/error.js";
+import { getPropertiesCollection, formatMongoProperty } from "../../config/mongo.js";
 
 const projectInput = z.object({
   name: z.string().min(2),
@@ -66,10 +67,8 @@ export async function listMine(req: Request, res: Response) {
     orderBy: { updatedAt: "desc" },
   });
 
-  const properties = await prisma.property.findMany({
-    where: { sellerId: req.user.id },
-    include: { images: true },
-  });
+  const col = getPropertiesCollection();
+  const properties = (await col.find({ sellerId: req.user.id }).toArray()).map(formatMongoProperty);
 
   const results = projects.map((proj) => {
     const units = properties.filter(
@@ -97,11 +96,10 @@ export async function listPublic(req: Request, res: Response) {
     orderBy: { createdAt: "desc" },
   });
 
-  // 2. Fetch all active properties with a projectName
-  const activeProps = await prisma.property.findMany({
-    where: { status: "ACTIVE", projectName: { not: null } },
-    include: { images: true, seller: { select: { name: true } } },
-  });
+  // 2. Fetch all active properties with a projectName from MongoDB
+  const col = getPropertiesCollection();
+  const activeDocs = await col.find({ status: "ACTIVE", projectName: { $exists: true, $ne: "" } }).toArray();
+  const activeProps = activeDocs.map(formatMongoProperty);
 
   // 3. Map projects with live unit metrics
   const projectsMap = new Map<string, any>();
@@ -157,7 +155,7 @@ export async function listPublic(req: Request, res: Response) {
       projectsMap.set(key, {
         project_id: `platform-${key.replace(/\W+/g, "-")}`,
         apartment_name: p.projectName.trim(),
-        developer_name: p.seller?.name ? `${p.seller.name} (Verified Seller)` : "Verified Developer",
+        developer_name: p.contactName ? `${p.contactName} (Verified Seller)` : "Verified Developer",
         locality: p.locality,
         city: p.city || "Jaipur",
         address: p.address,
@@ -217,15 +215,18 @@ export async function getPublic(req: Request, res: Response) {
 
   const projectName = proj?.name || id.replace(/^platform-/, "").replace(/-/g, " ");
 
-  // 3. Find all active properties under this project
-  const units = await prisma.property.findMany({
-    where: {
+  // 3. Find all active properties under this project from MongoDB
+  const col = getPropertiesCollection();
+  const escaped = projectName.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const unitDocs = await col
+    .find({
       status: "ACTIVE",
-      projectName: { equals: projectName, mode: "insensitive" },
-    },
-    include: { images: true, seller: { select: { name: true, phone: true } } },
-    orderBy: { price: "asc" },
-  });
+      projectName: { $regex: new RegExp(`^${escaped}$`, "i") },
+    })
+    .sort({ price: 1 })
+    .toArray();
+
+  const units = unitDocs.map(formatMongoProperty);
 
   const buyUnits = units.filter((u) => u.listingType === "BUY");
   const rentUnits = units.filter((u) => u.listingType === "RENT");
@@ -268,7 +269,7 @@ export async function getPublic(req: Request, res: Response) {
     return res.json({
       project_id: id,
       apartment_name: first.projectName,
-      developer_name: first.seller?.name ? `${first.seller.name} (Verified Developer)` : "Verified Developer",
+      developer_name: first.contactName ? `${first.contactName} (Verified Developer)` : "Verified Developer",
       locality: first.locality,
       city: first.city || "Jaipur",
       address: first.address,

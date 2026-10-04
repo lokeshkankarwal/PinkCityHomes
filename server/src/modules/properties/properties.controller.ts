@@ -1,10 +1,15 @@
 import { z } from "zod";
 import type { Request, Response } from "express";
-import { Prisma, PropertyStatus } from "@prisma/client";
+import crypto from "crypto";
 import { prisma } from "../../config/prisma.js";
 import { HttpError } from "../../middleware/error.js";
 import { defaultImageForType, deleteLocalFile, saveLocalFile } from "../../services/storage.service.js";
-import { getGeoCollection, syncPropertyToMongo, deletePropertyFromMongo } from "../../config/mongo.js";
+import {
+  getPropertiesCollection,
+  formatMongoProperty,
+  type MongoProperty,
+  type MongoPropertyImage,
+} from "../../config/mongo.js";
 
 const propertyInput = z.object({
   title: z.string().min(3),
@@ -16,31 +21,22 @@ const propertyInput = z.object({
   bathrooms: z.coerce.number().int().min(0).default(1),
   price: z.coerce.number().int().min(0),
   carpetArea: z.coerce.number().int().min(0),
-  superBuiltUpArea: z.coerce.number().int().min(0),
+  superBuiltUpArea: z.coerce.number().int().optional(),
+  builtUpArea: z.coerce.number().int().optional(),
   furnishing: z.enum(["UNFURNISHED", "SEMI_FURNISHED", "FULLY_FURNISHED"]),
   floor: z.coerce.number().int().optional(),
   totalFloors: z.coerce.number().int().optional(),
   parking: z.coerce.number().int().default(0),
+  amenities: z.array(z.string()).optional(),
   address: z.string().min(3),
   locality: z.string().min(2),
-  city: z.string().min(2),
-  latitude: z.coerce.number(),
-  longitude: z.coerce.number(),
+  city: z.string().min(2).default("Jaipur"),
+  latitude: z.coerce.number().min(-90).max(90),
+  longitude: z.coerce.number().min(-180).max(180),
   contactName: z.string().min(2),
   contactPhone: z.string().min(8),
   status: z.enum(["DRAFT", "ACTIVE", "INACTIVE"]).optional(),
 });
-
-function serialize(p: {
-  images: { path: string; isPrimary: boolean; sortOrder: number; id: string }[];
-  propertyType: string;
-  status: PropertyStatus;
-  [k: string]: unknown;
-}) {
-  const images = [...(p.images || [])].sort((a, b) => a.sortOrder - b.sortOrder);
-  const primary = images.find((i) => i.isPrimary)?.path ?? images[0]?.path ?? defaultImageForType(p.propertyType);
-  return { ...p, images, primaryImage: primary };
-}
 
 async function requireApprovedSeller(userId: string) {
   const profile = await prisma.sellerProfile.findUnique({ where: { userId } });
@@ -52,399 +48,475 @@ export async function listPublic(req: Request, res: Response) {
   const q = req.query as Record<string, string>;
   const page = Math.max(1, Number(q.page ?? 1));
   const limit = Math.min(50, Math.max(1, Number(q.limit ?? 24)));
-  const where: Prisma.PropertyWhereInput = {
+  const col = getPropertiesCollection();
+
+  const filter: Record<string, any> = {
     status: q.status === "SOLD" ? "SOLD" : "ACTIVE",
   };
-  if (q.listingType) where.listingType = q.listingType.toUpperCase();
-  if (q.projectName) where.projectName = { contains: q.projectName, mode: "insensitive" };
-  if (q.locality) {
-    where.OR = [
-      { locality: { contains: q.locality, mode: "insensitive" } },
-      { city: { contains: q.locality, mode: "insensitive" } },
-      { address: { contains: q.locality, mode: "insensitive" } },
-      { projectName: { contains: q.locality, mode: "insensitive" } },
+
+  if (q.listingType) {
+    filter.listingType = q.listingType.toUpperCase();
+  }
+
+  // Locality / Location search
+  const searchLoc = q.locality || q.location;
+  if (searchLoc) {
+    const escaped = searchLoc.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    filter.$or = [
+      { locality: { $regex: new RegExp(escaped, "i") } },
+      { address: { $regex: new RegExp(escaped, "i") } },
+      { projectName: { $regex: new RegExp(escaped, "i") } },
+      { city: { $regex: new RegExp(escaped, "i") } },
     ];
   }
-  if (q.city) where.city = { contains: q.city, mode: "insensitive" };
-  if (q.propertyType) where.propertyType = q.propertyType as never;
-  if (q.bhk) where.bhk = Number(q.bhk);
-  if (q.furnishing) where.furnishing = q.furnishing as never;
-  if (q.minPrice || q.maxPrice) {
-    where.price = {};
-    if (q.minPrice) where.price.gte = Number(q.minPrice);
-    if (q.maxPrice) where.price.lte = Number(q.maxPrice);
+
+  if (q.propertyType) {
+    filter.propertyType = q.propertyType.toUpperCase();
   }
-  // Bounding box filter support in Postgres
-  if (q.north && q.south && q.east && q.west) {
-    where.latitude = { gte: Number(q.south), lte: Number(q.north) };
-    where.longitude = { gte: Number(q.west), lte: Number(q.east) };
-  }
-  if (q.q) {
-    where.OR = [
-      { title: { contains: q.q, mode: "insensitive" } },
-      { locality: { contains: q.q, mode: "insensitive" } },
-      { city: { contains: q.q, mode: "insensitive" } },
-      { address: { contains: q.q, mode: "insensitive" } },
-      { projectName: { contains: q.q, mode: "insensitive" } },
-      { description: { contains: q.q, mode: "insensitive" } },
-    ];
-  }
-  const orderBy: Prisma.PropertyOrderByWithRelationInput =
-    q.sort === "price_asc"
-      ? { price: "asc" }
-      : q.sort === "price_desc"
-        ? { price: "desc" }
-        : q.sort === "area_desc"
-          ? { carpetArea: "desc" }
-          : q.sort === "area_asc"
-            ? { carpetArea: "asc" }
-            : { createdAt: "desc" };
 
-  const [total, items] = await Promise.all([
-    prisma.property.count({ where }),
-    prisma.property.findMany({
-      where,
-      include: { images: true, seller: { select: { name: true } } },
-      orderBy,
-      skip: (page - 1) * limit,
-      take: limit,
-    }),
-  ]);
-  res.json({ total, page, limit, results: items.map(serialize) });
-}
-
-/**
- * Geospatial Property Search API
- * Uses MongoDB 2dsphere index for bounding-box ($geoWithin) & proximity ($near) searches.
- * Seamlessly hydrates with full relational Postgres data.
- */
-export async function searchGeospatial(req: Request, res: Response) {
-  const q = req.query as Record<string, string>;
-  const page = Math.max(1, Number(q.page ?? 1));
-  const limit = Math.min(50, Math.max(1, Number(q.limit ?? 24)));
-  const listingType = (q.listingType || "BUY").toUpperCase();
-
-  const col = getGeoCollection();
-  if (col) {
-    try {
-      const filter: Record<string, any> = {
-        status: "ACTIVE",
-        listingType,
-      };
-
-      // Bounding box filter ($geoWithin) from map bounds
-      if (q.north && q.south && q.east && q.west) {
-        const north = Number(q.north);
-        const south = Number(q.south);
-        const east = Number(q.east);
-        const west = Number(q.west);
-        if ([north, south, east, west].every(Number.isFinite)) {
-          filter.location = {
-            $geoWithin: {
-              $box: [
-                [west, south], // [lng, lat] south-west
-                [east, north], // [lng, lat] north-east
-              ],
-            },
-          };
-        }
-      } else if (q.latitude && q.longitude && q.radius) {
-        // Radius proximity filter ($near)
-        const lat = Number(q.latitude);
-        const lng = Number(q.longitude);
-        const radius = Number(q.radius);
-        if ([lat, lng, radius].every(Number.isFinite)) {
-          filter.location = {
-            $near: {
-              $geometry: {
-                type: "Point",
-                coordinates: [lng, lat],
-              },
-              $maxDistance: radius,
-            },
-          };
-        }
-      }
-
-      if (q.locality) {
-        const escaped = q.locality.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-        filter.locality = { $regex: new RegExp(escaped, "i") };
-      }
-
-      if (q.bhk) {
-        filter.bedrooms = Number(q.bhk);
-      }
-
-      if (q.propertyType) {
-        filter.propertyType = q.propertyType.toUpperCase();
-      }
-
-      if (q.furnishing) {
-        filter.furnishing = q.furnishing.toUpperCase();
-      }
-
-      if (q.minPrice || q.maxPrice) {
-        filter.price = {};
-        if (q.minPrice) filter.price.$gte = Number(q.minPrice);
-        if (q.maxPrice) filter.price.$lte = Number(q.maxPrice);
-      }
-
-      let sortOption: Record<string, 1 | -1> = { updatedAt: -1 };
-      if (q.sort === "price_asc") sortOption = { price: 1 };
-      else if (q.sort === "price_desc") sortOption = { price: -1 };
-      else if (q.sort === "area_desc") sortOption = { carpetArea: -1 };
-      else if (q.sort === "area_asc") sortOption = { carpetArea: 1 };
-
-      const total = await col.countDocuments(filter);
-      const cursor = col.find(filter);
-      if (!filter.location?.$near) {
-        cursor.sort(sortOption);
-      }
-      const geoDocs = await cursor.skip((page - 1) * limit).limit(limit).toArray();
-
-      // Hydrate with Postgres records for full images, contact & seller details
-      const propIds = geoDocs.map((d) => d.propertyId);
-      const pgProps = await prisma.property.findMany({
-        where: { id: { in: propIds } },
-        include: { images: true, seller: { select: { name: true, phone: true } } },
-      });
-      const pgMap = new Map(pgProps.map((p) => [p.id, serialize(p)]));
-
-      // Preserve geo ordering (especially critical when $near proximity is used)
-      const results = geoDocs.map((d) => pgMap.get(d.propertyId) || d).filter(Boolean);
-
-      return res.json({
-        total,
-        page,
-        limit,
-        results,
-      });
-    } catch (err) {
-      console.warn("[MongoDB] Geospatial query failed, falling back to PostgreSQL:", (err as Error).message);
+  if (q.bhk) {
+    const bhkNum = Number(q.bhk);
+    if (bhkNum >= 5) {
+      filter.bhk = { $gte: 5 };
+    } else {
+      filter.bhk = bhkNum;
     }
   }
 
-  // Graceful fallback to PostgreSQL
+  if (q.furnishing) {
+    filter.furnishing = q.furnishing.toUpperCase();
+  }
+
+  if (q.minPrice || q.maxPrice) {
+    filter.price = {};
+    if (q.minPrice) filter.price.$gte = Number(q.minPrice);
+    if (q.maxPrice) filter.price.$lte = Number(q.maxPrice);
+  }
+
+  if (q.minArea || q.maxArea) {
+    filter.carpetArea = {};
+    if (q.minArea) filter.carpetArea.$gte = Number(q.minArea);
+    if (q.maxArea) filter.carpetArea.$lte = Number(q.maxArea);
+  }
+
+  if (q.verified === "true") {
+    filter.verified = true;
+  }
+
+  // General text query
+  if (q.q) {
+    const escaped = q.q.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const regex = new RegExp(escaped, "i");
+    filter.$or = [
+      { title: { $regex: regex } },
+      { locality: { $regex: regex } },
+      { description: { $regex: regex } },
+      { address: { $regex: regex } },
+      { projectName: { $regex: regex } },
+    ];
+  }
+
+  // Bounding box filter ($geoWithin)
+  if (q.north && q.south && q.east && q.west) {
+    const north = Number(q.north);
+    const south = Number(q.south);
+    const east = Number(q.east);
+    const west = Number(q.west);
+    if ([north, south, east, west].every(Number.isFinite)) {
+      filter.location = {
+        $geoWithin: {
+          $box: [
+            [west, south],
+            [east, north],
+          ],
+        },
+      };
+    }
+  }
+
+  let sortOption: Record<string, 1 | -1> = { createdAt: -1 };
+  if (q.sort === "price_asc") sortOption = { price: 1 };
+  else if (q.sort === "price_desc") sortOption = { price: -1 };
+  else if (q.sort === "area_desc") sortOption = { carpetArea: -1 };
+  else if (q.sort === "area_asc") sortOption = { carpetArea: 1 };
+
+  const total = await col.countDocuments(filter);
+  const cursor = col.find(filter);
+  if (!filter.location?.$near) {
+    cursor.sort(sortOption);
+  }
+  const docs = await cursor.skip((page - 1) * limit).limit(limit).toArray();
+
+  // Hydrate seller contact details from PostgreSQL User
+  const sellerIds = [...new Set(docs.map((d) => d.sellerId).filter((id): id is string => Boolean(id)))];
+  const sellers = sellerIds.length > 0
+    ? await prisma.user.findMany({
+        where: { id: { in: sellerIds } },
+        select: { id: true, name: true, phone: true, email: true },
+      })
+    : [];
+  const sellerMap = new Map(sellers.map((s) => [s.id, s]));
+
+  const results = docs.map((doc) => {
+    const formatted = formatMongoProperty(doc);
+    const seller = doc.sellerId ? sellerMap.get(doc.sellerId) : undefined;
+    return {
+      ...formatted,
+      seller: seller ? { name: seller.name, phone: seller.phone, email: seller.email } : undefined,
+    };
+  });
+
+  res.json({
+    total,
+    page,
+    limit,
+    results,
+  });
+}
+
+export async function searchGeospatial(req: Request, res: Response) {
   return listPublic(req, res);
 }
 
 export async function getPublic(req: Request, res: Response) {
   const id = String(req.params.id);
-  const p = await prisma.property.findUnique({
-    where: { id },
-    include: { images: true, seller: { select: { id: true, name: true, phone: true, email: true } } },
-  });
-  if (!p) throw new HttpError(404, "Property not found");
-  if (p.status === "DRAFT" || p.status === "INACTIVE") {
-    if (req.user?.role !== "SUPERADMIN" && req.user?.id !== p.sellerId) {
+  const col = getPropertiesCollection();
+
+  const doc = await col.findOne({ propertyId: id });
+  if (!doc) throw new HttpError(404, "Property not found");
+
+  if (doc.status === "DRAFT" || doc.status === "INACTIVE") {
+    if (req.user?.role !== "SUPERADMIN" && req.user?.id !== doc.sellerId) {
       throw new HttpError(404, "Property not found");
     }
   }
-  await prisma.property.update({ where: { id: p.id }, data: { views: { increment: 1 } } });
-  res.json(serialize({ ...p, views: p.views + 1 }));
+
+  // Increment views in MongoDB
+  await col.updateOne({ propertyId: id }, { $inc: { views: 1 } });
+
+  // Hydrate seller info from PostgreSQL
+  const seller = doc.sellerId
+    ? await prisma.user.findUnique({
+        where: { id: doc.sellerId },
+        select: { id: true, name: true, phone: true, email: true },
+      })
+    : null;
+
+  const formatted = formatMongoProperty({ ...doc, views: (doc.views || 0) + 1 });
+  res.json({
+    ...formatted,
+    seller: seller ? { name: seller.name, phone: seller.phone, email: seller.email } : undefined,
+  });
 }
 
 export async function createMine(req: Request, res: Response) {
   if (!req.user) throw new HttpError(401, "Authentication required");
   await requireApprovedSeller(req.user.id);
   const body = propertyInput.parse(req.body);
-  const p = await prisma.property.create({
-    data: {
-      ...body,
-      locality: body.locality.toLowerCase(),
-      sellerId: req.user.id,
-      status: body.status ?? "ACTIVE",
+  const col = getPropertiesCollection();
+
+  const propertyId = `prop_${Date.now()}_${crypto.randomBytes(4).toString("hex")}`;
+  const now = new Date();
+
+  const newDoc: MongoProperty = {
+    propertyId,
+    sellerId: req.user.id,
+    listingType: body.listingType,
+    title: body.title,
+    description: body.description,
+    propertyType: body.propertyType,
+    bhk: body.bhk,
+    bedrooms: body.bhk,
+    bathrooms: body.bathrooms,
+    price: body.price,
+    carpetArea: body.carpetArea,
+    superBuiltUpArea: body.superBuiltUpArea || body.carpetArea,
+    builtUpArea: body.builtUpArea || body.superBuiltUpArea || body.carpetArea,
+    furnishing: body.furnishing,
+    floor: body.floor,
+    totalFloors: body.totalFloors,
+    parking: body.parking,
+    parkingSlots: body.parking,
+    amenities: body.amenities || [],
+    projectName: body.projectName,
+    locality: body.locality.trim(),
+    city: body.city || "Jaipur",
+    address: body.address.trim(),
+    location: {
+      type: "Point",
+      coordinates: [body.longitude, body.latitude], // strictly GeoJSON [lng, lat]
     },
-    include: { images: true },
-  });
+    latitude: body.latitude,
+    longitude: body.longitude,
+    images: [],
+    status: body.status || "ACTIVE",
+    verified: true,
+    views: 0,
+    contactName: body.contactName,
+    contactPhone: body.contactPhone,
+    createdAt: now,
+    updatedAt: now,
+  };
 
-  // Sync to MongoDB geospatial collection
-  await syncPropertyToMongo(p).catch((err) => console.warn("[Mongo Sync Error]:", err));
-
-  res.status(201).json(serialize(p));
+  await col.insertOne(newDoc);
+  res.status(201).json(formatMongoProperty(newDoc));
 }
 
 export async function updateMine(req: Request, res: Response) {
   if (!req.user) throw new HttpError(401, "Authentication required");
   await requireApprovedSeller(req.user.id);
   const id = String(req.params.id);
-  const existing = await prisma.property.findUnique({ where: { id } });
+  const col = getPropertiesCollection();
+
+  const existing = await col.findOne({ propertyId: id });
   if (!existing) throw new HttpError(404, "Property not found");
-  if (existing.sellerId !== req.user.id) throw new HttpError(403, "Forbidden");
+  if (existing.sellerId !== req.user.id && req.user.role !== "SUPERADMIN") {
+    throw new HttpError(403, "Forbidden");
+  }
   if (existing.status === "SOLD") throw new HttpError(400, "Cannot edit a SOLD property");
+
   const body = propertyInput.partial().parse(req.body);
-  if ((body as { status?: string }).status === "SOLD") {
+  if ((body as { status?: string }).status === "SOLD" && req.user.role !== "SUPERADMIN") {
     throw new HttpError(403, "Sellers cannot mark a property as SOLD");
   }
-  const p = await prisma.property.update({
-    where: { id: existing.id },
-    data: {
-      ...body,
-      locality: body.locality ? body.locality.toLowerCase() : undefined,
-    },
-    include: { images: true },
-  });
 
-  // Sync to MongoDB geospatial collection
-  await syncPropertyToMongo(p).catch((err) => console.warn("[Mongo Sync Error]:", err));
+  const updateFields: Record<string, any> = {
+    ...body,
+    updatedAt: new Date(),
+  };
 
-  res.json(serialize(p));
+  if (body.bhk !== undefined) {
+    updateFields.bedrooms = body.bhk;
+  }
+  if (body.parking !== undefined) {
+    updateFields.parkingSlots = body.parking;
+  }
+
+  // If coordinates updated, update GeoJSON Point
+  if (body.latitude !== undefined && body.longitude !== undefined) {
+    updateFields.location = {
+      type: "Point",
+      coordinates: [body.longitude, body.latitude],
+    };
+  }
+
+  await col.updateOne({ propertyId: id }, { $set: updateFields });
+  const updated = await col.findOne({ propertyId: id });
+  res.json(formatMongoProperty(updated!));
 }
 
 export async function deactivateMine(req: Request, res: Response) {
   if (!req.user) throw new HttpError(401, "Authentication required");
   const id = String(req.params.id);
-  const existing = await prisma.property.findUnique({ where: { id } });
+  const col = getPropertiesCollection();
+
+  const existing = await col.findOne({ propertyId: id });
   if (!existing) throw new HttpError(404, "Property not found");
-  if (existing.sellerId !== req.user.id) throw new HttpError(403, "Forbidden");
-  if (existing.status === "SOLD") throw new HttpError(400, "Cannot change status of a SOLD property");
-  const newStatus = existing.status === "INACTIVE" ? "ACTIVE" : "INACTIVE";
-  const p = await prisma.property.update({
-    where: { id: existing.id },
-    data: { status: newStatus },
-    include: { images: true },
-  });
-
-  if (newStatus === "ACTIVE") {
-    await syncPropertyToMongo(p).catch((err) => console.warn("[Mongo Sync Error]:", err));
-  } else {
-    await deletePropertyFromMongo(p.id).catch((err) => console.warn("[Mongo Delete Error]:", err));
+  if (existing.sellerId !== req.user.id && req.user.role !== "SUPERADMIN") {
+    throw new HttpError(403, "Forbidden");
   }
+  if (existing.status === "SOLD") throw new HttpError(400, "Cannot change status of a SOLD property");
 
-  res.json(serialize(p));
+  const newStatus = existing.status === "INACTIVE" ? "ACTIVE" : "INACTIVE";
+  await col.updateOne({ propertyId: id }, { $set: { status: newStatus, updatedAt: new Date() } });
+
+  const updated = await col.findOne({ propertyId: id });
+  res.json(formatMongoProperty(updated!));
 }
 
 export async function listMine(req: Request, res: Response) {
   if (!req.user) throw new HttpError(401, "Authentication required");
-  const items = await prisma.property.findMany({
-    where: { sellerId: req.user.id },
-    include: { images: true, interests: true, visits: true },
-    orderBy: { updatedAt: "desc" },
-  });
-  res.json({ results: items.map(serialize) });
+  const col = getPropertiesCollection();
+
+  const docs = await col
+    .find({ sellerId: req.user.id })
+    .sort({ updatedAt: -1 })
+    .toArray();
+
+  res.json({ results: docs.map(formatMongoProperty) });
 }
 
 export async function uploadImages(req: Request, res: Response) {
   if (!req.user) throw new HttpError(401, "Authentication required");
   const id = String(req.params.id);
-  const existing = await prisma.property.findUnique({ where: { id }, include: { images: true } });
+  const col = getPropertiesCollection();
+
+  const existing = await col.findOne({ propertyId: id });
   if (!existing) throw new HttpError(404, "Property not found");
-  if (existing.sellerId !== req.user.id && req.user.role !== "SUPERADMIN") throw new HttpError(403, "Forbidden");
+  if (existing.sellerId !== req.user.id && req.user.role !== "SUPERADMIN") {
+    throw new HttpError(403, "Forbidden");
+  }
+
   const files = (req.files as Express.Multer.File[]) ?? [];
   if (!files.length) throw new HttpError(400, "No files uploaded");
-  let order = existing.images.length;
-  const created = [];
+
+  let order = (existing.images || []).length;
+  const newImages: MongoPropertyImage[] = [];
+
   for (const f of files) {
     if (!["image/jpeg", "image/png", "image/webp", "image/gif"].includes(f.mimetype)) {
       throw new HttpError(400, "Only jpeg, png, webp, gif are allowed");
     }
     if (f.size > 5 * 1024 * 1024) throw new HttpError(400, "Each image must be under 5MB");
-    const filename = `${existing.id}-${Date.now()}-${order}-${f.originalname.replace(/\s+/g, "_")}`;
+
+    const imgId = `img_${Date.now()}_${crypto.randomBytes(3).toString("hex")}`;
+    const filename = `${existing.propertyId}-${Date.now()}-${order}-${f.originalname.replace(/\s+/g, "_")}`;
     const path = saveLocalFile(filename, f.buffer);
-    const img = await prisma.propertyImage.create({
-      data: {
-        propertyId: existing.id,
-        path,
-        sortOrder: order,
-        isPrimary: existing.images.length === 0 && order === 0,
-      },
+
+    newImages.push({
+      id: imgId,
+      path,
+      sortOrder: order,
+      isPrimary: (existing.images || []).length === 0 && order === 0,
     });
-    created.push(img);
     order += 1;
   }
-  const p = await prisma.property.findUnique({ where: { id: existing.id }, include: { images: true } });
-  if (p) {
-    await syncPropertyToMongo(p).catch((err) => console.warn("[Mongo Sync Error]:", err));
-  }
-  res.status(201).json({ uploaded: created, property: serialize(p!) });
+
+  const updatedImages = [...(existing.images || []), ...newImages];
+  const primaryPath = updatedImages.find((i) => i.isPrimary)?.path || updatedImages[0]?.path;
+
+  await col.updateOne(
+    { propertyId: id },
+    { $set: { images: updatedImages, primaryImage: primaryPath, updatedAt: new Date() } },
+  );
+
+  const updated = await col.findOne({ propertyId: id });
+  res.status(201).json({ uploaded: newImages, property: formatMongoProperty(updated!) });
 }
 
 export async function deleteImage(req: Request, res: Response) {
   if (!req.user) throw new HttpError(401, "Authentication required");
   const imageId = String(req.params.imageId);
-  const img = await prisma.propertyImage.findUnique({ include: { property: true }, where: { id: imageId } });
-  if (!img) throw new HttpError(404, "Image not found");
-  if (img.property.sellerId !== req.user.id && req.user.role !== "SUPERADMIN") throw new HttpError(403, "Forbidden");
-  deleteLocalFile(img.path);
-  await prisma.propertyImage.delete({ where: { id: img.id } });
-  if (img.isPrimary) {
-    const next = await prisma.propertyImage.findFirst({
-      where: { propertyId: img.propertyId },
-      orderBy: { sortOrder: "asc" },
-    });
-    if (next) await prisma.propertyImage.update({ where: { id: next.id }, data: { isPrimary: true } });
+  const col = getPropertiesCollection();
+
+  const doc = await col.findOne({ "images.id": imageId });
+  if (!doc) throw new HttpError(404, "Image not found");
+  if (doc.sellerId !== req.user.id && req.user.role !== "SUPERADMIN") {
+    throw new HttpError(403, "Forbidden");
   }
-  const updatedProp = await prisma.property.findUnique({ where: { id: img.propertyId }, include: { images: true } });
-  if (updatedProp) {
-    await syncPropertyToMongo(updatedProp).catch((err) => console.warn("[Mongo Sync Error]:", err));
+
+  const targetImg = doc.images.find((i) => i.id === imageId);
+  if (targetImg) {
+    deleteLocalFile(targetImg.path);
   }
+
+  const remaining = doc.images.filter((i) => i.id !== imageId);
+  if (targetImg?.isPrimary && remaining.length > 0) {
+    remaining[0].isPrimary = true;
+  }
+  const primaryPath = remaining.find((i) => i.isPrimary)?.path || remaining[0]?.path;
+
+  await col.updateOne(
+    { propertyId: doc.propertyId },
+    { $set: { images: remaining, primaryImage: primaryPath, updatedAt: new Date() } },
+  );
+
   res.json({ ok: true });
 }
 
 export async function setPrimary(req: Request, res: Response) {
   if (!req.user) throw new HttpError(401, "Authentication required");
   const imageId = String(req.params.imageId);
-  const img = await prisma.propertyImage.findUnique({ include: { property: true }, where: { id: imageId } });
-  if (!img) throw new HttpError(404, "Image not found");
-  if (img.property.sellerId !== req.user.id) throw new HttpError(403, "Forbidden");
-  await prisma.$transaction([
-    prisma.propertyImage.updateMany({ where: { propertyId: img.propertyId }, data: { isPrimary: false } }),
-    prisma.propertyImage.update({ where: { id: img.id }, data: { isPrimary: true } }),
-  ]);
-  const updatedProp = await prisma.property.findUnique({ where: { id: img.propertyId }, include: { images: true } });
-  if (updatedProp) {
-    await syncPropertyToMongo(updatedProp).catch((err) => console.warn("[Mongo Sync Error]:", err));
+  const col = getPropertiesCollection();
+
+  const doc = await col.findOne({ "images.id": imageId });
+  if (!doc) throw new HttpError(404, "Image not found");
+  if (doc.sellerId !== req.user.id && req.user.role !== "SUPERADMIN") {
+    throw new HttpError(403, "Forbidden");
   }
+
+  const updatedImages = doc.images.map((img) => ({
+    ...img,
+    isPrimary: img.id === imageId,
+  }));
+  const primaryPath = updatedImages.find((i) => i.isPrimary)?.path;
+
+  await col.updateOne(
+    { propertyId: doc.propertyId },
+    { $set: { images: updatedImages, primaryImage: primaryPath, updatedAt: new Date() } },
+  );
+
   res.json({ ok: true });
 }
 
 export async function reorderImages(req: Request, res: Response) {
   if (!req.user) throw new HttpError(401, "Authentication required");
   const id = String(req.params.id);
-  const existing = await prisma.property.findUnique({ where: { id } });
-  if (!existing) throw new HttpError(404, "Property not found");
-  if (existing.sellerId !== req.user.id) throw new HttpError(403, "Forbidden");
+  const col = getPropertiesCollection();
+
+  const doc = await col.findOne({ propertyId: id });
+  if (!doc) throw new HttpError(404, "Property not found");
+  if (doc.sellerId !== req.user.id && req.user.role !== "SUPERADMIN") {
+    throw new HttpError(403, "Forbidden");
+  }
+
   const { order } = z.object({ order: z.array(z.string()) }).parse(req.body);
-  await prisma.$transaction(
-    order.map((id, i) => prisma.propertyImage.update({ where: { id }, data: { sortOrder: i } })),
+  const orderMap = new Map(order.map((imgId, idx) => [imgId, idx]));
+
+  const updatedImages = [...doc.images]
+    .map((img) => ({
+      ...img,
+      sortOrder: orderMap.has(img.id) ? orderMap.get(img.id)! : img.sortOrder,
+    }))
+    .sort((a, b) => a.sortOrder - b.sortOrder);
+
+  await col.updateOne(
+    { propertyId: id },
+    { $set: { images: updatedImages, updatedAt: new Date() } },
   );
+
   res.json({ ok: true });
 }
 
 export async function mapPoints(req: Request, res: Response) {
   const q = req.query as Record<string, string>;
-  const where: Prisma.PropertyWhereInput = { status: "ACTIVE" };
-  if (q.listingType) where.listingType = q.listingType.toUpperCase();
+  const col = getPropertiesCollection();
+  const filter: Record<string, any> = { status: "ACTIVE" };
+
+  if (q.listingType) filter.listingType = q.listingType.toUpperCase();
   if (q.locality) {
-    where.locality = { contains: q.locality, mode: "insensitive" };
-  }
-  if (q.north && q.south && q.east && q.west) {
-    where.latitude = { gte: Number(q.south), lte: Number(q.north) };
-    where.longitude = { gte: Number(q.west), lte: Number(q.east) };
+    const escaped = q.locality.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    filter.locality = { $regex: new RegExp(escaped, "i") };
   }
 
-  const items = await prisma.property.findMany({
-    where,
-    select: {
-      id: true,
-      title: true,
-      price: true,
-      latitude: true,
-      longitude: true,
-      locality: true,
-      city: true,
-      bhk: true,
-      bathrooms: true,
-      carpetArea: true,
-      listingType: true,
-      images: { take: 1, orderBy: { sortOrder: "asc" } },
-      propertyType: true,
-    },
-  });
+  const items = await col
+    .find(filter, {
+      projection: {
+        propertyId: 1,
+        title: 1,
+        price: 1,
+        latitude: 1,
+        longitude: 1,
+        locality: 1,
+        city: 1,
+        bhk: 1,
+        bathrooms: 1,
+        carpetArea: 1,
+        listingType: 1,
+        propertyType: 1,
+        primaryImage: 1,
+        images: 1,
+      },
+    })
+    .limit(100)
+    .toArray();
+
   res.json({
     results: items.map((p) => ({
-      ...p,
-      primaryImage: p.images[0]?.path ?? defaultImageForType(p.propertyType),
+      id: p.propertyId,
+      propertyId: p.propertyId,
+      title: p.title,
+      price: p.price,
+      latitude: p.latitude,
+      longitude: p.longitude,
+      locality: p.locality,
+      city: p.city || "Jaipur",
+      bhk: p.bhk,
+      bathrooms: p.bathrooms,
+      carpetArea: p.carpetArea,
+      listingType: p.listingType,
+      propertyType: p.propertyType,
+      primaryImage: p.primaryImage || p.images?.[0]?.path || defaultImageForType(p.propertyType),
     })),
   });
 }
