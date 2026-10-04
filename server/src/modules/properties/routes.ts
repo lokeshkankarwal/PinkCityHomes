@@ -14,18 +14,19 @@ propertiesRouter.get("/search", optionalAuth, c.searchGeospatial);
 propertiesRouter.get("/", optionalAuth, c.listPublic);
 propertiesRouter.get("/map", c.mapPoints);
 propertiesRouter.get("/mine", requireAuth, requireRole("SELLER", "SUPERADMIN"), c.listMine);
-propertiesRouter.post("/", requireAuth, requireRole("SELLER"), c.createMine);
+propertiesRouter.post("/", requireAuth, requireRole("SELLER", "SUPERADMIN"), c.createMine);
 
 // Image shortcut routes (frontend calls without property-ID prefix)
-propertiesRouter.post("/images/:imageId/primary", requireAuth, requireRole("SELLER"), c.setPrimary);
+propertiesRouter.post("/images/:imageId/primary", requireAuth, requireRole("SELLER", "SUPERADMIN"), c.setPrimary);
 propertiesRouter.delete("/images/:imageId", requireAuth, requireRole("SELLER", "SUPERADMIN"), c.deleteImage);
 
 propertiesRouter.get("/:id", optionalAuth, c.getPublic);
-propertiesRouter.patch("/:id", requireAuth, requireRole("SELLER"), c.updateMine);
-propertiesRouter.post("/:id/deactivate", requireAuth, requireRole("SELLER"), c.deactivateMine);
-propertiesRouter.patch("/:id/status", requireAuth, requireRole("SELLER"), c.deactivateMine);
-propertiesRouter.post("/:id/status", requireAuth, requireRole("SELLER"), c.deactivateMine);
+propertiesRouter.patch("/:id", requireAuth, requireRole("SELLER", "SUPERADMIN"), c.updateMine);
+propertiesRouter.post("/:id/deactivate", requireAuth, requireRole("SELLER", "SUPERADMIN"), c.deactivateMine);
+propertiesRouter.patch("/:id/status", requireAuth, requireRole("SELLER", "SUPERADMIN"), c.deactivateMine);
+propertiesRouter.post("/:id/status", requireAuth, requireRole("SELLER", "SUPERADMIN"), c.deactivateMine);
 propertiesRouter.post("/:id/images", requireAuth, requireRole("SELLER", "SUPERADMIN"), upload.array("photos", 8), c.uploadImages);
+propertiesRouter.delete("/:id", requireAuth, requireRole("SELLER", "SUPERADMIN"), c.deleteProperty);
 propertiesRouter.delete("/:id/images/:imageId", requireAuth, requireRole("SELLER", "SUPERADMIN"), c.deleteImage);
 propertiesRouter.post("/:id/images/:imageId/primary", requireAuth, requireRole("SELLER"), c.setPrimary);
 propertiesRouter.post("/:id/images/reorder", requireAuth, requireRole("SELLER"), c.reorderImages);

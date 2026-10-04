@@ -93,6 +93,8 @@ function transformWhere(where: any): Filter<any> {
       const subVal = val as any;
       if ("in" in subVal) {
         query[key] = { $in: subVal.in };
+      } else if ("contains" in subVal) {
+        query[key] = { $regex: new RegExp(escapeRegex(subVal.contains), subVal.mode === "insensitive" ? "i" : "") };
       } else if ("equals" in subVal && subVal.mode === "insensitive") {
         query[key] = { $regex: new RegExp(`^${escapeRegex(subVal.equals)}$`, "i") };
       } else if ("equals" in subVal) {
@@ -632,6 +634,12 @@ export const prisma = {
       await col.insertOne(doc);
       return sanitizeDoc(doc);
     },
+
+    async deleteMany(args?: { where?: any }): Promise<{ count: number }> {
+      const col = getDb().collection("client_property_interests");
+      const res = await col.deleteMany(transformWhere(args?.where));
+      return { count: res.deletedCount };
+    },
   },
 
   clientInteraction: {
@@ -752,6 +760,12 @@ export const prisma = {
     async count(args?: { where?: any }): Promise<number> {
       const col = getDb().collection("property_visits");
       return col.countDocuments(transformWhere(args?.where));
+    },
+
+    async deleteMany(args?: { where?: any }): Promise<{ count: number }> {
+      const col = getDb().collection("property_visits");
+      const res = await col.deleteMany(transformWhere(args?.where));
+      return { count: res.deletedCount };
     },
   },
 

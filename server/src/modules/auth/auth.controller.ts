@@ -129,6 +129,9 @@ export async function login(req: Request, res: Response) {
   if (!user) throw new HttpError(401, "Invalid credentials");
   const ok = await bcrypt.compare(body.password, user.passwordHash);
   if (!ok) throw new HttpError(401, "Invalid credentials");
+  if ((user as any).isDisabled) {
+    throw new HttpError(403, "Your account has been disabled by the administrator.");
+  }
   if (!user.emailVerifiedAt && user.role !== "SUPERADMIN") {
     throw new HttpError(403, "Email not verified");
   }
@@ -138,7 +141,9 @@ export async function login(req: Request, res: Response) {
       throw new HttpError(403, "Seller account awaiting superadmin approval");
     }
     if (st === "REJECTED") throw new HttpError(403, "Seller application was rejected");
-    if (st === "SUSPENDED") throw new HttpError(403, "Seller account is suspended");
+    if (st === "SUSPENDED" || (user.sellerProfile as any)?.isDisabled) {
+      throw new HttpError(403, "Seller account has been suspended/disabled by the administrator");
+    }
   }
   const token = signToken({ id: user.id, email: user.email, role: user.role, name: user.name });
   res.cookie("token", token, cookieOpts());
@@ -155,6 +160,12 @@ export async function me(req: Request, res: Response) {
     include: { sellerProfile: true },
   });
   if (!user) throw new HttpError(404, "Not found");
+  if ((user as any).isDisabled) {
+    throw new HttpError(403, "Your account has been disabled by the administrator.");
+  }
+  if (user.role === "SELLER" && ((user.sellerProfile as any)?.status === "SUSPENDED" || (user.sellerProfile as any)?.isDisabled)) {
+    throw new HttpError(403, "Seller account has been suspended/disabled by the administrator.");
+  }
   res.json({ user: publicUser(user) });
 }
 

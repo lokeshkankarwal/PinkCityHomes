@@ -27,8 +27,10 @@ import SellerClientsPage from "./pages/seller/SellerClientsPage";
 // Admin pages
 import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
 import AdminSellersPage from "./pages/admin/AdminSellersPage";
+import AdminSellerDetailPage from "./pages/admin/AdminSellerDetailPage";
 import AdminPropertiesPage from "./pages/admin/AdminPropertiesPage";
 import AdminUsersPage from "./pages/admin/AdminUsersPage";
+import AdminDisabledPage from "./pages/admin/AdminDisabledPage";
 import AdminAuditPage from "./pages/admin/AdminAuditPage";
 
 export default function App() {
@@ -60,8 +62,10 @@ export default function App() {
         {/* Admin area */}
         <Route path="admin/dashboard" element={<AdminDashboardPage />} />
         <Route path="admin/sellers" element={<AdminSellersPage />} />
+        <Route path="admin/sellers/:sellerId" element={<AdminSellerDetailPage />} />
         <Route path="admin/properties" element={<AdminPropertiesPage />} />
         <Route path="admin/users" element={<AdminUsersPage />} />
+        <Route path="admin/disabled" element={<AdminDisabledPage />} />
         <Route path="admin/audit" element={<AdminAuditPage />} />
         <Route path="admin/orders" element={<OrdersPage />} />
 

@@ -6,7 +6,7 @@ type AuditItem = {
   action: string;
   entityType: string;
   entityId?: string | null;
-  metadata?: unknown;
+  metadata?: Record<string, any> | null;
   createdAt: string;
   actor?: { name: string; email: string } | null;
 };
@@ -14,6 +14,7 @@ type AuditItem = {
 export default function AdminAuditPage() {
   const [logs, setLogs] = useState<AuditItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filterType, setFilterType] = useState<string>("ALL");
 
   useEffect(() => {
     api
@@ -23,20 +24,63 @@ export default function AdminAuditPage() {
       .finally(() => setLoading(false));
   }, []);
 
+  const displayedLogs = logs.filter((log) => {
+    if (filterType === "ALL") return true;
+    if (filterType === "USER") return log.entityType === "User" || log.action.includes("USER");
+    if (filterType === "SELLER") return log.entityType === "SellerProfile" || log.action.includes("SELLER");
+    if (filterType === "PROPERTY") return log.entityType === "Property" || log.action.includes("PROPERTY");
+    return true;
+  });
+
+  const getActionBadge = (action: string) => {
+    if (action.includes("DISABLED") || action.includes("DELETED") || action.includes("REJECT")) {
+      return "bg-red-100 text-red-800 border-red-200";
+    }
+    if (action.includes("ENABLED") || action.includes("APPROVE") || action.includes("SOLD")) {
+      return "bg-moss/10 text-moss border-moss/30";
+    }
+    return "bg-ink/5 text-ink border-ink/10";
+  };
+
   return (
     <div className="space-y-6 pb-16">
-      <div>
-        <h1 className="font-serif text-3xl font-bold">System Audit Logs</h1>
-        <p className="text-sm text-ink/70">
-          Immutable event stream capturing administrative actions, seller approvals, and order closings
-        </p>
+      {/* Header */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="font-serif text-3xl font-bold">System Audit Logs</h1>
+          <p className="text-sm text-ink/70">
+            Immutable event stream capturing administrative actions, seller onboarding, property deletions, and state transitions
+          </p>
+        </div>
+
+        {/* Filter buttons */}
+        <div className="flex rounded-xl bg-ink/5 p-1 text-xs font-semibold">
+          {[
+            { id: "ALL", label: "All Logs" },
+            { id: "SELLER", label: "Sellers" },
+            { id: "PROPERTY", label: "Properties" },
+            { id: "USER", label: "Users" },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setFilterType(tab.id)}
+              className={`rounded-lg px-3.5 py-1.5 transition ${
+                filterType === tab.id
+                  ? "bg-white text-ink shadow-sm font-bold"
+                  : "text-ink/60 hover:text-ink"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {loading ? (
         <div className="py-20 text-center text-ink/60">Loading audit trail...</div>
-      ) : logs.length === 0 ? (
-        <div className="rounded-3xl border border-ink/10 bg-white p-12 text-center text-ink/60">
-          No audit log events recorded yet.
+      ) : displayedLogs.length === 0 ? (
+        <div className="rounded-3xl border border-ink/10 bg-white p-12 text-center text-sm text-ink/60">
+          No audit log events found for the selected category.
         </div>
       ) : (
         <div className="rounded-3xl border border-ink/10 bg-white p-6 shadow-sm overflow-x-auto">
@@ -47,29 +91,50 @@ export default function AdminAuditPage() {
                 <th className="py-3 px-4">Action</th>
                 <th className="py-3 px-4">Actor</th>
                 <th className="py-3 px-4">Entity</th>
-                <th className="py-3 px-4">Metadata</th>
+                <th className="py-3 px-4">Audit Details</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-ink/5 text-xs">
-              {logs.map((log) => (
+              {displayedLogs.map((log) => (
                 <tr key={log.id} className="hover:bg-sand/20">
                   <td className="py-3 px-4 text-ink/60 whitespace-nowrap">
                     {new Date(log.createdAt).toLocaleString()}
                   </td>
                   <td className="py-3 px-4">
-                    <span className="font-mono font-bold bg-ink/5 px-2 py-0.5 rounded text-ink">
+                    <span
+                      className={`font-mono text-[11px] font-bold px-2 py-0.5 rounded-lg border ${getActionBadge(
+                        log.action
+                      )}`}
+                    >
                       {log.action}
                     </span>
                   </td>
                   <td className="py-3 px-4 text-ink/80">
-                    {log.actor ? `${log.actor.name} (${log.actor.email})` : "System"}
+                    {log.actor ? (
+                      <div>
+                        <p className="font-semibold">{log.actor.name}</p>
+                        <p className="text-[10px] text-ink/50 font-mono">{log.actor.email}</p>
+                      </div>
+                    ) : (
+                      <span className="text-ink/50 italic">System / Superadmin</span>
+                    )}
                   </td>
                   <td className="py-3 px-4">
-                    <span className="font-semibold">{log.entityType}</span>{" "}
-                    {log.entityId && <span className="font-mono text-ink/50 text-[10px]">({log.entityId})</span>}
+                    <span className="font-semibold text-ink">{log.entityType}</span>
+                    {log.entityId && (
+                      <p className="font-mono text-ink/40 text-[10px] truncate max-w-[140px]">
+                        {log.entityId}
+                      </p>
+                    )}
                   </td>
-                  <td className="py-3 px-4 font-mono text-[11px] text-ink/70 max-w-xs truncate">
-                    {log.metadata ? JSON.stringify(log.metadata) : "—"}
+                  <td className="py-3 px-4 font-mono text-[11px] text-ink/70 max-w-sm truncate">
+                    {log.metadata ? (
+                      <span title={JSON.stringify(log.metadata, null, 2)}>
+                        {JSON.stringify(log.metadata)}
+                      </span>
+                    ) : (
+                      "—"
+                    )}
                   </td>
                 </tr>
               ))}

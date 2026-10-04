@@ -18,10 +18,16 @@ export default function LoginPage() {
     setError(null);
 
     try {
-      const res = await api.post<{ token?: string }>("/auth/login", { email, password });
+      const res = await api.post<{ token?: string; user?: { role: string } }>("/auth/login", { email, password });
       if (res.token) setStoredToken(res.token);
       await refresh();
-      navigate("/");
+      if (res.user?.role === "SUPERADMIN") {
+        navigate("/admin/dashboard");
+      } else if (res.user?.role === "SELLER") {
+        navigate("/seller/dashboard");
+      } else {
+        navigate("/");
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Login failed. Please check your credentials.");
     } finally {

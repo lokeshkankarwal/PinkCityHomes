@@ -38,11 +38,15 @@ const propertyInput = z.object({
   status: z.enum(["DRAFT", "ACTIVE", "INACTIVE"]).optional(),
 });
 
-async function requireApprovedSeller(userId: string) {
+async function requireApprovedSeller(userId: string, role?: string) {
+  if (role === "SUPERADMIN") {
+    return { id: `admin_${userId}`, userId, status: "APPROVED", companyName: "Platform Administration" };
+  }
   const profile = await prisma.sellerProfile.findUnique({ where: { userId } });
   if (!profile || profile.status !== "APPROVED") throw new HttpError(403, "Seller is not approved");
   return profile;
 }
+
 
 export async function listPublic(req: Request, res: Response) {
   const q = req.query as Record<string, string>;
@@ -52,6 +56,7 @@ export async function listPublic(req: Request, res: Response) {
 
   const filter: Record<string, any> = {
     status: q.status === "SOLD" ? "SOLD" : "ACTIVE",
+    sellerDisabled: { $ne: true },
   };
 
   if (q.listingType) {
@@ -211,7 +216,7 @@ export async function getPublic(req: Request, res: Response) {
 
 export async function createMine(req: Request, res: Response) {
   if (!req.user) throw new HttpError(401, "Authentication required");
-  await requireApprovedSeller(req.user.id);
+  await requireApprovedSeller(req.user.id, req.user.role);
   const body = propertyInput.parse(req.body);
   const col = getPropertiesCollection();
 
@@ -264,7 +269,7 @@ export async function createMine(req: Request, res: Response) {
 
 export async function updateMine(req: Request, res: Response) {
   if (!req.user) throw new HttpError(401, "Authentication required");
-  await requireApprovedSeller(req.user.id);
+  await requireApprovedSeller(req.user.id, req.user.role);
   const id = String(req.params.id);
   const col = getPropertiesCollection();
 
@@ -471,7 +476,10 @@ export async function reorderImages(req: Request, res: Response) {
 export async function mapPoints(req: Request, res: Response) {
   const q = req.query as Record<string, string>;
   const col = getPropertiesCollection();
-  const filter: Record<string, any> = { status: "ACTIVE" };
+  const filter: Record<string, any> = {
+    status: "ACTIVE",
+    sellerDisabled: { $ne: true },
+  };
 
   if (q.listingType) filter.listingType = q.listingType.toUpperCase();
   if (q.locality) {
@@ -519,4 +527,60 @@ export async function mapPoints(req: Request, res: Response) {
       primaryImage: p.primaryImage || p.images?.[0]?.path || defaultImageForType(p.propertyType),
     })),
   });
+}
+
+export async function deleteProperty(req: Request, res: Response) {
+  if (!req.user) throw new HttpError(401, "Authentication required");
+  const id = String(req.params.id);
+  const col = getPropertiesCollection();
+
+  const existing = await col.findOne({ propertyId: id });
+  if (!existing) throw new HttpError(404, "Property not found");
+
+  if (existing.sellerId !== req.user.id && req.user.role !== "SUPERADMIN") {
+    throw new HttpError(403, "Forbidden: you can only delete your own properties");
+  }
+
+  // 1. Delete associated local image files safely
+  if (Array.isArray(existing.images)) {
+    for (const img of existing.images) {
+      if (img.path && typeof img.path === "string") {
+        try {
+          await deleteLocalFile(img.path);
+        } catch {
+          // ignore file not found
+        }
+      }
+    }
+  }
+
+  // 2. Cascade delete related records in database
+  await Promise.all([
+    prisma.favourite.deleteMany({ where: { propertyId: id } }),
+    prisma.cartItem.deleteMany({ where: { propertyId: id } }),
+    prisma.clientPropertyInterest.deleteMany({ where: { propertyId: id } }),
+    prisma.propertyVisit.deleteMany({ where: { propertyId: id } }),
+  ]);
+
+  // 3. Remove property document from MongoDB
+  await col.deleteOne({ propertyId: id });
+
+  // 4. Audit log entry
+  await prisma.auditLog.create({
+    data: {
+      actorId: req.user.id,
+      action: "PROPERTY_DELETED",
+      entityType: "Property",
+      entityId: id,
+      metadata: {
+        title: existing.title,
+        price: existing.price,
+        locality: existing.locality,
+        sellerId: existing.sellerId,
+        deletedByRole: req.user.role,
+      },
+    },
+  });
+
+  res.json({ ok: true, message: "Property permanently deleted" });
 }

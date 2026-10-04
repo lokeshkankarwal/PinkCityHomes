@@ -1,0 +1,386 @@
+import { useState, useEffect, useCallback } from "react";
+import { useParams, Link, useNavigate } from "react-router-dom";
+import { api } from "../../api/client";
+import { inr, imgSrc } from "../../lib/format";
+import type { Property } from "../../types";
+import { ConfirmModal } from "../../components/ConfirmModal";
+
+type SellerData = {
+  seller: {
+    id: string;
+    userId: string;
+    companyName?: string | null;
+    status: string;
+    createdAt: string;
+    approvedAt?: string | null;
+    rejectionReason?: string | null;
+    isDisabled?: boolean;
+  };
+  user: {
+    id: string;
+    email: string;
+    name: string;
+    phone?: string | null;
+    avatar?: string | null;
+    createdAt: string;
+    emailVerifiedAt?: string | null;
+    isDisabled?: boolean;
+  };
+  stats: {
+    totalProperties: number;
+    activeProperties: number;
+    inactiveProperties: number;
+    soldProperties: number;
+    totalViews: number;
+  };
+  properties: Property[];
+};
+
+export default function AdminSellerDetailPage() {
+  const { sellerId } = useParams<{ sellerId: string }>();
+  const navigate = useNavigate();
+
+  const [data, setData] = useState<SellerData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Modal states
+  const [deletePropTarget, setDeletePropTarget] = useState<Property | null>(null);
+  const [togglePropTarget, setTogglePropTarget] = useState<Property | null>(null);
+  const [sellerStatusTarget, setSellerStatusTarget] = useState<"DISABLE" | "ENABLE" | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
+
+  const fetchSellerDetails = useCallback(async () => {
+    if (!sellerId) return;
+    setLoading(true);
+    try {
+      const res = await api.get<SellerData>(`/admin/sellers/${sellerId}`);
+      setData(res);
+      setError(null);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Failed to load seller details");
+    } finally {
+      setLoading(false);
+    }
+  }, [sellerId]);
+
+  useEffect(() => {
+    void fetchSellerDetails();
+  }, [fetchSellerDetails]);
+
+  const handleTogglePropertyStatus = async () => {
+    if (!togglePropTarget) return;
+    setActionLoading(true);
+    try {
+      const endpoint =
+        togglePropTarget.status === "ACTIVE"
+          ? `/admin/properties/${togglePropTarget.id}/disable`
+          : `/admin/properties/${togglePropTarget.id}/enable`;
+      await api.patch(endpoint);
+      setTogglePropTarget(null);
+      void fetchSellerDetails();
+    } catch (e: unknown) {
+      alert(e instanceof Error ? e.message : "Failed to update property status");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleDeleteProperty = async () => {
+    if (!deletePropTarget) return;
+    setActionLoading(true);
+    try {
+      await api.delete(`/admin/properties/${deletePropTarget.id}`);
+      setDeletePropTarget(null);
+      void fetchSellerDetails();
+    } catch (e: unknown) {
+      alert(e instanceof Error ? e.message : "Failed to delete property");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleSellerStatus = async () => {
+    if (!sellerStatusTarget || !data) return;
+    setActionLoading(true);
+    try {
+      if (sellerStatusTarget === "DISABLE") {
+        await api.patch(`/admin/sellers/${data.seller.id}/disable`);
+      } else {
+        await api.patch(`/admin/sellers/${data.seller.id}/enable`);
+      }
+      setSellerStatusTarget(null);
+      void fetchSellerDetails();
+    } catch (e: unknown) {
+      alert(e instanceof Error ? e.message : "Failed to update seller status");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  if (loading) return <div className="py-24 text-center text-ink/60">Loading seller profile &amp; inventory...</div>;
+  if (error || !data) {
+    return (
+      <div className="rounded-3xl border border-red-200 bg-red-50 p-8 text-center space-y-3">
+        <h3 className="font-serif text-xl font-bold text-red-900">Seller Not Found</h3>
+        <p className="text-sm text-red-700">{error || "Could not retrieve seller profile."}</p>
+        <button
+          onClick={() => navigate("/admin/sellers")}
+          className="rounded-xl bg-ink px-4 py-2 text-xs font-semibold text-sand hover:bg-ink/90"
+        >
+          &larr; Back to Sellers Directory
+        </button>
+      </div>
+    );
+  }
+
+  const { seller, user, stats, properties } = data;
+  const isSuspended = seller.status === "SUSPENDED" || seller.isDisabled || user.isDisabled;
+
+  return (
+    <div className="space-y-8 pb-16">
+      {/* Breadcrumb & Navigation */}
+      <div className="flex items-center gap-2 text-xs text-ink/60">
+        <Link to="/admin/sellers" className="hover:text-ink font-semibold">
+          &larr; Sellers Directory
+        </Link>
+        <span>/</span>
+        <span className="text-ink">{user.name}</span>
+      </div>
+
+      {/* Seller Header Profile Card */}
+      <div className="rounded-3xl border border-ink/10 bg-white p-6 sm:p-8 shadow-sm">
+        <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
+          <div className="flex items-start gap-5">
+            <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-2xl bg-gradient-to-tr from-pink-500 to-amber-500 flex items-center justify-center text-white text-2xl sm:text-3xl font-bold font-serif shadow-sm overflow-hidden flex-shrink-0">
+              {user.avatar ? (
+                <img src={imgSrc(user.avatar)} alt="" className="h-full w-full object-cover" />
+              ) : (
+                user.name.charAt(0).toUpperCase()
+              )}
+            </div>
+
+            <div className="space-y-1.5">
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="font-serif text-2xl sm:text-3xl font-bold text-ink">{user.name}</h1>
+                <span
+                  className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider ${
+                    isSuspended
+                      ? "bg-red-100 text-red-800 border border-red-300"
+                      : seller.status === "APPROVED"
+                      ? "bg-moss/10 text-moss border border-moss/30"
+                      : "bg-amber-100 text-amber-900 border border-amber-300"
+                  }`}
+                >
+                  {isSuspended ? "SUSPENDED / DISABLED" : seller.status}
+                </span>
+                {user.emailVerifiedAt && (
+                  <span className="rounded-full bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 text-[10px] font-semibold">
+                    Email Verified ✓
+                  </span>
+                )}
+              </div>
+
+              {seller.companyName && (
+                <p className="text-sm font-semibold text-brass">🏢 {seller.companyName}</p>
+              )}
+
+              <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-ink/70 pt-1">
+                <span>✉️ {user.email}</span>
+                {user.phone && <span>📞 {user.phone}</span>}
+                <span>📅 Registered: {new Date(user.createdAt).toLocaleDateString()}</span>
+                <span className="font-mono text-[10px] text-ink/40">ID: {seller.id}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Quick Actions */}
+          <div className="flex flex-wrap items-center gap-2">
+            {isSuspended ? (
+              <button
+                onClick={() => setSellerStatusTarget("ENABLE")}
+                className="rounded-xl bg-moss px-4 py-2 text-xs font-semibold text-white shadow hover:bg-moss/90 transition"
+              >
+                Re-enable / Restore Seller
+              </button>
+            ) : (
+              <button
+                onClick={() => setSellerStatusTarget("DISABLE")}
+                className="rounded-xl border border-red-200 bg-red-50 text-red-700 px-4 py-2 text-xs font-semibold hover:bg-red-100 transition"
+              >
+                Suspend / Disable Seller
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Stats Strip */}
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 pt-6 mt-6 border-t border-ink/10">
+          <div className="rounded-2xl bg-sand/40 p-3">
+            <span className="text-[10px] uppercase font-bold text-ink/50">Total Properties</span>
+            <p className="font-serif text-xl font-bold text-ink mt-0.5">{stats.totalProperties}</p>
+          </div>
+          <div className="rounded-2xl bg-sand/40 p-3">
+            <span className="text-[10px] uppercase font-bold text-moss">Active Searchable</span>
+            <p className="font-serif text-xl font-bold text-moss mt-0.5">{stats.activeProperties}</p>
+          </div>
+          <div className="rounded-2xl bg-sand/40 p-3">
+            <span className="text-[10px] uppercase font-bold text-amber-800">Inactive / Deactivated</span>
+            <p className="font-serif text-xl font-bold text-amber-800 mt-0.5">{stats.inactiveProperties}</p>
+          </div>
+          <div className="rounded-2xl bg-sand/40 p-3">
+            <span className="text-[10px] uppercase font-bold text-ink/50">Marked SOLD</span>
+            <p className="font-serif text-xl font-bold text-ink mt-0.5">{stats.soldProperties}</p>
+          </div>
+          <div className="rounded-2xl bg-sand/40 p-3">
+            <span className="text-[10px] uppercase font-bold text-ink/50">Total Views</span>
+            <p className="font-serif text-xl font-bold text-ink mt-0.5">{stats.totalViews}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Seller Inventory Section */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="font-serif text-xl font-bold">Seller Properties ({properties.length})</h2>
+            <p className="text-xs text-ink/60">
+              Complete catalogued inventory listed by {user.name}
+            </p>
+          </div>
+        </div>
+
+        {properties.length === 0 ? (
+          <div className="rounded-3xl border border-ink/10 bg-white p-12 text-center text-ink/60">
+            This seller has not posted any property listings yet.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
+            {properties.map((p) => (
+              <div
+                key={p.id}
+                className="overflow-hidden rounded-3xl border border-ink/10 bg-white shadow-sm transition hover:shadow-md flex flex-col justify-between"
+              >
+                <div>
+                  <div className="relative">
+                    <img
+                      src={imgSrc(p.primaryImage || p.images?.[0]?.path)}
+                      alt=""
+                      className="h-44 w-full object-cover"
+                    />
+                    <div className="absolute top-3 left-3 flex flex-wrap gap-1.5 z-10">
+                      <span
+                        className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                          p.status === "ACTIVE"
+                            ? "bg-moss text-white"
+                            : p.status === "SOLD"
+                            ? "bg-ink text-sand"
+                            : "bg-amber-600 text-white"
+                        }`}
+                      >
+                        {p.status}
+                      </span>
+                      <span className="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-brass text-ink">
+                        {p.listingType === "RENT" ? "FOR RENT" : "FOR SALE"}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="p-4 space-y-2">
+                    <h3 className="font-serif text-base font-bold line-clamp-1">{p.title}</h3>
+                    <p className="font-serif text-lg font-bold text-brass">
+                      {p.listingType === "RENT" ? `${inr(p.price)}/mo` : inr(p.price)}
+                    </p>
+                    <p className="text-xs text-ink/70">
+                      {p.bhk} BHK · {p.carpetArea} sq ft · <span className="capitalize">{p.locality}</span>
+                    </p>
+
+                    <div className="text-[11px] text-ink/50 pt-1 border-t border-ink/5 flex items-center justify-between">
+                      <span>📍 {p.latitude?.toFixed(4)}, {p.longitude?.toFixed(4)}</span>
+                      <span>👁 {p.views ?? 0} views</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Property Admin Action Bar */}
+                <div className="border-t border-ink/5 p-3 bg-sand/20 flex flex-wrap gap-2 justify-between items-center text-xs">
+                  <Link
+                    to={`/properties/${p.id}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="rounded-lg bg-moss/10 text-moss border border-moss/30 px-2.5 py-1 font-semibold hover:bg-moss/20 transition"
+                  >
+                    View
+                  </Link>
+
+                  <div className="flex items-center gap-1.5">
+                    {p.status !== "SOLD" && (
+                      <button
+                        onClick={() => setTogglePropTarget(p)}
+                        className={`rounded-lg border px-2.5 py-1 font-semibold transition ${
+                          p.status === "ACTIVE"
+                            ? "border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100"
+                            : "border-moss/40 bg-moss/10 text-moss hover:bg-moss/20"
+                        }`}
+                      >
+                        {p.status === "ACTIVE" ? "Disable" : "Enable"}
+                      </button>
+                    )}
+                    <button
+                      onClick={() => setDeletePropTarget(p)}
+                      className="rounded-lg border border-red-200 bg-red-50 text-red-700 px-2.5 py-1 font-semibold hover:bg-red-100 transition"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Confirmation Modals */}
+      <ConfirmModal
+        isOpen={Boolean(togglePropTarget)}
+        title={togglePropTarget?.status === "ACTIVE" ? "Disable Property Listing" : "Enable Property Listing"}
+        message={
+          togglePropTarget?.status === "ACTIVE"
+            ? `Disable "${togglePropTarget?.title}"? It will immediately stop appearing in customer Buy and Rent searches.`
+            : `Re-enable "${togglePropTarget?.title}"? It will immediately be made visible to prospective buyers and tenants in public search.`
+        }
+        confirmLabel={togglePropTarget?.status === "ACTIVE" ? "Disable Listing" : "Enable Listing"}
+        variant={togglePropTarget?.status === "ACTIVE" ? "warning" : "primary"}
+        loading={actionLoading}
+        onConfirm={handleTogglePropertyStatus}
+        onCancel={() => setTogglePropTarget(null)}
+      />
+
+      <ConfirmModal
+        isOpen={Boolean(deletePropTarget)}
+        title="Permanently Delete Property"
+        message={`Are you sure you want to permanently delete "${deletePropTarget?.title}"? This action cannot be undone and will purge all photos, saved favorites, inquiries, and schedules from MongoDB.`}
+        confirmLabel="Permanently Delete"
+        variant="danger"
+        loading={actionLoading}
+        onConfirm={handleDeleteProperty}
+        onCancel={() => setDeletePropTarget(null)}
+      />
+
+      <ConfirmModal
+        isOpen={Boolean(sellerStatusTarget)}
+        title={sellerStatusTarget === "DISABLE" ? "Suspend Seller Account" : "Re-enable Seller Account"}
+        message={
+          sellerStatusTarget === "DISABLE"
+            ? `Suspending "${user.name}" will immediately prevent this seller from authenticating and will automatically hide all their properties from public search results.`
+            : `Re-enabling "${user.name}" will restore seller login access and restore their active properties to public search results.`
+        }
+        confirmLabel={sellerStatusTarget === "DISABLE" ? "Suspend Account" : "Restore Account"}
+        variant={sellerStatusTarget === "DISABLE" ? "danger" : "primary"}
+        loading={actionLoading}
+        onConfirm={handleSellerStatus}
+        onCancel={() => setSellerStatusTarget(null)}
+      />
+    </div>
+  );
+}

@@ -1,236 +1,340 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { api } from "../../api/client";
+import { ConfirmModal } from "../../components/ConfirmModal";
 
-type SellerRequest = {
+type SellerItem = {
   id: string;
   userId: string;
   companyName?: string | null;
   status: string;
   createdAt: string;
+  propertiesCount?: number;
+  isDisabled?: boolean;
   user: {
     id: string;
     email: string;
     name: string;
     phone?: string | null;
     emailVerifiedAt?: string | null;
+    isDisabled?: boolean;
   };
 };
 
 export default function AdminSellersPage() {
-  const [requests, setRequests] = useState<SellerRequest[]>([]);
-  const [allSellers, setAllSellers] = useState<SellerRequest[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"pending" | "all">("pending");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialStatus = searchParams.get("status") || "ALL";
 
+  const [sellers, setSellers] = useState<SellerItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [activeTab, setActiveTab] = useState<string>(initialStatus);
+
+  // Rejection modal
   const [rejectId, setRejectId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState("");
 
-  const fetchData = async () => {
+  // Disable / Enable modal
+  const [statusModalTarget, setStatusModalTarget] = useState<{
+    seller: SellerItem;
+    action: "DISABLE" | "ENABLE";
+  } | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
+
+  // Sync tab with URL search parameter if changed
+  useEffect(() => {
+    const s = searchParams.get("status");
+    if (s && s !== activeTab) {
+      setActiveTab(s.toUpperCase());
+    }
+  }, [searchParams]);
+
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  const fetchSellers = useCallback(async () => {
     setLoading(true);
     try {
-      const [reqs, all] = await Promise.all([
-        api.get<{ results: SellerRequest[] }>("/admin/seller-requests"),
-        api.get<{ results: SellerRequest[] }>("/admin/sellers"),
-      ]);
-      setRequests(reqs.results || []);
-      setAllSellers(all.results || []);
+      const params = new URLSearchParams();
+      if (debouncedSearch) params.append("q", debouncedSearch);
+      if (activeTab !== "ALL") params.append("status", activeTab);
+
+      const qs = params.toString() ? `?${params.toString()}` : "";
+      const res = await api.get<{ results: SellerItem[] }>(`/admin/sellers${qs}`);
+      setSellers(res.results || []);
     } catch {
-      setRequests([]);
-      setAllSellers([]);
+      setSellers([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [debouncedSearch, activeTab]);
 
   useEffect(() => {
-    void fetchData();
-  }, []);
+    void fetchSellers();
+  }, [fetchSellers]);
 
-  const handleReview = async (id: string, action: "APPROVE" | "REJECT" | "SUSPEND", reason?: string) => {
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    if (tab === "ALL") {
+      searchParams.delete("status");
+    } else {
+      searchParams.set("status", tab);
+    }
+    setSearchParams(searchParams);
+  };
+
+  const handleReview = async (id: string, action: "APPROVE" | "REJECT", reason?: string) => {
+    setActionLoading(true);
     try {
       await api.post(`/admin/sellers/${id}/review`, { action, reason });
       setRejectId(null);
       setRejectReason("");
-      void fetchData();
+      void fetchSellers();
     } catch (e: unknown) {
       alert(e instanceof Error ? e.message : "Review action failed");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleToggleSellerStatus = async () => {
+    if (!statusModalTarget) return;
+    setActionLoading(true);
+    try {
+      if (statusModalTarget.action === "DISABLE") {
+        await api.patch(`/admin/sellers/${statusModalTarget.seller.id}/disable`);
+      } else {
+        await api.patch(`/admin/sellers/${statusModalTarget.seller.id}/enable`);
+      }
+      setStatusModalTarget(null);
+      void fetchSellers();
+    } catch (e: unknown) {
+      alert(e instanceof Error ? e.message : "Failed to update seller status");
+    } finally {
+      setActionLoading(false);
     }
   };
 
   return (
     <div className="space-y-6 pb-16">
+      {/* Header */}
       <div>
         <h1 className="font-serif text-3xl font-bold">Seller Verification &amp; Governance</h1>
         <p className="text-sm text-ink/70">
-          Superadmin approval controls for real estate sellers and brokerage agencies
+          Superadmin approval controls, credentials review, and listing inventory oversight for agencies and individual sellers
         </p>
       </div>
 
-      {/* Tabs */}
-      <div className="flex rounded-xl bg-ink/5 p-1 text-xs font-semibold max-w-xs">
-        <button
-          onClick={() => setActiveTab("pending")}
-          className={`flex-1 rounded-lg py-2 transition ${
-            activeTab === "pending" ? "bg-white shadow text-ink" : "text-ink/60 hover:text-ink"
-          }`}
-        >
-          Pending Approvals ({requests.length})
-        </button>
-        <button
-          onClick={() => setActiveTab("all")}
-          className={`flex-1 rounded-lg py-2 transition ${
-            activeTab === "all" ? "bg-white shadow text-ink" : "text-ink/60 hover:text-ink"
-          }`}
-        >
-          All Sellers ({allSellers.length})
-        </button>
+      {/* Controls: Search + Tabs */}
+      <div className="flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between">
+        {/* Search */}
+        <div className="relative max-w-md w-full">
+          <input
+            type="text"
+            placeholder="Search by company, agent name, email, phone, or ID..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full rounded-2xl border border-ink/20 px-4 py-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-brass bg-white shadow-sm"
+          />
+          {searchTerm && (
+            <button
+              onClick={() => setSearchTerm("")}
+              className="absolute right-3 top-2.5 text-xs text-ink/40 hover:text-ink"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+
+        {/* Status Filter Tabs */}
+        <div className="flex rounded-xl bg-ink/5 p-1 text-xs font-semibold overflow-x-auto">
+          {[
+            { id: "ALL", label: "All Sellers" },
+            { id: "PENDING", label: "Pending Approvals" },
+            { id: "APPROVED", label: "Approved" },
+            { id: "SUSPENDED", label: "Suspended / Disabled" },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => handleTabChange(tab.id)}
+              className={`rounded-lg px-3.5 py-1.5 whitespace-nowrap transition ${
+                activeTab === tab.id
+                  ? "bg-white text-ink shadow-sm font-bold"
+                  : "text-ink/60 hover:text-ink"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {loading ? (
-        <div className="py-20 text-center text-ink/60">Loading seller requests...</div>
-      ) : activeTab === "pending" ? (
-        requests.length === 0 ? (
-          <div className="rounded-3xl border border-ink/10 bg-white p-12 text-center text-ink/60">
-            No pending seller approval requests. All active applications have been processed.
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {requests.map((r) => (
-              <div
-                key={r.id}
-                className="rounded-3xl border border-ink/10 bg-white p-6 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
-              >
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="rounded-full bg-amber-100 text-amber-900 text-[10px] font-bold px-2.5 py-0.5 uppercase">
-                      {r.status}
-                    </span>
-                    <span className="text-xs text-ink/50">
-                      Applied {new Date(r.createdAt).toLocaleDateString()}
-                    </span>
-                  </div>
-                  <h3 className="font-serif text-xl font-bold">{r.companyName || r.user.name}</h3>
-                  <p className="text-xs text-ink/70">
-                    Contact: {r.user.name} ({r.user.email}) · Phone: {r.user.phone || "—"}
-                  </p>
-                  <p className="text-[11px] text-moss font-semibold">
-                    Email Verified: {r.user.emailVerifiedAt ? "Yes ✓" : "Pending OTP"}
-                  </p>
-                </div>
-
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => void handleReview(r.id, "APPROVE")}
-                    className="rounded-xl bg-moss px-4 py-2 text-xs font-semibold text-white shadow hover:bg-moss/90"
-                  >
-                    Approve Seller
-                  </button>
-                  <button
-                    onClick={() => setRejectId(r.id)}
-                    className="rounded-xl border border-red-200 px-4 py-2 text-xs font-semibold text-red-700 hover:bg-red-50"
-                  >
-                    Reject...
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )
+        <div className="py-20 text-center text-ink/60">Loading sellers directory...</div>
+      ) : sellers.length === 0 ? (
+        <div className="rounded-3xl border border-ink/10 bg-white p-12 text-center text-sm text-ink/60">
+          No sellers found matching your search and filter criteria.
+        </div>
       ) : (
-        /* All Sellers Table */
-        <div className="rounded-3xl border border-ink/10 bg-white p-6 shadow-sm overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="border-b border-ink/10 text-xs font-semibold text-ink/60 uppercase">
-                <th className="py-3 px-4">Company / Agent</th>
-                <th className="py-3 px-4">Contact</th>
-                <th className="py-3 px-4">Approval Status</th>
-                <th className="py-3 px-4">Registered</th>
-                <th className="py-3 px-4 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-ink/5">
-              {allSellers.map((s) => (
-                <tr key={s.id} className="hover:bg-sand/20">
-                  <td className="py-3 px-4 font-semibold">{s.companyName || s.user.name}</td>
-                  <td className="py-3 px-4 text-xs text-ink/70">
-                    {s.user.email} <br /> {s.user.phone}
-                  </td>
-                  <td className="py-3 px-4">
-                    <span
-                      className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase ${
-                        s.status === "APPROVED"
-                          ? "bg-moss/10 text-moss"
-                          : s.status === "REJECTED"
-                          ? "bg-red-100 text-red-800"
-                          : "bg-amber-100 text-amber-800"
-                      }`}
+        <div className="space-y-4">
+          {sellers.map((s) => {
+            const isSuspended = s.status === "SUSPENDED" || s.isDisabled || s.user?.isDisabled;
+            const isPending = s.status === "PENDING_APPROVAL" || s.status === "PENDING_VERIFICATION";
+
+            return (
+              <div
+                key={s.id}
+                className="rounded-3xl border border-ink/10 bg-white p-6 shadow-sm hover:shadow-md transition space-y-4"
+              >
+                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                  <div className="flex items-start gap-4">
+                    <div className="h-12 w-12 rounded-2xl bg-sand flex items-center justify-center text-ink font-serif font-bold text-lg flex-shrink-0 border border-ink/10">
+                      {s.user?.name?.charAt(0).toUpperCase()}
+                    </div>
+
+                    <div className="space-y-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Link
+                          to={`/admin/sellers/${s.id}`}
+                          className="font-serif text-lg font-bold text-ink hover:text-brass transition"
+                        >
+                          {s.user?.name}
+                        </Link>
+                        <span
+                          className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                            isSuspended
+                              ? "bg-red-100 text-red-800 border border-red-200"
+                              : isPending
+                              ? "bg-amber-100 text-amber-900 border border-amber-300 animate-pulse"
+                              : "bg-moss/10 text-moss border border-moss/30"
+                          }`}
+                        >
+                          {isSuspended ? "SUSPENDED" : s.status}
+                        </span>
+                        <span className="rounded-full bg-ink/5 px-2.5 py-0.5 text-[10px] font-semibold text-ink/70">
+                          🏡 {s.propertiesCount ?? 0} Properties
+                        </span>
+                      </div>
+
+                      {s.companyName && (
+                        <p className="text-xs font-semibold text-brass">🏢 {s.companyName}</p>
+                      )}
+
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-ink/60">
+                        <span className="font-mono">{s.user?.email}</span>
+                        {s.user?.phone && <span>📞 {s.user.phone}</span>}
+                        <span>Registered {new Date(s.createdAt).toLocaleDateString()}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Link
+                      to={`/admin/sellers/${s.id}`}
+                      className="rounded-xl border border-ink/20 px-3.5 py-1.5 text-xs font-semibold text-ink hover:bg-sand transition"
                     >
-                      {s.status}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4 text-xs text-ink/60">
-                    {new Date(s.createdAt).toLocaleDateString()}
-                  </td>
-                  <td className="py-3 px-4 text-right">
-                    {s.status === "APPROVED" ? (
+                      View Properties &amp; Profile &rarr;
+                    </Link>
+
+                    {isPending && (
+                      <>
+                        <button
+                          onClick={() => void handleReview(s.id, "APPROVE")}
+                          disabled={actionLoading}
+                          className="rounded-xl bg-moss px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-moss/90 transition disabled:opacity-50"
+                        >
+                          Approve
+                        </button>
+                        <button
+                          onClick={() => setRejectId(s.id)}
+                          disabled={actionLoading}
+                          className="rounded-xl border border-red-200 bg-red-50 px-3.5 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-100 transition disabled:opacity-50"
+                        >
+                          Reject
+                        </button>
+                      </>
+                    )}
+
+                    {!isPending && (
+                      isSuspended ? (
+                        <button
+                          onClick={() => setStatusModalTarget({ seller: s, action: "ENABLE" })}
+                          className="rounded-xl bg-moss/10 text-moss border border-moss/30 px-3.5 py-1.5 text-xs font-semibold hover:bg-moss/20 transition"
+                        >
+                          Re-enable Seller
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => setStatusModalTarget({ seller: s, action: "DISABLE" })}
+                          className="rounded-xl border border-red-200 bg-red-50 text-red-700 px-3.5 py-1.5 text-xs font-semibold hover:bg-red-100 transition"
+                        >
+                          Suspend Seller
+                        </button>
+                      )
+                    )}
+                  </div>
+                </div>
+
+                {/* Reject Reason Form Inline */}
+                {rejectId === s.id && (
+                  <div className="rounded-2xl bg-red-50/60 border border-red-200 p-4 space-y-3">
+                    <label className="block text-xs font-semibold text-red-900">
+                      Reason for Rejection (visible to applicant)
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={rejectReason}
+                      onChange={(e) => setRejectReason(e.target.value)}
+                      placeholder="e.g., Incomplete broker license information, identity verification mismatch..."
+                      className="w-full rounded-xl border border-red-200 p-2.5 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-red-400"
+                    />
+                    <div className="flex justify-end gap-2">
                       <button
-                        onClick={() => void handleReview(s.id, "SUSPEND")}
-                        className="rounded-lg border border-red-200 px-3 py-1 text-xs font-semibold text-red-700 hover:bg-red-50"
+                        onClick={() => {
+                          setRejectId(null);
+                          setRejectReason("");
+                        }}
+                        className="rounded-lg px-3 py-1 text-xs text-ink/70 hover:bg-sand"
                       >
-                        Suspend
+                        Cancel
                       </button>
-                    ) : s.status !== "APPROVED" ? (
                       <button
-                        onClick={() => void handleReview(s.id, "APPROVE")}
-                        className="rounded-lg bg-moss px-3 py-1 text-xs font-semibold text-white hover:bg-moss/90"
+                        onClick={() => void handleReview(s.id, "REJECT", rejectReason)}
+                        className="rounded-lg bg-red-700 px-4 py-1 text-xs font-semibold text-white hover:bg-red-800"
                       >
-                        Approve
+                        Confirm Rejection
                       </button>
-                    ) : null}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
 
-      {/* Reject Modal */}
-      {rejectId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/60 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl space-y-4">
-            <h3 className="font-serif text-xl font-bold">Reject Seller Application</h3>
-            <div>
-              <label className="block text-xs font-semibold text-ink/70 mb-1">Reason for Rejection</label>
-              <textarea
-                rows={3}
-                required
-                value={rejectReason}
-                onChange={(e) => setRejectReason(e.target.value)}
-                placeholder="Incomplete documentation, unverifiable license, etc."
-                className="w-full rounded-xl border border-ink/20 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass"
-              />
-            </div>
-            <div className="flex justify-end gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => setRejectId(null)}
-                className="rounded-xl px-4 py-2 text-xs font-semibold text-ink/70 hover:bg-ink/5"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={() => void handleReview(rejectId, "REJECT", rejectReason)}
-                className="rounded-xl bg-red-700 px-5 py-2 text-xs font-semibold text-white hover:bg-red-800"
-              >
-                Confirm Rejection
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Suspend / Re-enable Confirmation Modal */}
+      <ConfirmModal
+        isOpen={Boolean(statusModalTarget)}
+        title={statusModalTarget?.action === "DISABLE" ? "Suspend Seller Account" : "Re-enable Seller Account"}
+        message={
+          statusModalTarget?.action === "DISABLE"
+            ? `Suspending "${statusModalTarget?.seller.user?.name}" (${statusModalTarget?.seller.companyName || "Direct Seller"}) will block them from accessing the seller console and will immediately exclude their properties from public search results.`
+            : `Re-enabling "${statusModalTarget?.seller.user?.name}" will restore login credentials and return active property listings to public Buy and Rent search results.`
+        }
+        confirmLabel={statusModalTarget?.action === "DISABLE" ? "Suspend Account" : "Restore Account"}
+        variant={statusModalTarget?.action === "DISABLE" ? "danger" : "primary"}
+        loading={actionLoading}
+        onConfirm={handleToggleSellerStatus}
+        onCancel={() => setStatusModalTarget(null)}
+      />
     </div>
   );
 }

@@ -5,11 +5,18 @@ import { inr, imgSrc } from "../../lib/format";
 import type { Property } from "../../types";
 import { LocationPickerMap } from "../../components/LocationPickerMap";
 import { searchJaipurLocations, type JaipurLocation } from "../../services/jaipurLocations";
+import { ConfirmModal } from "../../components/ConfirmModal";
 
 export default function SellerPropertiesPage() {
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<"ALL" | "ACTIVE" | "INACTIVE" | "SOLD">("ALL");
+
+  // Deactivate and Delete modal states
+  const [deleteTarget, setDeleteTarget] = useState<Property | null>(null);
+  const [deactivateTarget, setDeactivateTarget] = useState<Property | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
 
   // Modal states
   const [showAddModal, setShowAddModal] = useState(false);
@@ -220,12 +227,31 @@ export default function SellerPropertiesPage() {
     }
   };
 
-  const handleToggleStatus = async (id: string) => {
+  const handleDeactivateConfirm = async () => {
+    if (!deactivateTarget) return;
+    setActionLoading(true);
     try {
-      await api.patch(`/properties/${id}/status`);
+      await api.patch(`/properties/${deactivateTarget.id}/status`);
+      setDeactivateTarget(null);
       void fetchMine();
     } catch (e: unknown) {
       alert(e instanceof Error ? e.message : "Failed to update status");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteTarget) return;
+    setActionLoading(true);
+    try {
+      await api.delete(`/properties/${deleteTarget.id}`);
+      setDeleteTarget(null);
+      void fetchMine();
+    } catch (e: unknown) {
+      alert(e instanceof Error ? e.message : "Failed to delete property");
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -296,6 +322,35 @@ export default function SellerPropertiesPage() {
         </div>
       )}
 
+      {/* Status Category Tabs */}
+      <div className="flex flex-wrap gap-2">
+        {(["ALL", "ACTIVE", "INACTIVE", "SOLD"] as const).map((tab) => {
+          const count =
+            tab === "ALL"
+              ? properties.length
+              : properties.filter((p) => p.status === tab).length;
+          const labels = {
+            ALL: "All Properties",
+            ACTIVE: "Active Listings",
+            INACTIVE: "Inactive / Deactivated",
+            SOLD: "Sold",
+          };
+          return (
+            <button
+              key={tab}
+              onClick={() => setStatusFilter(tab)}
+              className={`rounded-xl px-4 py-2 text-xs font-semibold transition ${
+                statusFilter === tab
+                  ? "bg-ink text-sand shadow-sm"
+                  : "bg-white text-ink/70 border border-ink/10 hover:bg-sand"
+              }`}
+            >
+              {labels[tab]} ({count})
+            </button>
+          );
+        })}
+      </div>
+
       {loading ? (
         <div className="py-20 text-center text-ink/60">Loading properties...</div>
       ) : properties.length === 0 ? (
@@ -311,9 +366,15 @@ export default function SellerPropertiesPage() {
             Create Property
           </button>
         </div>
+      ) : properties.filter((p) => (statusFilter === "ALL" ? true : p.status === statusFilter)).length === 0 ? (
+        <div className="rounded-3xl border border-ink/10 bg-white p-12 text-center text-sm text-ink/60">
+          No properties found under "{statusFilter === "INACTIVE" ? "Inactive / Deactivated" : statusFilter}".
+        </div>
       ) : (
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {properties.map((p) => (
+          {properties
+            .filter((p) => (statusFilter === "ALL" ? true : p.status === statusFilter))
+            .map((p) => (
             <div
               key={p.id}
               className="overflow-hidden rounded-3xl border border-ink/10 bg-white shadow-sm transition hover:shadow-md flex flex-col justify-between"
@@ -387,17 +448,29 @@ export default function SellerPropertiesPage() {
                     📷 Photos
                   </button>
                 </div>
-                {p.status !== "SOLD" && (
+                <div className="flex flex-wrap gap-1.5 items-center">
+                  {p.status !== "SOLD" && (
+                    <button
+                      onClick={() => setDeactivateTarget(p)}
+                      className={`rounded-lg border px-2.5 py-1 font-semibold transition ${
+                        p.status === "ACTIVE"
+                          ? "border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100"
+                          : "border-moss/40 bg-moss/10 text-moss hover:bg-moss/20"
+                      }`}
+                    >
+                      {p.status === "ACTIVE" ? "Deactivate" : "Activate"}
+                    </button>
+                  )}
+                  {p.status === "SOLD" && (
+                    <span className="text-[11px] font-bold text-ink/60">Marked SOLD</span>
+                  )}
                   <button
-                    onClick={() => void handleToggleStatus(p.id)}
-                    className="rounded-lg border border-ink/20 px-2.5 py-1 font-semibold text-ink/70 hover:bg-white"
+                    onClick={() => setDeleteTarget(p)}
+                    className="rounded-lg border border-red-200 bg-red-50 text-red-700 px-2.5 py-1 font-semibold hover:bg-red-100 transition"
                   >
-                    {p.status === "ACTIVE" ? "Deactivate" : "Activate"}
+                    Delete
                   </button>
-                )}
-                {p.status === "SOLD" && (
-                  <span className="text-[11px] font-bold text-ink/60">Marked SOLD by Admin</span>
-                )}
+                </div>
               </div>
             </div>
           ))}
@@ -1001,6 +1074,34 @@ export default function SellerPropertiesPage() {
           </div>
         </div>
       )}
+
+      {/* Deactivate / Reactivate Confirmation Modal */}
+      <ConfirmModal
+        isOpen={Boolean(deactivateTarget)}
+        title={deactivateTarget?.status === "ACTIVE" ? "Deactivate Property Listing" : "Reactivate Property Listing"}
+        message={
+          deactivateTarget?.status === "ACTIVE"
+            ? `Are you sure you want to deactivate "${deactivateTarget?.title}"? The property will be hidden from public Buy and Rent searches, but will remain safely in your account under the Inactive section.`
+            : `Reactivate "${deactivateTarget?.title}" to make it immediately visible to prospective buyers and tenants in public search results.`
+        }
+        confirmLabel={deactivateTarget?.status === "ACTIVE" ? "Deactivate Listing" : "Reactivate Listing"}
+        variant={deactivateTarget?.status === "ACTIVE" ? "warning" : "primary"}
+        loading={actionLoading}
+        onConfirm={handleDeactivateConfirm}
+        onCancel={() => setDeactivateTarget(null)}
+      />
+
+      {/* Permanent Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={Boolean(deleteTarget)}
+        title="Permanently Delete Property"
+        message={`Are you sure you want to permanently delete "${deleteTarget?.title}"? This action cannot be undone. All photos, customer favorites, leads, and schedule records will be permanently removed.`}
+        confirmLabel="Permanently Delete"
+        variant="danger"
+        loading={actionLoading}
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }
