@@ -27,6 +27,13 @@ export const env = {
   smtpPass: process.env.SMTP_PASS ?? "",
   smtpFrom: process.env.SMTP_FROM ?? "PinkCityHomes <noreply@pinkcityhomes.com>",
   emailVerificationUrl: process.env.EMAIL_VERIFICATION_URL ?? "http://localhost:5173",
+  // MongoDB Geospatial Discovery
+  mongoUri: process.env.MONGODB_URI ?? "mongodb://127.0.0.1:27017/pinkcityhomes",
+  // AWS S3 Storage Architecture
+  awsAccessKeyId: process.env.AWS_ACCESS_KEY_ID ?? "",
+  awsSecretAccessKey: process.env.AWS_SECRET_ACCESS_KEY ?? "",
+  awsRegion: process.env.AWS_REGION ?? "ap-south-1",
+  awsS3Bucket: process.env.AWS_S3_BUCKET ?? "",
   // Rate limiting (configurable via env)
   authRateLimitWindowMs: Number(process.env.AUTH_RATE_LIMIT_WINDOW_MS ?? 15 * 60 * 1000),
   authRateLimitMax: Number(process.env.AUTH_RATE_LIMIT_MAX ?? 30),

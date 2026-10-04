@@ -2,6 +2,7 @@ import type { Request, Response } from "express";
 import { z } from "zod";
 import { prisma } from "../../config/prisma.js";
 import { HttpError } from "../../middleware/error.js";
+import { deletePropertyFromMongo } from "../../config/mongo.js";
 
 async function audit(req: Request, action: string, entityType: string, entityId?: string, metadata?: unknown) {
   await prisma.auditLog.create({
@@ -107,6 +108,7 @@ export async function markSold(req: Request, res: Response) {
     return { property: updated, order };
   });
   await audit(req, "PROPERTY_SOLD", "Property", property.id, { orderId: result.order.id });
+  await deletePropertyFromMongo(property.id).catch(() => {});
   res.json(result);
 }
 

@@ -1,6 +1,7 @@
 import { createApp } from "./app.js";
 import { env } from "./config/env.js";
 import { prisma } from "./config/prisma.js";
+import { connectMongo, bootstrapSyncFromPostgres } from "./config/mongo.js";
 import bcrypt from "bcryptjs";
 
 /**
@@ -61,6 +62,13 @@ async function seedSuperadmin() {
 
 async function main() {
   await seedSuperadmin();
+
+  // Connect to MongoDB and initialize geospatial index
+  const mongoDb = await connectMongo();
+  if (mongoDb) {
+    await bootstrapSyncFromPostgres();
+  }
+
   const app = createApp();
   const port = Number(process.env.PORT || env.port || 4000);
   const host = "0.0.0.0";

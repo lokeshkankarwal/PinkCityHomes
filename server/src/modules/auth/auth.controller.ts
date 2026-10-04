@@ -5,6 +5,7 @@ import { HttpError } from "../../middleware/error.js";
 import { signToken } from "../../middleware/auth.js";
 import { sendVerificationEmail } from "../../services/email.service.js";
 import { env } from "../../config/env.js";
+import { saveFile, deleteLocalFile } from "../../services/storage.service.js";
 import type { Request, Response } from "express";
 import type { Role } from "@prisma/client";
 
@@ -171,11 +172,43 @@ export async function updateProfile(req: Request, res: Response) {
   res.json({ user: publicUser(user) });
 }
 
+export async function uploadAvatar(req: Request, res: Response) {
+  if (!req.user) throw new HttpError(401, "Authentication required");
+  const file = req.file;
+  if (!file) throw new HttpError(400, "No image file provided");
+
+  if (!["image/jpeg", "image/png", "image/webp"].includes(file.mimetype)) {
+    throw new HttpError(400, "Please upload a JPEG, PNG, or WebP image");
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    throw new HttpError(400, "Image must be under 5MB");
+  }
+
+  const ext = file.mimetype.split("/")[1] || "jpg";
+  const filename = `avatar-${req.user.id}-${Date.now()}.${ext}`;
+  const avatarUrl = await saveFile(filename, file.buffer, file.mimetype, "avatars");
+
+  // Clean up previous local avatar if applicable
+  const current = await prisma.user.findUnique({ where: { id: req.user.id }, select: { avatarUrl: true } });
+  if (current?.avatarUrl && current.avatarUrl.startsWith("/uploads/")) {
+    deleteLocalFile(current.avatarUrl);
+  }
+
+  const updated = await prisma.user.update({
+    where: { id: req.user.id },
+    data: { avatarUrl },
+    include: { sellerProfile: true },
+  });
+
+  res.json({ user: publicUser(updated) });
+}
+
 function publicUser(user: {
   id: string;
   email: string;
   name: string;
   phone: string | null;
+  avatarUrl?: string | null;
   role: Role;
   emailVerifiedAt: Date | null;
   sellerProfile?: { status: string; companyName: string | null } | null;
@@ -185,6 +218,7 @@ function publicUser(user: {
     email: user.email,
     name: user.name,
     phone: user.phone,
+    avatarUrl: user.avatarUrl ?? null,
     role: user.role,
     emailVerifiedAt: user.emailVerifiedAt,
     sellerStatus: user.sellerProfile?.status ?? null,

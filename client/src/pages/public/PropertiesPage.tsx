@@ -2,6 +2,9 @@ import { useState, useEffect, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { api } from "../../api/client";
 import { PropertyCard } from "../../components/PropertyCard";
+import { PropertyMap, type MapProperty, type MapBounds } from "../../components/PropertyMap";
+import { LocationSearchBar } from "../../components/LocationSearchBar";
+import { PropertyFilterBar, type FilterState } from "../../components/PropertyFilterBar";
 import { useAuth } from "../../auth";
 import type { Property } from "../../types";
 
@@ -9,42 +12,94 @@ export default function PropertiesPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
 
-  // Filter input states
-  const [localityInput, setLocalityInput] = useState(searchParams.get("locality") || "");
-  const [bhkInput, setBhkInput] = useState(searchParams.get("bhk") || "");
-  const [propertyTypeInput, setPropertyTypeInput] = useState(searchParams.get("type") || "");
-  const [furnishingInput, setFurnishingInput] = useState(searchParams.get("furnishing") || "");
-  const [minPriceInput, setMinPriceInput] = useState(searchParams.get("minPrice") || "");
-  const [maxPriceInput, setMaxPriceInput] = useState(searchParams.get("maxPrice") || "");
-  const [sortBy, setSortBy] = useState("newest");
-
-  // Applied filters
-  const [appliedFilters, setAppliedFilters] = useState({
+  // Filters state
+  const [filters, setFilters] = useState<FilterState>({
     locality: searchParams.get("locality") || "",
+    minPrice: searchParams.get("minPrice") || "",
+    maxPrice: searchParams.get("maxPrice") || "",
     bhk: searchParams.get("bhk") || "",
     propertyType: searchParams.get("type") || "",
     furnishing: searchParams.get("furnishing") || "",
-    minPrice: searchParams.get("minPrice") || "",
-    maxPrice: searchParams.get("maxPrice") || "",
+    bathrooms: searchParams.get("bathrooms") || "",
+    minArea: searchParams.get("minArea") || "",
+    sort: searchParams.get("sort") || "recommended",
   });
 
-  const [platformProps, setPlatformProps] = useState<Property[]>([]);
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [actionMsg, setActionMsg] = useState<string | null>(null);
+
+  // Map state
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [mapBounds, setMapBounds] = useState<MapBounds | null>(null);
+
+  // Mobile view mode
+  const [mobileTab, setMobileTab] = useState<"list" | "map">("list");
 
   // Pagination
   const [page, setPage] = useState(1);
   const pageSize = 12;
 
-  // Load properties
+  // Sync state to URL
+  const updateFilters = (newFilters: FilterState) => {
+    setFilters(newFilters);
+    setPage(1);
+    setMapBounds(null); // Reset explicit map bounds when user changes filters
+
+    const p = new URLSearchParams();
+    if (newFilters.locality) p.set("locality", newFilters.locality);
+    if (newFilters.minPrice) p.set("minPrice", newFilters.minPrice);
+    if (newFilters.maxPrice) p.set("maxPrice", newFilters.maxPrice);
+    if (newFilters.bhk) p.set("bhk", newFilters.bhk);
+    if (newFilters.propertyType) p.set("type", newFilters.propertyType);
+    if (newFilters.furnishing) p.set("furnishing", newFilters.furnishing);
+    if (newFilters.bathrooms) p.set("bathrooms", newFilters.bathrooms);
+    if (newFilters.minArea) p.set("minArea", newFilters.minArea);
+    if (newFilters.sort && newFilters.sort !== "recommended") p.set("sort", newFilters.sort);
+    setSearchParams(p);
+  };
+
+  // Fetch properties (geospatial or filter query)
   useEffect(() => {
     let isMounted = true;
     setLoading(true);
 
+    const queryParts = new URLSearchParams();
+    queryParts.set("listingType", "BUY");
+    queryParts.set("page", String(page));
+    queryParts.set("limit", String(pageSize));
+
+    if (filters.locality) queryParts.set("locality", filters.locality);
+    if (filters.minPrice) queryParts.set("minPrice", filters.minPrice);
+    if (filters.maxPrice) queryParts.set("maxPrice", filters.maxPrice);
+    if (filters.bhk) queryParts.set("bhk", filters.bhk);
+    if (filters.propertyType) queryParts.set("propertyType", filters.propertyType);
+    if (filters.furnishing) queryParts.set("furnishing", filters.furnishing);
+    if (filters.bathrooms) queryParts.set("bathrooms", filters.bathrooms);
+    if (filters.sort) queryParts.set("sort", filters.sort);
+
+    // Apply map bounding box if "Search this area" was triggered
+    if (mapBounds) {
+      queryParts.set("north", String(mapBounds.north));
+      queryParts.set("south", String(mapBounds.south));
+      queryParts.set("east", String(mapBounds.east));
+      queryParts.set("west", String(mapBounds.west));
+    }
+
     api
-      .get<{ results: Property[] }>("/properties?limit=200")
-      .then((d) => (isMounted ? setPlatformProps(d.results || []) : null))
-      .catch(() => (isMounted ? setPlatformProps([]) : null))
+      .get<{ total: number; results: Property[] }>(`/properties/search?${queryParts.toString()}`)
+      .then((res) => {
+        if (!isMounted) return;
+        setProperties(res.results || []);
+        setTotalCount(res.total ?? (res.results || []).length);
+      })
+      .catch(() => {
+        if (!isMounted) return;
+        setProperties([]);
+        setTotalCount(0);
+      })
       .finally(() => {
         if (isMounted) setLoading(false);
       });
@@ -52,112 +107,12 @@ export default function PropertiesPage() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [filters, page, mapBounds]);
 
-  const applyFilters = () => {
-    const trimmedLocality = localityInput.trim();
-    setAppliedFilters({
-      locality: trimmedLocality,
-      bhk: bhkInput,
-      propertyType: propertyTypeInput,
-      furnishing: furnishingInput,
-      minPrice: minPriceInput,
-      maxPrice: maxPriceInput,
-    });
-    const params = new URLSearchParams();
-    if (trimmedLocality) params.set("locality", trimmedLocality);
-    if (bhkInput) params.set("bhk", bhkInput);
-    if (propertyTypeInput) params.set("type", propertyTypeInput);
-    if (furnishingInput) params.set("furnishing", furnishingInput);
-    if (minPriceInput) params.set("minPrice", minPriceInput);
-    if (maxPriceInput) params.set("maxPrice", maxPriceInput);
-    setSearchParams(params);
+  const handleSearchArea = (bounds: MapBounds) => {
+    setMapBounds(bounds);
     setPage(1);
   };
-
-  const clearFilters = () => {
-    setLocalityInput("");
-    setBhkInput("");
-    setPropertyTypeInput("");
-    setFurnishingInput("");
-    setMinPriceInput("");
-    setMaxPriceInput("");
-    setAppliedFilters({
-      locality: "",
-      bhk: "",
-      propertyType: "",
-      furnishing: "",
-      minPrice: "",
-      maxPrice: "",
-    });
-    setSearchParams(new URLSearchParams());
-    setPage(1);
-  };
-
-  // Filter properties (only show BUY listings on sale page)
-  const buyProperties = useMemo(() => {
-    return platformProps.filter((p) => (p.listingType || "BUY") === "BUY");
-  }, [platformProps]);
-
-  const filteredItems = useMemo(() => {
-    return buyProperties.filter((item) => {
-      if (appliedFilters.locality) {
-        const needle = appliedFilters.locality.toLowerCase().trim();
-        const tokens = needle.split(/[,\s]+/).filter(Boolean);
-        const haystack = `${item.title} ${item.locality} ${item.city || ""} ${item.address || ""} ${item.projectName || ""}`.toLowerCase();
-        const matches = tokens.every((token) => haystack.includes(token));
-        if (!matches) return false;
-      }
-      if (appliedFilters.bhk) {
-        if (item.bhk !== Number(appliedFilters.bhk)) return false;
-      }
-      if (appliedFilters.furnishing) {
-        const f = item.furnishing.toLowerCase().replace(/_/g, "-");
-        const target = appliedFilters.furnishing.toLowerCase().replace(/_/g, "-");
-        if (!f.includes(target)) return false;
-      }
-      if (appliedFilters.propertyType) {
-        const pt = item.propertyType.toLowerCase().replace(/_/g, " ");
-        const target = appliedFilters.propertyType.toLowerCase().replace(/_/g, " ");
-        if (!pt.includes(target)) return false;
-      }
-      if (appliedFilters.minPrice && item.price < Number(appliedFilters.minPrice)) return false;
-      if (appliedFilters.maxPrice && item.price > Number(appliedFilters.maxPrice)) return false;
-      return true;
-    });
-  }, [buyProperties, appliedFilters]);
-
-  // Autocomplete suggestions
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const locationSuggestions = useMemo(() => {
-    if (!localityInput || localityInput.trim().length === 0) return [];
-    const needle = localityInput.toLowerCase().trim();
-    const suggestions = new Set<string>();
-
-    buyProperties.forEach((item) => {
-      if (item.locality && item.locality.toLowerCase().includes(needle)) {
-        suggestions.add(item.locality);
-      }
-      if (item.projectName && item.projectName.toLowerCase().includes(needle)) {
-        suggestions.add(item.projectName);
-      }
-    });
-
-    return Array.from(suggestions).slice(0, 6);
-  }, [buyProperties, localityInput]);
-
-  // Sorting
-  const sortedItems = useMemo(() => {
-    const copy = [...filteredItems];
-    if (sortBy === "price_asc") copy.sort((a, b) => a.price - b.price);
-    else if (sortBy === "price_desc") copy.sort((a, b) => b.price - a.price);
-    else if (sortBy === "area_desc") copy.sort((a, b) => (b.carpetArea || 0) - (a.carpetArea || 0));
-    return copy;
-  }, [filteredItems, sortBy]);
-
-  // Pagination
-  const totalPages = Math.max(1, Math.ceil(sortedItems.length / pageSize));
-  const paginatedItems = sortedItems.slice((page - 1) * pageSize, page * pageSize);
 
   const handleFav = async (propertyId: string, title: string) => {
     if (!user) {
@@ -191,203 +146,215 @@ export default function PropertiesPage() {
     }
   };
 
+  // Prepare map properties
+  const mapPoints: MapProperty[] = useMemo(() => {
+    return properties.map((p) => ({
+      id: p.id,
+      title: p.title,
+      price: p.price,
+      latitude: p.latitude,
+      longitude: p.longitude,
+      locality: p.locality,
+      city: p.city,
+      bhk: p.bhk,
+      bathrooms: p.bathrooms,
+      carpetArea: p.carpetArea,
+      propertyType: p.propertyType,
+      listingType: "BUY",
+      primaryImage: p.images?.[0]?.path || p.primaryImage,
+      href: `/properties/${p.id}`,
+    }));
+  }, [properties]);
+
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+    <div className="space-y-6 pb-12">
+      {/* Header & Location Search */}
+      <div className="space-y-4">
         <div>
-          <h1 className="font-serif text-3xl font-bold">Properties for Sale in Jaipur</h1>
-          <p className="text-sm text-ink/70">
-            {sortedItems.length} verified propert{sortedItems.length === 1 ? "y" : "ies"} in the Pink City
+          <div className="inline-flex items-center gap-2 rounded-full border border-pink-200 bg-pink-50 px-3 py-1 text-xs font-bold text-pink-700">
+            🏙️ Properties for Sale in Jaipur
+          </div>
+          <h1 className="font-serif text-3xl font-bold mt-2 sm:text-4xl text-ink">
+            Find Your Dream Home in the Pink City
+          </h1>
+          <p className="text-sm text-ink/70 max-w-2xl mt-1">
+            Explore verified residential apartments, luxury villas, and independent houses across Jaipur's top micro-markets.
           </p>
         </div>
+
+        <LocationSearchBar
+          value={filters.locality}
+          onChange={(loc) => updateFilters({ ...filters, locality: loc })}
+        />
       </div>
 
       {actionMsg && (
-        <div className="rounded-xl bg-moss/10 border border-moss/20 px-4 py-2 text-sm text-moss font-semibold animate-fade-in">
+        <div className="rounded-2xl bg-moss/10 border border-moss/20 px-4 py-2.5 text-sm text-moss font-semibold animate-fade-in">
           {actionMsg}
         </div>
       )}
 
-      {/* Filter Bar */}
-      <div className="rounded-2xl border border-ink/10 bg-white p-4 shadow-sm space-y-3">
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-6">
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Locality (e.g. Malviya Nagar, Mansarovar)"
-              value={localityInput}
-              onChange={(e) => {
-                setLocalityInput(e.target.value);
-                setShowSuggestions(true);
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  setShowSuggestions(false);
-                  applyFilters();
-                }
-              }}
-              onFocus={() => setShowSuggestions(true)}
-              className="w-full rounded-xl border border-ink/10 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass"
-            />
-            {showSuggestions && locationSuggestions.length > 0 && (
-              <div className="absolute top-full left-0 right-0 z-30 mt-1 rounded-xl border border-ink/10 bg-white p-1.5 shadow-xl text-xs space-y-1 max-h-48 overflow-y-auto">
-                {locationSuggestions.map((sug) => (
-                  <button
-                    key={sug}
-                    type="button"
-                    onClick={() => {
-                      setLocalityInput(sug);
-                      setShowSuggestions(false);
-                    }}
-                    className="w-full rounded-lg px-2.5 py-1.5 text-left font-medium text-ink hover:bg-sand transition flex items-center gap-1.5"
-                  >
-                    <span>📍</span>
-                    <span className="truncate capitalize">{sug}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <select
-            value={bhkInput}
-            onChange={(e) => setBhkInput(e.target.value)}
-            className="rounded-xl border border-ink/10 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass"
-          >
-            <option value="">All BHKs</option>
-            <option value="1">1 BHK</option>
-            <option value="2">2 BHK</option>
-            <option value="3">3 BHK</option>
-            <option value="4">4+ BHK</option>
-          </select>
-
-          <select
-            value={propertyTypeInput}
-            onChange={(e) => setPropertyTypeInput(e.target.value)}
-            className="rounded-xl border border-ink/10 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass"
-          >
-            <option value="">All Types</option>
-            <option value="APARTMENT">Apartment</option>
-            <option value="VILLA">Villa</option>
-            <option value="INDEPENDENT_HOUSE">Independent House</option>
-            <option value="PLOT">Plot</option>
-            <option value="BUILDER_FLOOR">Builder Floor</option>
-          </select>
-
-          <select
-            value={furnishingInput}
-            onChange={(e) => setFurnishingInput(e.target.value)}
-            className="rounded-xl border border-ink/10 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass"
-          >
-            <option value="">Any Furnishing</option>
-            <option value="UNFURNISHED">Unfurnished</option>
-            <option value="SEMI_FURNISHED">Semi-Furnished</option>
-            <option value="FULLY_FURNISHED">Fully Furnished</option>
-          </select>
-
-          <input
-            type="number"
-            placeholder="Min Price (₹)"
-            value={minPriceInput}
-            onChange={(e) => setMinPriceInput(e.target.value)}
-            className="rounded-xl border border-ink/10 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass"
-          />
-
-          <input
-            type="number"
-            placeholder="Max Price (₹)"
-            value={maxPriceInput}
-            onChange={(e) => setMaxPriceInput(e.target.value)}
-            className="rounded-xl border border-ink/10 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brass"
-          />
-        </div>
-
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-ink/5 pt-3 text-xs">
-          <div className="flex items-center gap-2">
-            <span className="text-ink/60 font-medium">Sort by:</span>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="rounded-lg border border-ink/10 bg-sand/30 px-2.5 py-1 text-xs"
-            >
-              <option value="newest">Newest First</option>
-              <option value="price_asc">Price: Low to High</option>
-              <option value="price_desc">Price: High to Low</option>
-              <option value="area_desc">Carpet Area: Large to Small</option>
-            </select>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={applyFilters}
-              className="rounded-lg bg-ink px-4 py-1.5 font-semibold text-sand hover:bg-ink/90"
-            >
-              Apply Filters
-            </button>
-            <button
-              onClick={clearFilters}
-              className="rounded-lg border border-ink/20 px-3 py-1.5 text-ink/70 hover:bg-ink/5"
-            >
-              Reset
-            </button>
-          </div>
-        </div>
+      {/* Mobile Tab Switcher */}
+      <div className="lg:hidden flex rounded-2xl bg-ink/5 p-1 text-sm font-semibold">
+        <button
+          type="button"
+          onClick={() => setMobileTab("list")}
+          className={`flex-1 rounded-xl py-2 transition flex items-center justify-center gap-2 ${
+            mobileTab === "list" ? "bg-white shadow text-ink" : "text-ink/60"
+          }`}
+        >
+          <span>📋</span> List View ({totalCount})
+        </button>
+        <button
+          type="button"
+          onClick={() => setMobileTab("map")}
+          className={`flex-1 rounded-xl py-2 transition flex items-center justify-center gap-2 ${
+            mobileTab === "map" ? "bg-white shadow text-ink" : "text-ink/60"
+          }`}
+        >
+          <span>🗺️</span> Interactive Map
+        </button>
       </div>
 
-      {/* Main Content Area */}
-      {loading ? (
-        <div className="py-20 text-center text-ink/60">Loading properties...</div>
-      ) : sortedItems.length === 0 ? (
-        <div className="rounded-2xl border border-ink/10 bg-white p-12 text-center text-ink/60">
-          No properties match your active filters. Try adjusting or clearing your filters.
-        </div>
-      ) : (
-        <>
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {paginatedItems.map((item) => (
-              <PropertyCard
-                key={item.id}
-                id={item.id}
-                title={item.title}
-                price={item.price}
-                locality={item.locality}
-                bhk={item.bhk}
-                area={item.carpetArea}
-                image={item.images?.[0]?.path}
-                href={`/properties/${item.id}`}
-                sold={item.status === "SOLD"}
-                projectName={item.projectName || undefined}
-                listingType={item.listingType}
-                onFav={user?.role === "SELLER" ? undefined : () => void handleFav(item.id, item.title)}
-                onCart={user?.role === "SELLER" || item.status === "SOLD" ? undefined : () => void handleCart(item.id, item.title)}
-              />
-            ))}
-          </div>
+      {/* Main Split Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* Left Side: Filters + Property List */}
+        <div
+          className={`lg:col-span-7 xl:col-span-7 space-y-6 ${
+            mobileTab === "map" ? "hidden lg:block" : "block"
+          }`}
+        >
+          {/* Filter Bar */}
+          <PropertyFilterBar
+            filters={filters}
+            onChange={updateFilters}
+            listingType="BUY"
+            totalCount={totalCount}
+            loading={loading}
+          />
 
-          {totalPages > 1 && (
-            <div className="flex items-center justify-center gap-2 pt-6">
+          {/* Properties List */}
+          {loading ? (
+            <div className="py-24 text-center space-y-3">
+              <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-pink-600 border-r-transparent"></div>
+              <p className="text-sm font-semibold text-ink/60">Searching verified Jaipur homes...</p>
+            </div>
+          ) : properties.length === 0 ? (
+            /* Friendly Empty State */
+            <div className="rounded-3xl border border-ink/10 bg-white p-8 sm:p-12 text-center space-y-4 shadow-sm">
+              <span className="text-4xl">🏡</span>
+              <h3 className="font-serif text-2xl font-bold text-ink">No homes found with these filters</h3>
+              <div className="text-sm text-ink/70 max-w-md mx-auto text-left space-y-2 bg-sand/40 p-4 rounded-2xl border border-ink/5">
+                <p className="font-semibold text-ink">Helpful suggestions:</p>
+                <ul className="list-disc list-inside text-xs space-y-1 text-ink/70">
+                  <li>Try increasing your budget range or choosing fewer bedrooms</li>
+                  <li>Search nearby localities (e.g. Malviya Nagar, Mansarovar, Jagatpura)</li>
+                  <li>Clear some filters to see all available listings in Jaipur</li>
+                </ul>
+              </div>
               <button
-                disabled={page <= 1}
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                className="rounded-lg border border-ink/20 px-3 py-1.5 text-sm disabled:opacity-40"
+                type="button"
+                onClick={() =>
+                  updateFilters({
+                    locality: "",
+                    minPrice: "",
+                    maxPrice: "",
+                    bhk: "",
+                    propertyType: "",
+                    furnishing: "",
+                    bathrooms: "",
+                    minArea: "",
+                    sort: "recommended",
+                  })
+                }
+                className="inline-block rounded-xl bg-pink-600 px-6 py-2.5 text-xs font-bold text-white hover:bg-pink-700 transition shadow"
               >
-                Previous
-              </button>
-              <span className="text-sm font-semibold text-ink/80 px-2">
-                Page {page} of {totalPages}
-              </span>
-              <button
-                disabled={page >= totalPages}
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                className="rounded-lg border border-ink/20 px-3 py-1.5 text-sm disabled:opacity-40"
-              >
-                Next
+                Clear Filters & Show All Homes
               </button>
             </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                {properties.map((item) => (
+                  <PropertyCard
+                    key={item.id}
+                    id={item.id}
+                    title={item.title}
+                    price={item.price}
+                    locality={item.locality}
+                    city={item.city || "Jaipur"}
+                    bhk={item.bhk}
+                    bathrooms={item.bathrooms}
+                    area={item.carpetArea}
+                    propertyType={item.propertyType}
+                    image={item.images?.[0]?.path}
+                    href={`/properties/${item.id}`}
+                    sold={item.status === "SOLD"}
+                    projectName={item.projectName || undefined}
+                    listingType="BUY"
+                    isSelected={selectedId === item.id}
+                    onMouseEnter={() => setHoveredId(item.id)}
+                    onMouseLeave={() => setHoveredId(null)}
+                    onFav={user?.role === "SELLER" ? undefined : () => void handleFav(item.id, item.title)}
+                    onCart={
+                      user?.role === "SELLER" || item.status === "SOLD"
+                        ? undefined
+                        : () => void handleCart(item.id, item.title)
+                    }
+                  />
+                ))}
+              </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-center gap-2 pt-4">
+                  <button
+                    disabled={page <= 1}
+                    onClick={() => {
+                      setPage((p) => Math.max(1, p - 1));
+                      window.scrollTo({ top: 120, behavior: "smooth" });
+                    }}
+                    className="rounded-xl border border-ink/20 px-4 py-2 text-xs font-bold disabled:opacity-40 hover:bg-sand transition"
+                  >
+                    &larr; Previous
+                  </button>
+                  <span className="text-xs font-bold text-ink/70 px-3">
+                    Page {page} of {totalPages}
+                  </span>
+                  <button
+                    disabled={page >= totalPages}
+                    onClick={() => {
+                      setPage((p) => Math.min(totalPages, p + 1));
+                      window.scrollTo({ top: 120, behavior: "smooth" });
+                    }}
+                    className="rounded-xl border border-ink/20 px-4 py-2 text-xs font-bold disabled:opacity-40 hover:bg-sand transition"
+                  >
+                    Next &rarr;
+                  </button>
+                </div>
+              )}
+            </>
           )}
-        </>
-      )}
+        </div>
+
+        {/* Right Side: Sticky Interactive Map */}
+        <div
+          className={`lg:col-span-5 xl:col-span-5 sticky top-20 ${
+            mobileTab === "list" ? "hidden lg:block" : "block"
+          } h-[550px] lg:h-[calc(100vh-140px)]`}
+        >
+          <PropertyMap
+            properties={mapPoints}
+            selectedId={selectedId}
+            hoveredId={hoveredId}
+            onSelectProperty={setSelectedId}
+            onSearchArea={handleSearchArea}
+            listingType="BUY"
+          />
+        </div>
+      </div>
     </div>
   );
 }

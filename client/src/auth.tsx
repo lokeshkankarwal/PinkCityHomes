@@ -7,7 +7,9 @@ export type User = {
   name: string;
   role: "CUSTOMER" | "SELLER" | "SUPERADMIN";
   phone?: string | null;
+  avatarUrl?: string | null;
   sellerStatus?: string | null;
+  companyName?: string | null;
 };
 
 type Ctx = {

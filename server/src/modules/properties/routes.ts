@@ -10,6 +10,7 @@ const upload = multer({
 
 export const propertiesRouter = Router();
 
+propertiesRouter.get("/search", optionalAuth, c.searchGeospatial);
 propertiesRouter.get("/", optionalAuth, c.listPublic);
 propertiesRouter.get("/map", c.mapPoints);
 propertiesRouter.get("/mine", requireAuth, requireRole("SELLER", "SUPERADMIN"), c.listMine);
