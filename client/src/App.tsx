@@ -46,6 +46,8 @@ export default function App() {
         <Route path="register" element={<RegisterPage />} />
         <Route path="sellers/:sellerId" element={<SellerProfilePage />} />
 
+        <Route path="profile" element={<ProfilePage />} />
+
         {/* Customer area */}
         <Route path="customer/favourites" element={<FavouritesPage />} />
         <Route path="customer/cart" element={<CartPage />} />
@@ -56,6 +58,7 @@ export default function App() {
         <Route path="seller/dashboard" element={<SellerDashboardPage />} />
         <Route path="seller/properties" element={<SellerPropertiesPage />} />
         <Route path="seller/clients" element={<SellerClientsPage />} />
+        <Route path="seller/profile" element={<ProfilePage />} />
 
         {/* Admin area */}
         <Route path="admin/dashboard" element={<AdminDashboardPage />} />
@@ -66,6 +69,7 @@ export default function App() {
         <Route path="admin/disabled" element={<AdminDisabledPage />} />
         <Route path="admin/audit" element={<AdminAuditPage />} />
         <Route path="admin/orders" element={<OrdersPage />} />
+        <Route path="admin/profile" element={<ProfilePage />} />
 
         {/* 404 fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />

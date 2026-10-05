@@ -275,6 +275,9 @@ export default function Layout() {
                 <NavLink to="/admin/audit" className={adminNavLink}>
                   Audit Log
                 </NavLink>
+                <NavLink to="/admin/profile" className={adminNavLink}>
+                  Profile
+                </NavLink>
 
                 <div className="h-4 w-[1px] bg-navy-800 mx-2" />
 
@@ -539,6 +542,10 @@ export default function Layout() {
                 {isSuperAdmin ? (
                   // Superadmin Secondary Actions (Home, Users, Sellers, Properties are in bottom nav)
                   <>
+                    <NavLink to="/admin/profile" className={drawerNavLink}>
+                      <UserIcon className="w-4 h-4 text-slate-500" />
+                      <span>Admin Profile</span>
+                    </NavLink>
                     <NavLink to="/admin/disabled" className={drawerNavLink}>
                       <BuildingIcon className="w-4 h-4 text-slate-500" />
                       <span>Disabled Properties</span>
@@ -664,16 +671,16 @@ export default function Layout() {
                   </>
                 )}
               </NavLink>
-              <button
-                type="button"
-                onClick={() => setMobileMenuOpen(true)}
-                className="bottom-nav-item"
-              >
-                <div className="nav-icon-wrap">
-                  <MenuIcon className="nav-icon w-5 h-5 transition-all duration-200" />
-                </div>
-                <span className="bottom-nav-label">More</span>
-              </button>
+              <NavLink to="/admin/profile" className={bottomNavLink}>
+                {({ isActive }) => (
+                  <>
+                    <div className="nav-icon-wrap">
+                      <UserIcon className="nav-icon w-5 h-5 transition-all duration-200" />
+                    </div>
+                    <span className="bottom-nav-label">Profile</span>
+                  </>
+                )}
+              </NavLink>
             </>
           ) : isSeller ? (
             // Seller Bottom Nav (Dashboard, Buy, Rent, Listings, Leads, Profile)

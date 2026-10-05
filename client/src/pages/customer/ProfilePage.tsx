@@ -14,6 +14,7 @@ export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(user?.name || "");
   const [phone, setPhone] = useState(user?.phone || "");
+  const [companyName, setCompanyName] = useState(user?.companyName || "");
   const [loading, setLoading] = useState(false);
   const [avatarLoading, setAvatarLoading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -39,12 +40,14 @@ export default function ProfilePage() {
   const handleStartEdit = () => {
     setName(user.name);
     setPhone(user.phone || "");
+    setCompanyName(user.companyName || "");
     setIsEditing(true);
   };
 
   const handleCancelEdit = () => {
     setName(user.name);
     setPhone(user.phone || "");
+    setCompanyName(user.companyName || "");
     setIsEditing(false);
   };
 
@@ -52,7 +55,11 @@ export default function ProfilePage() {
     e.preventDefault();
     setLoading(true);
     try {
-      await api.patch("/auth/profile", { name: name.trim(), phone: phone.trim() || undefined });
+      await api.patch("/auth/profile", {
+        name: name.trim(),
+        phone: phone.trim() || null,
+        companyName: user.role === "SELLER" ? companyName.trim() || null : undefined,
+      });
       await refresh();
       toast.success("Profile information updated successfully!");
       setIsEditing(false);
@@ -89,17 +96,7 @@ export default function ProfilePage() {
     formData.append("avatar", selectedFile);
 
     try {
-      const token = localStorage.getItem("pch_jwt");
-      const res = await fetch("/api/auth/profile/avatar", {
-        method: "POST",
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-        body: formData,
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || "Failed to upload photo");
-      }
+      await api.uploadFormData("/auth/profile/avatar", formData);
 
       await refresh();
       toast.success("Profile photo updated successfully!");
@@ -286,6 +283,19 @@ export default function ProfilePage() {
                 className="w-full rounded-2xl border border-slate-200 px-4 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-pink-500 shadow-xs"
               />
             </div>
+
+            {user.role === "SELLER" && (
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">Company / Agency Name</label>
+                <input
+                  type="text"
+                  value={companyName}
+                  onChange={(e) => setCompanyName(e.target.value)}
+                  placeholder="e.g. Royal Jaipur Realty"
+                  className="w-full rounded-2xl border border-slate-200 px-4 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-pink-500 shadow-xs"
+                />
+              </div>
+            )}
 
             <div>
               <label className="block text-xs font-semibold text-slate-400 mb-1.5">Email Address</label>

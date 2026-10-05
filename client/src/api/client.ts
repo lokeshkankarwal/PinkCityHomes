@@ -81,4 +81,31 @@ export const api = {
       clearTimeout(timeoutId);
     }
   },
+  uploadFormData: async <T = any>(path: string, formData: FormData): Promise<T> => {
+    const token = getStoredToken();
+    const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 60_000);
+
+    try {
+      const res = await fetch(`${API}${path}`, {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+        headers,
+        signal: controller.signal,
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || data.message || "Upload failed");
+      return data as T;
+    } catch (err: unknown) {
+      if (err instanceof DOMException && err.name === "AbortError") {
+        throw new Error("Upload timed out. Please try again with a smaller file or better connection.");
+      }
+      throw err;
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  },
 };

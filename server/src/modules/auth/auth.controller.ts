@@ -1,5 +1,6 @@
 import bcrypt from "bcryptjs";
 import crypto from "node:crypto";
+import path from "node:path";
 import { z } from "zod";
 import { prisma, type Role } from "../../config/prisma.js";
 import { HttpError } from "../../middleware/error.js";
@@ -417,8 +418,31 @@ export async function logout(req: Request, res: Response) {
 
 export async function updateProfile(req: Request, res: Response) {
   if (!req.user) throw new HttpError(401, "Authentication required");
-  const body = z.object({ name: z.string().min(2).optional(), phone: z.string().optional() }).parse(req.body);
-  const user = await prisma.user.update({ where: { id: req.user.id }, data: body, include: { sellerProfile: true } });
+  const body = z
+    .object({
+      name: z.string().min(2, "Name must be at least 2 characters").optional(),
+      phone: z.string().optional().nullable(),
+      companyName: z.string().optional().nullable(),
+    })
+    .parse(req.body);
+
+  const userData: { name?: string; phone?: string | null } = {};
+  if (body.name !== undefined) userData.name = body.name;
+  if (body.phone !== undefined) userData.phone = body.phone ? body.phone.trim() : null;
+
+  if (body.companyName !== undefined && req.user.role === "SELLER") {
+    await prisma.sellerProfile.upsert({
+      where: { userId: req.user.id },
+      update: { companyName: body.companyName ? body.companyName.trim() : null },
+      create: { userId: req.user.id, companyName: body.companyName ? body.companyName.trim() : null },
+    });
+  }
+
+  const user = await prisma.user.update({
+    where: { id: req.user.id },
+    data: userData,
+    include: { sellerProfile: true },
+  });
   res.json({ user: publicUser(user) });
 }
 
@@ -432,7 +456,9 @@ export async function uploadAvatar(req: Request, res: Response) {
     await deleteLocalFile(current.avatarUrl);
   }
 
-  const avatarUrl = await saveFile(file.originalname, file.buffer, file.mimetype, "avatars");
+  const ext = path.extname(file.originalname) || ".jpg";
+  const uniqueName = `avatar-${req.user.id}-${Date.now()}${ext}`;
+  const avatarUrl = await saveFile(uniqueName, file.buffer, file.mimetype, "avatars");
   const user = await prisma.user.update({
     where: { id: req.user.id },
     data: { avatarUrl },
