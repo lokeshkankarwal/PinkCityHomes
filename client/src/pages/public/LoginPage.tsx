@@ -240,7 +240,7 @@ export default function LoginPage() {
               <span>🏢</span> Partner &amp; Agency Access
             </p>
             <p className="text-amber-800 leading-snug label-ui">
-              Seller accounts must be approved by PinkCityHomes administration before logging in. If you have already applied, our team reviews each application within 24 hours.
+              Seller accounts must be approved by PinkCityHomes administration before signing up. If you have already applied, our team reviews each application within 24 hours.
             </p>
             <div className="pt-1">
               <Link to="/register" className="font-bold text-amber-900 underline hover:text-amber-950">

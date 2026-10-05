@@ -396,7 +396,7 @@ export async function uploadImages(req: Request, res: Response) {
     if (!["image/jpeg", "image/png", "image/webp", "image/gif"].includes(f.mimetype)) {
       throw new HttpError(400, "Only jpeg, png, webp, gif are allowed");
     }
-    if (f.size > 5 * 1024 * 1024) throw new HttpError(400, "Each image must be under 5MB");
+    if (f.size > 10 * 1024 * 1024) throw new HttpError(400, "Each image must be under 10MB");
 
     const imgId = `img_${Date.now()}_${crypto.randomBytes(3).toString("hex")}`;
     const filename = `${existing.propertyId}-${Date.now()}-${order}-${f.originalname.replace(/\s+/g, "_")}`;

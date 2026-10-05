@@ -31,6 +31,24 @@ export default function SellerPropertiesPage() {
   const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
   const [uploading, setUploading] = useState(false);
 
+  // View Details Modal state (in-page API view)
+  const [viewModalProperty, setViewModalProperty] = useState<Property | null>(null);
+  const [loadingDetailsId, setLoadingDetailsId] = useState<string | null>(null);
+  const [activePhotoIndex, setActivePhotoIndex] = useState(0);
+
+  const handleOpenViewDetails = async (propertyId: string) => {
+    setLoadingDetailsId(propertyId);
+    setActivePhotoIndex(0);
+    try {
+      const res = await api.get<{ property: Property }>(`/properties/${propertyId}`);
+      setViewModalProperty(res.property);
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to load property details");
+    } finally {
+      setLoadingDetailsId(null);
+    }
+  };
+
   // Wizard state (Steps 1 to 6)
   const [step, setStep] = useState(1);
   const [isLocationConfirmed, setIsLocationConfirmed] = useState(false);
@@ -271,6 +289,14 @@ export default function SellerPropertiesPage() {
   const handleUploadImages = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!showUploadModal || !selectedFiles || selectedFiles.length === 0) return;
+
+    for (let i = 0; i < selectedFiles.length; i++) {
+      if (selectedFiles[i].size > 10 * 1024 * 1024) {
+        toast.error(`"${selectedFiles[i].name}" exceeds the 10MB limit.`);
+        return;
+      }
+    }
+
     setUploading(true);
     try {
       await api.upload(`/properties/${showUploadModal.id}/images`, selectedFiles);
@@ -435,14 +461,14 @@ export default function SellerPropertiesPage() {
 
               <div className="border-t border-slate-100 p-3 bg-slate-50/70 flex flex-wrap gap-2 justify-between items-center text-xs">
                 <div className="flex flex-wrap gap-1.5">
-                  <Link
-                    to={`/properties/${p.id}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="rounded-xl bg-slate-100 text-slate-800 border border-slate-300 px-3 py-1.5 font-bold hover:bg-slate-200 transition"
+                  <button
+                    type="button"
+                    onClick={() => handleOpenViewDetails(p.id)}
+                    disabled={loadingDetailsId === p.id}
+                    className="rounded-xl bg-slate-100 text-slate-800 border border-slate-300 px-3 py-1.5 font-bold hover:bg-slate-200 transition disabled:opacity-50"
                   >
-                    View
-                  </Link>
+                    {loadingDetailsId === p.id ? "Loading..." : "View"}
+                  </button>
                   <button
                     onClick={() => handleOpenEdit(p)}
                     className="rounded-xl bg-slate-900 text-white px-3 py-1.5 font-bold hover:bg-slate-800 transition shadow-xs"
@@ -1111,6 +1137,201 @@ export default function SellerPropertiesPage() {
         onConfirm={handleDeleteConfirm}
         onCancel={() => setDeleteTarget(null)}
       />
+
+      {/* ── In-Page Property Details Modal (via API) ── */}
+      {viewModalProperty && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-navy-950/70 backdrop-blur-xs animate-fade-in">
+          <div
+            className="fixed inset-0"
+            onClick={() => setViewModalProperty(null)}
+          />
+          <div className="relative z-10 w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-3xl bg-white p-5 sm:p-7 shadow-2xl space-y-6 animate-scale-up border border-slate-200">
+            {/* Header */}
+            <div className="flex items-start justify-between gap-4 border-b border-slate-100 pb-4">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Badge status={viewModalProperty.status} />
+                  <span className="rounded-full bg-slate-100 text-slate-700 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider">
+                    {viewModalProperty.listingType === "RENT" ? "For Rent" : "For Sale"}
+                  </span>
+                  <span className="rounded-full bg-pink-50 text-pink-700 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider">
+                    {viewModalProperty.propertyType?.replace(/_/g, " ")}
+                  </span>
+                </div>
+                <h2 className="font-display text-xl sm:text-2xl font-bold text-ink leading-tight">
+                  {viewModalProperty.title}
+                </h2>
+                <p className="text-xs text-slate-500 flex items-center gap-1">
+                  <span>📍</span> {viewModalProperty.address}, {viewModalProperty.locality}, {viewModalProperty.city || "Jaipur"}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setViewModalProperty(null)}
+                className="rounded-full p-2 text-slate-400 hover:text-ink hover:bg-slate-100 transition"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Photo Gallery Viewer */}
+            {viewModalProperty.images && viewModalProperty.images.length > 0 ? (
+              <div className="space-y-2">
+                <div className="relative aspect-video w-full overflow-hidden rounded-2xl bg-slate-100 border border-slate-200">
+                  <img
+                    src={imgSrc(viewModalProperty.images[activePhotoIndex]?.path || viewModalProperty.images[0]?.path)}
+                    alt={viewModalProperty.title}
+                    className="h-full w-full object-cover"
+                  />
+                  <div className="absolute bottom-3 right-3 rounded-full bg-slate-900/80 backdrop-blur-xs px-3 py-1 text-xs font-semibold text-white">
+                    {activePhotoIndex + 1} / {viewModalProperty.images.length}
+                  </div>
+                </div>
+                {viewModalProperty.images.length > 1 && (
+                  <div className="flex gap-2 overflow-x-auto pb-1">
+                    {viewModalProperty.images.map((img, idx) => (
+                      <button
+                        key={img.id || idx}
+                        type="button"
+                        onClick={() => setActivePhotoIndex(idx)}
+                        className={`relative h-14 w-20 flex-shrink-0 overflow-hidden rounded-xl border-2 transition ${
+                          activePhotoIndex === idx ? "border-pink-600 scale-95 shadow-sm" : "border-transparent opacity-70 hover:opacity-100"
+                        }`}
+                      >
+                        <img src={imgSrc(img.path)} alt="" className="h-full w-full object-cover" />
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="aspect-video w-full rounded-2xl bg-slate-100 border border-slate-200 flex flex-col items-center justify-center text-slate-400 gap-2">
+                <span className="text-3xl">📷</span>
+                <span className="text-xs font-semibold">No photos uploaded yet</span>
+              </div>
+            )}
+
+            {/* Pricing & Key Metrics */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="rounded-2xl bg-pink-50/70 border border-pink-100 p-3">
+                <span className="text-[10px] font-bold text-pink-800 uppercase tracking-wider">
+                  {viewModalProperty.listingType === "RENT" ? "Rent / Month" : "Total Price"}
+                </span>
+                <p className="font-display text-lg sm:text-xl font-extrabold text-pink-700 mt-1">
+                  {inr(viewModalProperty.price)}
+                  {viewModalProperty.listingType === "RENT" && <span className="text-xs font-normal">/mo</span>}
+                </p>
+              </div>
+
+              <div className="rounded-2xl bg-slate-50 border border-slate-200/80 p-3">
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Carpet Area</span>
+                <p className="font-display text-lg font-bold text-ink mt-1">
+                  {viewModalProperty.carpetArea || "—"} <span className="text-xs font-normal">sq ft</span>
+                </p>
+              </div>
+
+              <div className="rounded-2xl bg-slate-50 border border-slate-200/80 p-3">
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Bedrooms &amp; Baths</span>
+                <p className="font-display text-lg font-bold text-ink mt-1">
+                  {viewModalProperty.bhk ?? 0} BHK · {viewModalProperty.bathrooms ?? 1} Bath
+                </p>
+              </div>
+
+              <div className="rounded-2xl bg-slate-50 border border-slate-200/80 p-3">
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Furnishing</span>
+                <p className="font-display text-sm font-bold text-ink mt-1 capitalize">
+                  {viewModalProperty.furnishing?.replace(/_/g, " ").toLowerCase() || "Unfurnished"}
+                </p>
+              </div>
+            </div>
+
+            {/* Description */}
+            <div className="space-y-1.5">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-600">Description</h4>
+              <p className="text-xs sm:text-sm text-slate-700 whitespace-pre-line leading-relaxed bg-slate-50/70 p-4 rounded-2xl border border-slate-100">
+                {viewModalProperty.description}
+              </p>
+            </div>
+
+            {/* Amenities if present */}
+            {Array.isArray((viewModalProperty as any).amenities) && (viewModalProperty as any).amenities.length > 0 && (
+              <div className="space-y-1.5">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-600">Amenities &amp; Features</h4>
+                <div className="flex flex-wrap gap-1.5">
+                  {(viewModalProperty as any).amenities.map((amenity: string, i: number) => (
+                    <span key={i} className="rounded-full bg-slate-100 border border-slate-200 px-3 py-1 text-xs text-slate-700 font-medium">
+                      ✓ {amenity}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Additional Spec Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs border-t border-slate-100 pt-3">
+              <div>
+                <span className="text-slate-400">Total Views:</span>{" "}
+                <span className="font-bold text-ink">{viewModalProperty.views ?? 0}</span>
+              </div>
+              <div>
+                <span className="text-slate-400">Floor:</span>{" "}
+                <span className="font-bold text-ink">{viewModalProperty.floor ?? "—"} / {viewModalProperty.totalFloors ?? "—"}</span>
+              </div>
+              <div>
+                <span className="text-slate-400">Parking:</span>{" "}
+                <span className="font-bold text-ink">{viewModalProperty.parking ?? 0} covered</span>
+              </div>
+              <div>
+                <span className="text-slate-400">Project:</span>{" "}
+                <span className="font-bold text-ink">{viewModalProperty.projectName || "Individual"}</span>
+              </div>
+            </div>
+
+            {/* Actions Footer */}
+            <div className="flex flex-wrap justify-between items-center gap-2 border-t border-slate-100 pt-4">
+              <Link
+                to={`/properties/${viewModalProperty.id}`}
+                target="_blank"
+                rel="noreferrer"
+                className="text-xs font-semibold text-pink-600 hover:underline flex items-center gap-1"
+              >
+                <span>↗</span> Open public preview page
+              </Link>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const p = viewModalProperty;
+                    setViewModalProperty(null);
+                    handleOpenEdit(p);
+                  }}
+                  className="rounded-xl bg-slate-900 text-white px-4 py-2 text-xs font-bold hover:bg-slate-800 transition"
+                >
+                  Edit Listing
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const p = viewModalProperty;
+                    setViewModalProperty(null);
+                    setShowUploadModal(p);
+                  }}
+                  className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-800 hover:bg-slate-50 transition"
+                >
+                  Manage Photos
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewModalProperty(null)}
+                  className="rounded-xl bg-slate-100 px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-200 transition"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

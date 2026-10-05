@@ -5,7 +5,7 @@ import { optionalAuth, requireAuth, requireRole } from "../../middleware/auth.js
 
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024, files: 8 },
+  limits: { fileSize: 10 * 1024 * 1024, files: 12 },
 });
 
 export const propertiesRouter = Router();
