@@ -19,7 +19,7 @@ function notify() {
 }
 
 export const toast = {
-  show(message: string, type: ToastType = "info") {
+  show(message: string, type: ToastType = "info", durationMs = 4000) {
     const id = Math.random().toString(36).substring(2, 9);
     const item: ToastItem = { id, type, message };
     toasts = [...toasts, item];
@@ -27,16 +27,16 @@ export const toast = {
 
     setTimeout(() => {
       toast.dismiss(id);
-    }, 4000);
+    }, Math.max(1500, durationMs));
   },
-  success(message: string) {
-    this.show(message, "success");
+  success(message: string, opts?: { duration?: number }) {
+    this.show(message, "success", opts?.duration);
   },
-  error(message: string) {
-    this.show(message, "error");
+  error(message: string, opts?: { duration?: number }) {
+    this.show(message, "error", opts?.duration);
   },
-  info(message: string) {
-    this.show(message, "info");
+  info(message: string, opts?: { duration?: number }) {
+    this.show(message, "info", opts?.duration);
   },
   dismiss(id: string) {
     toasts = toasts.filter((t) => t.id !== id);

@@ -4,6 +4,7 @@
  */
 export {
   sendVerificationEmail,
+  dispatchVerificationEmail,
   sendOTPEmail,
   maskEmail,
   checkEmailServiceConfigured,

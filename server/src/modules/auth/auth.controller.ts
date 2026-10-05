@@ -4,7 +4,7 @@ import { z } from "zod";
 import { prisma, type Role } from "../../config/prisma.js";
 import { HttpError } from "../../middleware/error.js";
 import { signToken } from "../../middleware/auth.js";
-import { sendVerificationEmail } from "../../services/email.service.js";
+import { dispatchVerificationEmail } from "../../services/email.service.js";
 import { env } from "../../config/env.js";
 import { saveFile, deleteLocalFile } from "../../services/storage.service.js";
 import type { Request, Response } from "express";
@@ -42,7 +42,42 @@ function otp(): string {
   return num.toString().padStart(6, "0");
 }
 
-async function issueVerification(userId: string, email: string) {
+function buildDeliveryWarning(): string | undefined {
+  const hasSmtp = Boolean(env.smtpUser && env.smtpPass);
+  const hasResend = Boolean(env.emailApiKey);
+  const isProd = env.nodeEnv === "production";
+
+  if (!hasSmtp && !hasResend) {
+    return "Email service not configured. Your OTP code is saved and valid for 10 minutes — please contact site admin for the code, or check server logs (plaintext OTP is logged there for debugging).";
+  }
+
+  if (isProd) {
+    const fromRaw = env.emailFrom.toLowerCase();
+    const isGmailFrom = fromRaw.includes("@gmail.") || fromRaw.includes("@outlook.") || fromRaw.includes("@yahoo.") || fromRaw.includes("@hotmail.");
+
+    if (hasResend && isGmailFrom) {
+      return [
+        "Resend FREE TIER LIMITATION active: Gmail/outlook sender is unverifiable.",
+        "Using onboarding@resend.dev sender — it ONLY DELIVERS TO THE EMAIL YOU USED TO SIGN UP AT RESEND.COM.",
+        "Other recipients: email is accepted by API but usually NOT delivered.",
+        "If no email arrives after 60s, click Resend Code, check Spam/Promotions folder,",
+        "or ask your site admin to share the OTP from Render server logs (OTP code is printed there).",
+      ].join(" ");
+    }
+
+    if (hasSmtp && !hasResend) {
+      return [
+        "Free hosting platforms (Render/Railway free tier) usually BLOCK outgoing SMTP ports (465/587/2525).",
+        "If code not received in 60s, please use Resend Code — or check Spam/Promotions folders.",
+        "For reliable delivery, add Resend API key (EMAIL_API_KEY) with EMAIL_FROM on a verified custom domain.",
+      ].join(" ");
+    }
+  }
+
+  return undefined;
+}
+
+async function issueVerification(userId: string, email: string): Promise<{ code: string; warning?: string }> {
   await prisma.emailVerification.updateMany({
     where: { userId, usedAt: null },
     data: { usedAt: new Date() },
@@ -59,16 +94,20 @@ async function issueVerification(userId: string, email: string) {
     },
   });
 
+  const warning = buildDeliveryWarning();
+
   void (async () => {
     try {
-      await sendVerificationEmail(email, code);
+      await dispatchVerificationEmail(email, code);
     } catch (err) {
       console.error(
-        `[AUTH ERROR] Failed to dispatch verification email to ${email.slice(0, 2)}***@${email.split("@")[1] || "?"}. OTP code was already persisted and remains valid for 10 min. User can use Resend Code button. Error:`,
+        `[AUTH ERROR] Failed to dispatch verification email to ${email.slice(0, 2)}***@${email.split("@")[1] || "?"}. OTP code was already persisted and remains valid for 10 min. Error:`,
         err instanceof Error ? err.message : err,
       );
     }
   })();
+
+  return { code, warning };
 }
 
 export async function register(req: Request, res: Response) {
@@ -90,13 +129,14 @@ export async function register(req: Request, res: Response) {
         },
       });
 
-      await issueVerification(existing.id, cleanEmail);
+      const { warning } = await issueVerification(existing.id, cleanEmail);
 
       return res.status(200).json({
         message: "Verification code sent to your email.",
         email: cleanEmail,
         role: "CUSTOMER",
         pendingApproval: false,
+        emailWarning: warning || undefined,
       });
     }
 
@@ -145,17 +185,14 @@ export async function register(req: Request, res: Response) {
     },
   });
 
-  try {
-    await issueVerification(user.id, user.email);
-  } catch (emailErr) {
-    throw emailErr;
-  }
+  const { warning } = await issueVerification(user.id, user.email);
 
   res.status(201).json({
     message: "Verification code sent to your email.",
     email: user.email,
     role: "CUSTOMER",
     pendingApproval: false,
+    emailWarning: warning || undefined,
   });
 }
 
@@ -171,7 +208,6 @@ export async function verifyEmail(req: Request, res: Response) {
 
   if (!user) throw new HttpError(404, "User not found with this email address");
 
-  // Security rule: OTP is strictly for Users/Buyers, not Sellers
   if (user.role === "SELLER") {
     throw new HttpError(400, "Seller accounts are approved by Superadmin and do not use OTP verification.");
   }
@@ -225,7 +261,6 @@ export async function verifyEmail(req: Request, res: Response) {
     include: { sellerProfile: true },
   });
 
-  // Automatically authenticate and issue JWT session token upon registration verification!
   const token = signToken({
     id: updatedUser.id,
     email: updatedUser.email,
@@ -260,10 +295,11 @@ export async function resendOtp(req: Request, res: Response) {
   });
   if (recent) throw new HttpError(429, "Please wait 60 seconds before requesting another OTP.");
 
-  await issueVerification(user.id, user.email);
+  const { warning } = await issueVerification(user.id, user.email);
 
   res.json({
     message: "Verification code sent to your email.",
+    emailWarning: warning || undefined,
   });
 }
 
@@ -281,7 +317,6 @@ export async function login(req: Request, res: Response) {
   const ok = await bcrypt.compare(body.password, user.passwordHash);
   if (!ok) throw new HttpError(401, "Invalid email or password");
 
-  // 1. Role mismatch security check
   if (requestedRoleRaw === "CUSTOMER" || requestedRoleRaw === "BUYER" || requestedRoleRaw === "USER") {
     if (user.role === "SELLER") {
       throw new HttpError(403, "This account is registered as a Seller. Please use Seller Login.");
@@ -292,19 +327,16 @@ export async function login(req: Request, res: Response) {
     }
   }
 
-  // 2. Disabled account check
   if ((user as any).isDisabled) {
     throw new HttpError(403, "Your account has been disabled by PinkCityHomes administration.");
   }
 
-  // 3. User / Buyer verification rules
   if (user.role === "CUSTOMER") {
     if (!user.emailVerifiedAt) {
       throw new HttpError(403, "Please verify your email before logging in.");
     }
   }
 
-  // 4. Seller approval rules (Superadmin only approves, NO OTP)
   if (user.role === "SELLER") {
     const sp = user.sellerProfile;
 
@@ -325,7 +357,6 @@ export async function login(req: Request, res: Response) {
     }
   }
 
-  // 5. Generate secure session token
   const token = signToken({ id: user.id, email: user.email, role: user.role, name: user.name });
   res.cookie("token", token, cookieOpts());
 

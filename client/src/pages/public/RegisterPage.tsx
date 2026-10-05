@@ -47,6 +47,7 @@ export default function RegisterPage() {
       const res = await api.post<{
         message: string;
         pendingApproval?: boolean;
+        emailWarning?: string;
       }>("/auth/register", {
         name,
         email: email.trim().toLowerCase(),
@@ -64,6 +65,10 @@ export default function RegisterPage() {
         setOtpMsg(res.message || "Please enter the 6-digit verification code sent to your email.");
         setResendCooldown(60);
         toast.success(res.message || "Verification code sent to your email!");
+        if (res.emailWarning) {
+          setOtpMsg(res.emailWarning);
+          toast.info(res.emailWarning, { duration: 6000 });
+        }
       }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Registration failed");
@@ -102,13 +107,17 @@ export default function RegisterPage() {
     setError(null);
 
     try {
-      const res = await api.post<{ message: string }>(
+      const res = await api.post<{ message: string; emailWarning?: string }>(
         "/auth/resend-otp",
         { email: email.trim().toLowerCase() }
       );
-      setOtpMsg(res.message || "A fresh 6-digit OTP has been dispatched.");
+      const nextMsg = res.emailWarning || res.message || "A fresh 6-digit OTP has been dispatched.";
+      setOtpMsg(nextMsg);
       setResendCooldown(60);
       toast.success(res.message || "Verification code sent to your email.");
+      if (res.emailWarning) {
+        toast.info(res.emailWarning, { duration: 6000 });
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to resend OTP");
     }

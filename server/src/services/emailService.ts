@@ -15,27 +15,65 @@ function getResendClient(): Resend | null {
   return null;
 }
 
-function getSmtpTransporter(): Transporter | null {
+function extractEmailAddress(raw: string): string {
+  const m = raw.match(/<([^>]+)>/);
+  return (m ? m[1] : raw).trim().toLowerCase();
+}
+
+function isResendAllowedFrom(fromRaw: string): boolean {
+  const addr = extractEmailAddress(fromRaw);
+  const domain = addr.split("@")[1] || "";
+  return domain !== "gmail.com" && domain !== "outlook.com" && domain !== "yahoo.com" && domain !== "hotmail.com";
+}
+
+function getResendFromAddress(): { from: string; wasSanitized: boolean } {
+  const configuredFrom = env.emailFrom;
+  if (isResendAllowedFrom(configuredFrom)) {
+    return { from: configuredFrom, wasSanitized: false };
+  }
+  console.warn(
+    `[EMAIL WARN] Resend sender "${configuredFrom}" uses a non-verifiable domain (gmail/outlook/yahoo). Automatically switching sender to "onboarding@resend.dev". FREE TIER LIMITATION: onboarding@resend.dev only DELIVERS TO THE EMAIL YOU SIGNED UP AT RESEND.COM WITH — all other recipients are silently dropped by Resend on the free plan. To send to arbitrary users, add & verify a paid custom domain at resend.com/domains (e.g., pinkcityhomes.com).`,
+  );
+  return { from: "PinkCityHomes <onboarding@resend.dev>", wasSanitized: true };
+}
+
+const SMTP_CANDIDATES: Array<{ port: number; secure: boolean }> = [
+  { port: 2525, secure: false },
+  { port: 587, secure: false },
+  { port: 465, secure: true },
+];
+
+async function tryCreateSmtpTransporter(): Promise<Transporter | null> {
   if (smtpTransporter) return smtpTransporter;
   if (!env.smtpUser || !env.smtpPass) return null;
-  try {
-    smtpTransporter = nodemailer.createTransport({
-      host: env.smtpHost,
-      port: env.smtpPort,
-      secure: env.smtpSecure,
-      connectionTimeout: 8000,
-      greetingTimeout: 8000,
-      socketTimeout: 15000,
-      auth: {
-        user: env.smtpUser,
-        pass: env.smtpPass,
-      },
-    });
-    return smtpTransporter;
-  } catch (err) {
-    console.error(`[EMAIL ERROR] Failed to create SMTP transporter: ${(err as Error)?.message || err}`);
-    return null;
+
+  let lastErr: unknown = null;
+  for (const { port, secure } of SMTP_CANDIDATES) {
+    try {
+      const t = nodemailer.createTransport({
+        host: env.smtpHost,
+        port,
+        secure,
+        requireTLS: port !== 465,
+        connectionTimeout: 6000,
+        greetingTimeout: 6000,
+        socketTimeout: 12000,
+        auth: {
+          user: env.smtpUser,
+          pass: env.smtpPass,
+        },
+      });
+      await t.verify();
+      smtpTransporter = t;
+      console.log(`[EMAIL] Gmail SMTP connected on port ${port} (secure=${String(secure)})`);
+      return smtpTransporter;
+    } catch (err) {
+      lastErr = err;
+      console.warn(`[EMAIL WARN] Gmail SMTP port ${port} failed: ${(err as Error)?.message || String(err)}`);
+    }
   }
+  console.error(`[EMAIL ERROR] All Gmail SMTP ports exhausted. Last error: ${(lastErr as Error)?.message || String(lastErr)}`);
+  return null;
 }
 
 export function maskEmail(email: string): string {
@@ -77,9 +115,9 @@ async function sendViaGmailSmtp(
   to: string,
   otp: string,
 ): Promise<{ success: boolean; messageId?: string; provider: "gmail-smtp" }> {
-  const transporter = getSmtpTransporter();
+  const transporter = await tryCreateSmtpTransporter();
   if (!transporter) {
-    throw new HttpError(502, "Unable to send verification email. Please try again.");
+    throw new HttpError(502, "Unable to send verification email (SMTP unavailable). Please try Resend Code or use a different email.");
   }
 
   const info = await transporter.sendMail({
@@ -105,12 +143,19 @@ async function sendViaResend(
 ): Promise<{ success: boolean; messageId?: string; provider: "resend" }> {
   const resend = getResendClient();
   if (!resend) {
-    throw new HttpError(502, "Unable to send verification email. Please try again.");
+    throw new HttpError(502, "Unable to send verification email (no Resend API key configured). Please try again.");
+  }
+
+  const { from: effectiveFrom, wasSanitized } = getResendFromAddress();
+  if (wasSanitized) {
+    console.warn(
+      `[EMAIL WARN] Resend FREE tier delivery restriction active for ${maskEmail(to)}. If ${maskEmail(to)} is NOT your Resend.com account email, this message will be ACCEPTED by Resend API with status 200 but SILENTLY NOT DELIVERED (onboarding@resend.dev constraint). If delivery to ${maskEmail(to)} is required, verify a custom paid domain at resend.com/domains.`,
+    );
   }
 
   const recipientEmail = to;
   const { data, error } = await resend.emails.send({
-    from: env.emailFrom,
+    from: effectiveFrom,
     to: [recipientEmail],
     subject: SUBJECT,
     text: TEXT_CONTENT(otp),
@@ -118,62 +163,89 @@ async function sendViaResend(
   });
 
   if (!error && data?.id) {
+    console.log(
+      `[EMAIL RESEND] Accepted id=${data.id} to=${maskEmail(to)} from=${effectiveFrom}. NOTE: 202/200 OK from Resend with onboarding@resend.dev DOES NOT GUARANTEE DELIVERY if recipient != Resend account owner email.`,
+    );
     return { success: true, messageId: data.id, provider: "resend" };
   }
 
   const errorMsg = error?.message || "Unknown Resend API error";
-  console.error(`[EMAIL ERROR] Resend API rejected request for ${maskEmail(to)}: ${errorMsg}`);
+  console.error(`[EMAIL ERROR] Resend API rejected request for ${maskEmail(to)} (from=${effectiveFrom}): ${errorMsg}`);
+  if (
+    errorMsg.toLowerCase().includes("from") ||
+    errorMsg.toLowerCase().includes("domain") ||
+    errorMsg.toLowerCase().includes("verified") ||
+    (typeof (error as any)?.statusCode === "number" && (error as any).statusCode === 403)
+  ) {
+    console.error(
+      `[EMAIL HINT] Resend 403 Domain not verified. FIX: Either (A) verify a custom paid domain at resend.com/domains and update EMAIL_FROM, or (B) for localhost-only testing with Gmail sender, switch EMAIL_PROVIDER=gmail and ensure SMTP ports are not blocked by your network.`,
+    );
+  }
   throw new HttpError(502, "Unable to send verification email. Please try again.");
+}
+
+export async function dispatchVerificationEmail(
+  to: string,
+  plaintextOtp: string,
+): Promise<{ success: boolean; messageId?: string; provider?: string; warning?: string }> {
+  const masked = maskEmail(to);
+  const isProduction = env.nodeEnv === "production";
+
+  console.log(`[EMAIL] ─── OTP for ${masked}:  CODE=${plaintextOtp}  (expires in 10 min) ───`);
+
+  const hasSmtpCreds = Boolean(env.smtpUser && env.smtpPass);
+  const hasResendKey = Boolean(env.emailApiKey);
+
+  let primary: "resend" | "gmail";
+  if (isProduction) {
+    primary = hasResendKey ? "resend" : hasSmtpCreds ? "gmail" : "resend";
+  } else {
+    primary = (env.emailProvider === "resend" || env.emailProvider === "gmail")
+      ? env.emailProvider
+      : hasResendKey ? "resend" : hasSmtpCreds ? "gmail" : "gmail";
+  }
+
+  console.log(`[EMAIL] Using provider order: primary=${primary} (production=${isProduction} — ${isProduction && hasResendKey ? "Resend HTTPS preferred because Render blocks SMTP ports" : isProduction ? "Gmail SMTP preferred" : "local-dev provider order"})`);
+
+  let lastErr: unknown = null;
+  const order: Array<"gmail" | "resend"> = primary === "gmail"
+    ? ["gmail", "resend"]
+    : ["resend", "gmail"];
+
+  for (const provider of order) {
+    if (provider === "gmail" && !hasSmtpCreds) continue;
+    if (provider === "resend" && !hasResendKey) continue;
+    try {
+      const r = provider === "gmail"
+        ? await sendViaGmailSmtp(to, plaintextOtp)
+        : await sendViaResend(to, plaintextOtp);
+      console.log(`[EMAIL OK] Dispatched via ${r.provider} → ${masked} (messageId=${r.messageId || "n/a"})`);
+      return r;
+    } catch (err) {
+      lastErr = err;
+      console.warn(`[EMAIL WARN] ${provider.toUpperCase()} failed for ${masked}: ${(err as Error)?.message || String(err)}`);
+    }
+  }
+
+  console.error(`[EMAIL FATAL] All providers failed for ${masked}. LAST ERROR=${(lastErr as Error)?.message || String(lastErr)}`);
+  console.error(`[EMAIL FATAL] OTP code was still saved in DB. User can still verify IF they get the code via Resend Code retries or you share it from logs.`);
+
+  const warning = env.nodeEnv === "production"
+    ? "Email delivery delayed. If the code doesn't arrive in 1 minute, please click 'Resend Code' or check your Spam folder."
+    : "Email dispatch had issues. Try Resend Code; or check server logs for the actual OTP code printed above.";
+
+  return { success: false, warning };
 }
 
 export async function sendVerificationEmail(
   to: string,
   otp: string,
 ): Promise<{ success: boolean; messageId?: string; provider?: string }> {
-  const masked = maskEmail(to);
-  const isProduction = env.nodeEnv === "production";
-
-  const preferredProvider: "resend" | "gmail" = isProduction && env.emailApiKey
-    ? "resend"
-    : (env.emailProvider === "resend" || env.emailProvider === "gmail")
-      ? env.emailProvider
-      : env.emailApiKey
-        ? "resend"
-        : env.smtpUser && env.smtpPass
-          ? "gmail"
-          : isProduction
-            ? "resend"
-            : "gmail";
-
-  console.log(`[EMAIL] Selected provider=${preferredProvider} (production=${isProduction}) — dispatching OTP to ${masked}...`);
-
-  if (preferredProvider === "resend") {
-    try {
-      return await sendViaResend(to, otp);
-    } catch (errResend: any) {
-      console.warn(`[EMAIL WARN] Resend failed for ${masked}: ${errResend?.message || errResend}`);
-      if (env.smtpUser && env.smtpPass && !isProduction) {
-        console.warn(`[EMAIL WARN] Falling back to Gmail SMTP for ${masked}...`);
-        return await sendViaGmailSmtp(to, otp);
-      }
-      throw errResend instanceof HttpError
-        ? errResend
-        : new HttpError(502, "Unable to send verification email. Please try again.");
-    }
+  const r = await dispatchVerificationEmail(to, otp);
+  if (!r.success) {
+    throw new HttpError(502, r.warning || "Unable to send verification email. Please try again.");
   }
-
-  try {
-    return await sendViaGmailSmtp(to, otp);
-  } catch (errGmail: any) {
-    console.warn(`[EMAIL WARN] Gmail SMTP failed for ${masked}: ${errGmail?.message || errGmail}`);
-    if (env.emailApiKey) {
-      console.warn(`[EMAIL WARN] Falling back to Resend for ${masked}...`);
-      return await sendViaResend(to, otp);
-    }
-    throw errGmail instanceof HttpError
-      ? errGmail
-      : new HttpError(502, "Unable to send verification email. Please try again.");
-  }
+  return r;
 }
 
 export const sendOTPEmail = sendVerificationEmail;
@@ -183,4 +255,3 @@ export function checkEmailServiceConfigured(): boolean {
     (env.smtpUser && env.smtpPass) || env.emailApiKey,
   );
 }
-

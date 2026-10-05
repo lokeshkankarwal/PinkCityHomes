@@ -75,9 +75,12 @@ export default function LoginPage() {
 
   const handleResendOtp = async () => {
     try {
-      await api.post("/auth/resend-otp", { email });
-      setOtpSuccess("A fresh 6-digit OTP has been sent to your email.");
-      toast.info("A fresh OTP has been sent to your email.");
+      const res = await api.post<{ message: string; emailWarning?: string }>("/auth/resend-otp", { email });
+      setOtpSuccess(res.message || "A fresh 6-digit OTP has been sent to your email.");
+      toast.success(res.message || "A fresh OTP has been sent to your email.");
+      if (res.emailWarning) {
+        toast.info(res.emailWarning, { duration: 6000 });
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to resend OTP");
     }
