@@ -4,7 +4,7 @@ import { env } from "./env.js";
 
 // Common Enums
 export type Role = "CUSTOMER" | "SELLER" | "SUPERADMIN";
-export type SellerApprovalStatus = "PENDING_VERIFICATION" | "PENDING_APPROVAL" | "APPROVED" | "REJECTED" | "SUSPENDED";
+export type SellerApprovalStatus = "PENDING" | "PENDING_VERIFICATION" | "PENDING_APPROVAL" | "APPROVED" | "REJECTED" | "SUSPENDED" | "DISABLED";
 export type PropertyStatus = "DRAFT" | "ACTIVE" | "INACTIVE" | "SOLD";
 export type PropertyType = "APARTMENT" | "VILLA" | "INDEPENDENT_HOUSE" | "PLOT" | "BUILDER_FLOOR";
 export type Furnishing = "UNFURNISHED" | "SEMI_FURNISHED" | "FULLY_FURNISHED";

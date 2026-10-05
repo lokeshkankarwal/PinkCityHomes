@@ -1,0 +1,11 @@
+services:
+  # Frontend Single-Page App (SPA)
+  - type: web
+    name: pinkcityhomes-frontend
+    runtime: static
+    buildCommand: npm install && npm run build -w client
+    staticPublishPath: client/dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html

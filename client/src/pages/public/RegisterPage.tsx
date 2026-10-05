@@ -150,11 +150,17 @@ export default function RegisterPage() {
               </p>
             </div>
 
+            <div className="rounded-[1.25rem] bg-navy/5 border border-navy/10 p-4 text-center">
+              <p className="text-[13px] font-medium text-navy leading-relaxed">
+                Your application will be reviewed under 24 hours
+              </p>
+            </div>
+
             <Link
-              to="/login"
-              className="block w-full btn-primary py-3 text-center text-[14px]"
+              to="/"
+              className="inline-block text-[13px] font-semibold text-slate-500 hover:text-ink transition"
             >
-              Go to Partner Login →
+              ← Back to Explore Homes
             </Link>
           </div>
         ) : (

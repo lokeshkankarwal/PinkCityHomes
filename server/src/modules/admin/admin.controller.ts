@@ -40,7 +40,7 @@ export async function dashboard(_req: Request, res: Response) {
     prisma.user.count({ where: { role: "CUSTOMER" } }),
     col.countDocuments({}),
     col.countDocuments({ status: "SOLD" }),
-    prisma.sellerProfile.count({ where: { status: "PENDING_APPROVAL" } }),
+    prisma.sellerProfile.count({ where: { status: { in: ["PENDING", "PENDING_APPROVAL", "PENDING_VERIFICATION"] } } }),
     prisma.order.count(),
     prisma.user.count({ where: { isDisabled: true } }),
     prisma.sellerProfile.count({ where: { OR: [{ status: "SUSPENDED" }, { isDisabled: true }] } }),
@@ -66,7 +66,7 @@ export async function dashboard(_req: Request, res: Response) {
 
 export async function sellerRequests(_req: Request, res: Response) {
   const requests = await prisma.sellerProfile.findMany({
-    where: { status: { in: ["PENDING_APPROVAL", "PENDING_VERIFICATION"] } },
+    where: { status: { in: ["PENDING", "PENDING_APPROVAL", "PENDING_VERIFICATION"] } },
     include: {
       user: {
         select: {
