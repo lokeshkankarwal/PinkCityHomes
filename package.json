@@ -13,7 +13,8 @@
     "start": "node server/dist/src/server.js",
     "typecheck": "npm run typecheck -w server && npm run typecheck -w client",
     "db:migrate:atlas": "tsx server/src/scripts/migrateAtlas.ts",
-    "db:backup": "bash scripts/migrate-local-to-atlas.sh"
+    "db:backup": "bash scripts/migrate-local-to-atlas.sh",
+    "test:api": "npm run test:api -w server"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"
