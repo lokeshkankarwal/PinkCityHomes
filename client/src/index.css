@@ -168,7 +168,8 @@
   }
 
   .btn-primary {
-    @apply btn text-white shadow-btn-primary;
+    @apply btn text-white;
+    box-shadow: var(--shadow-btn-primary);
     background-image: linear-gradient(
       180deg,
       var(--navy-gradient-from) 0%,
@@ -190,7 +191,8 @@
   }
 
   .btn-accent {
-    @apply btn text-white bg-pink-600 shadow-btn-primary;
+    @apply btn text-white bg-pink-600;
+    box-shadow: var(--shadow-btn-primary);
   }
   .btn-accent:hover {
     @apply bg-pink-700;
@@ -199,7 +201,8 @@
   }
 
   .btn-ghost {
-    @apply btn text-navy bg-white border border-slate-200/80 shadow-xs hover:bg-slate-50 hover:border-slate-300;
+    @apply btn text-ink bg-white border border-slate-200/80 hover:bg-slate-50 hover:border-slate-300;
+    box-shadow: 0 1px 2px 0 rgba(11, 29, 53, 0.04);
   }
 
   .btn-danger {
@@ -212,7 +215,8 @@
 
   /* ─── Cards ─── */
   .card {
-    @apply bg-white rounded-[1.25rem] border border-slate-200/70 shadow-card transition-all duration-250 ease-out;
+    @apply bg-white rounded-[1.25rem] border border-slate-200/70 transition-all duration-200 ease-out;
+    box-shadow: var(--shadow-card);
   }
   .card-hover:hover,
   .card:hover {
@@ -223,14 +227,15 @@
 
   /* ─── Bottom Nav Bar ─── */
   .bottom-nav {
-    @apply fixed bottom-0 left-0 right-0 z-40 bg-white/80 backdrop-blur-xl border-t border-slate-200/70 shadow-nav md:hidden;
+    @apply fixed bottom-0 left-0 right-0 z-40 bg-white/80 backdrop-blur-xl border-t border-slate-200/70 md:hidden;
+    box-shadow: 0 -4px 20px -8px rgba(11, 29, 53, 0.10);
     padding-bottom: max(0.5rem, env(safe-area-inset-bottom, 0.5rem));
   }
 
   .bottom-nav-item {
     @apply relative flex flex-col items-center justify-center flex-1 py-1.5 px-0.5
       transition-all duration-200 ease-out active:scale-[0.94]
-      text-slate-500 hover:text-navy min-h-[56px];
+      text-slate-500 hover:text-ink min-h-[56px];
   }
 
   .bottom-nav-item .nav-icon-wrap {
