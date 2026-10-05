@@ -34,12 +34,13 @@ export default function PropertyDetailPage() {
     setActiveImageIndex(0);
 
     api
-      .get<Property>(`/properties/${id}`)
-      .then((p) => {
+      .get<{ property: Property } & Property>(`/properties/${id}`)
+      .then((res: any) => {
+        const p = res?.property || res;
         setProperty(p);
 
         // Fetch other properties by this seller
-        if (p.sellerId) {
+        if (p?.sellerId) {
           api
             .get<{ results: Property[] }>(`/properties?sellerId=${p.sellerId}&limit=4`)
             .then((res) => {
@@ -150,7 +151,7 @@ export default function PropertyDetailPage() {
     ? property.images.map((i) => imgSrc(i.path))
     : property.primaryImage
       ? [imgSrc(property.primaryImage)]
-      : ["/defaults/apartment.svg"];
+      : [imgSrc(null)];
 
   const currentImage = allImages[activeImageIndex] || allImages[0];
   const isRent = property.listingType === "RENT";
