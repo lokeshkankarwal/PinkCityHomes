@@ -5,6 +5,7 @@ build
 .env.*
 *.env*
 env
+ev
 !*.env.example
 !.env.example
 *.log
