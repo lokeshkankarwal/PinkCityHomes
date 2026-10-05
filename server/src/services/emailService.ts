@@ -1,8 +1,29 @@
+import nodemailer from "nodemailer";
+import type { Transporter } from "nodemailer";
 import { Resend } from "resend";
 import { env } from "../config/env.js";
 import { HttpError } from "../middleware/error.js";
 
+let gmailTransporter: Transporter | null = null;
 let resendClient: Resend | null = null;
+
+function getGmailTransporter(): Transporter | null {
+  if (gmailTransporter) return gmailTransporter;
+  if (env.smtpUser && env.smtpPass) {
+    gmailTransporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: env.smtpUser,
+        pass: env.smtpPass,
+      },
+      connectionTimeout: 10_000,
+      greetingTimeout: 10_000,
+      socketTimeout: 15_000,
+    });
+    return gmailTransporter;
+  }
+  return null;
+}
 
 function getResendClient(): Resend | null {
   if (resendClient) return resendClient;
@@ -46,53 +67,69 @@ function getVerificationHtml(otp: string): string {
 export async function sendVerificationEmail(
   to: string,
   otp: string,
-): Promise<{ success: boolean; messageId?: string; isDevFallback?: boolean }> {
+): Promise<{ success: boolean; messageId?: string; isDevFallback?: boolean; provider?: string }> {
   const masked = maskEmail(to);
-  const client = getResendClient();
+  const gmail = getGmailTransporter();
+  const resend = getResendClient();
 
-  if (!client) {
-    if (env.nodeEnv !== "production") {
-      console.log(`[EMAIL] Running in development mode without EMAIL_API_KEY. Simulated verification email to ${masked}.`);
-      return { success: true, isDevFallback: true };
+  console.log(`[EMAIL] Attempting to dispatch verification code to ${masked}...`);
+
+  // ── Strategy 1: Gmail SMTP via Nodemailer ──────────────────────────────
+  if (gmail) {
+    try {
+      console.log(`[EMAIL] Sending via Gmail SMTP (${env.smtpUser})...`);
+      const info = await gmail.sendMail({
+        from: env.smtpFrom,
+        to,
+        subject: "Your PinkCityHomes Verification Code",
+        text: `Your PinkCityHomes verification code is ${otp}. It expires in 15 minutes. Do not share this code with anyone.`,
+        html: getVerificationHtml(otp),
+      });
+
+      console.log(`[EMAIL] Verification email sent successfully via Gmail (messageId: ${info.messageId})`);
+      return { success: true, messageId: info.messageId, provider: "gmail" };
+    } catch (err: any) {
+      console.warn(`[EMAIL WARN] Gmail SMTP failed: ${err.message ?? "Unknown SMTP error"}`);
+      // Fall through to Resend or Dev Fallback
     }
-    console.error("[EMAIL ERROR] EMAIL_API_KEY / RESEND_API_KEY is not configured in production environment.");
-    throw new HttpError(500, "Email delivery service is not configured on this server.");
   }
 
-  console.log(`[EMAIL] Sending verification email to ${masked}`);
+  // ── Strategy 2: Resend HTTPS REST API ──────────────────────────────────
+  if (resend) {
+    try {
+      console.log(`[EMAIL] Sending via Resend HTTPS API...`);
+      const { data, error } = await resend.emails.send({
+        from: env.emailFrom,
+        to: [to],
+        subject: "Your PinkCityHomes Verification Code",
+        text: `Your PinkCityHomes verification code is ${otp}. It expires in 15 minutes. Do not share this code with anyone.`,
+        html: getVerificationHtml(otp),
+      });
 
-  try {
-    const { data, error } = await client.emails.send({
-      from: env.emailFrom,
-      to: [to],
-      subject: "Your PinkCityHomes Verification Code",
-      text: `Your PinkCityHomes verification code is ${otp}. It expires in 15 minutes. Do not share this code with anyone.`,
-      html: getVerificationHtml(otp),
-    });
-
-    if (error) {
-      console.error(`[EMAIL ERROR] Email provider request failed: ${error.name || "Error"} - ${error.message}`);
-      throw new HttpError(
-        502,
-        "Unable to send verification email. Please check your email address or try again in a few moments.",
-      );
+      if (!error && data?.id) {
+        console.log(`[EMAIL] Verification email sent successfully via Resend (id: ${data.id})`);
+        return { success: true, messageId: data.id, provider: "resend" };
+      }
+      console.warn(`[EMAIL WARN] Resend API failed: ${error?.message || "Unknown error"}`);
+    } catch (err: any) {
+      console.warn(`[EMAIL WARN] Resend API failed: ${err.message}`);
     }
-
-    console.log(`[EMAIL] Verification email sent successfully (id: ${data?.id ?? "unknown"})`);
-    return { success: true, messageId: data?.id };
-  } catch (err: any) {
-    if (err instanceof HttpError) throw err;
-
-    console.error(`[EMAIL ERROR] Email provider request failed: ${err?.message || "Unknown error"}`);
-    throw new HttpError(
-      502,
-      "Unable to send verification email. Please check your email address or try again in a few moments.",
-    );
   }
+
+  // ── Strategy 3: Development / Testing Fallback ─────────────────────────
+  if (env.nodeEnv !== "production") {
+    console.log(`[EMAIL] Development mode: Simulated verification email to ${masked}.`);
+    return { success: true, isDevFallback: true, provider: "dev" };
+  }
+
+  throw new HttpError(
+    502,
+    "Unable to deliver verification email. Please check your email settings or try again.",
+  );
 }
 
 export const sendOTPEmail = sendVerificationEmail;
 
 export function checkEmailServiceConfigured(): boolean {
-  return Boolean(env.emailApiKey);
+  return Boolean((env.smtpUser && env.smtpPass) || env.emailApiKey);
 }
