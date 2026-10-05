@@ -27,9 +27,9 @@ export default function ProfilePage() {
   if (!user) {
     return (
       <div className="py-24 text-center space-y-4">
-        <p className="font-display text-2xl font-bold text-navy">Account Profile</p>
+        <p className="font-display text-2xl font-bold text-ink">Account Profile</p>
         <p className="text-xs text-slate-500">Please log in to view and manage your profile.</p>
-        <Link to="/login" className="inline-block rounded-2xl bg-navy px-5 py-2.5 text-xs font-semibold text-white shadow">
+        <Link to="/login" className="inline-block btn-primary px-5 py-2.5 text-xs font-semibold">
           Sign In
         </Link>
       </div>
@@ -146,22 +146,22 @@ export default function ProfilePage() {
     .toUpperCase();
 
   return (
-    <div className="mx-auto max-w-3xl py-8 space-y-8 animate-fade-in">
+    <div className="mx-auto max-w-3xl py-8 space-y-8 animate-in-page">
       {/* Page Header */}
-      <div>
-        <span className="text-xs font-bold uppercase tracking-wider text-pink-600">Account Management</span>
-        <h1 className="font-display text-3xl font-bold text-navy mt-1">Profile &amp; Settings</h1>
-        <p className="text-xs sm:text-sm text-slate-500">
+      <div className="stagger-0">
+        <span className="page-eyebrow">Account Management</span>
+        <h1 className="page-title mt-1">Profile &amp; Settings</h1>
+        <p className="page-subtitle mt-2">
           Manage your personal details, profile image, and review account permissions
         </p>
       </div>
 
       {/* Profile Overview Card */}
-      <div className="rounded-3xl border border-slate-200/80 bg-white p-4 sm:p-8 shadow-card space-y-6">
+      <div className="stagger-1 rounded-[1.25rem] border border-slate-200/70 bg-white p-4 sm:p-8 shadow-card card-hover space-y-6">
         <div className="flex flex-col sm:flex-row items-center gap-6 text-center sm:text-left">
           {/* Avatar with Preview & Edit */}
           <div className="relative group">
-            <div className="h-24 w-24 sm:h-28 sm:w-28 rounded-full overflow-hidden border-4 border-slate-100 bg-gradient-to-tr from-pink-600 via-rose-500 to-amber-500 flex items-center justify-center text-white font-display text-3xl font-bold shadow-md">
+            <div className="h-24 w-24 sm:h-28 sm:w-28 rounded-full overflow-hidden border-4 border-slate-100 bg-gradient-to-tr from-pink-600 via-rose-500 to-amber-500 flex items-center justify-center text-white font-display text-3xl font-extrabold tracking-[-0.02em] shadow-card">
               {previewUrl ? (
                 <img src={previewUrl} alt="Preview" className="h-full w-full object-cover" />
               ) : user.avatarUrl ? (
@@ -193,7 +193,7 @@ export default function ProfilePage() {
 
           <div className="space-y-1.5 flex-1 min-w-0">
             <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-              <h2 className="font-display text-2xl font-bold text-navy truncate">{user.name}</h2>
+              <h2 className="font-display text-2xl font-bold text-ink truncate tracking-[-0.02em] leading-snug">{user.name}</h2>
               <Badge status={user.role} />
             </div>
             <p className="text-xs text-slate-500">{user.email}</p>
@@ -211,7 +211,7 @@ export default function ProfilePage() {
             <button
               type="button"
               onClick={handleStartEdit}
-              className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition active:scale-95 shadow-xs"
+              className="btn-ghost px-4 py-2 text-[13px]"
             >
               Edit Details
             </button>
@@ -260,8 +260,8 @@ export default function ProfilePage() {
       </div>
 
       {/* Personal Information Form / View */}
-      <div className="rounded-3xl border border-slate-200/80 bg-white p-4 sm:p-8 shadow-card space-y-6">
-        <h3 className="font-display text-xl font-bold text-navy">Personal Information</h3>
+      <div className="stagger-2 rounded-[1.25rem] border border-slate-200/70 bg-white p-4 sm:p-8 shadow-card card-hover space-y-6">
+        <h3 className="font-display text-xl font-bold text-ink tracking-[-0.02em]">Personal Information</h3>
 
         {isEditing ? (
           <form onSubmit={handleUpdate} className="space-y-4">
@@ -272,7 +272,7 @@ export default function ProfilePage() {
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full rounded-2xl border border-slate-200 px-4 py-2.5 text-sm text-navy focus:outline-none focus:ring-2 focus:ring-pink-500 shadow-xs"
+                className="w-full rounded-2xl border border-slate-200 px-4 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-pink-500 shadow-xs"
               />
             </div>
 
@@ -283,7 +283,7 @@ export default function ProfilePage() {
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="+91 98000 00000"
-                className="w-full rounded-2xl border border-slate-200 px-4 py-2.5 text-sm text-navy focus:outline-none focus:ring-2 focus:ring-pink-500 shadow-xs"
+                className="w-full rounded-2xl border border-slate-200 px-4 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-pink-500 shadow-xs"
               />
             </div>
 
@@ -302,7 +302,7 @@ export default function ProfilePage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="rounded-2xl bg-navy px-5 py-2.5 text-xs font-semibold text-white shadow-md hover:bg-navy-800 disabled:opacity-50 transition active:scale-95"
+                className="btn-primary px-5 py-2.5 text-[14px] disabled:opacity-50"
               >
                 {loading ? "Saving Changes..." : "Save Changes"}
               </button>
@@ -310,7 +310,7 @@ export default function ProfilePage() {
                 type="button"
                 onClick={handleCancelEdit}
                 disabled={loading}
-                className="rounded-2xl border border-slate-200 px-4 py-2.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition"
+                className="btn-ghost px-4 py-2.5 text-[13px]"
               >
                 Cancel
               </button>
@@ -320,34 +320,34 @@ export default function ProfilePage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs sm:text-sm">
             <div className="space-y-1 rounded-2xl bg-slate-50/70 p-4 border border-slate-100">
               <span className="text-slate-400 text-xs">Full Name</span>
-              <p className="font-semibold text-navy">{user.name}</p>
+              <p className="font-semibold text-ink">{user.name}</p>
             </div>
             <div className="space-y-1 rounded-2xl bg-slate-50/70 p-4 border border-slate-100">
               <span className="text-slate-400 text-xs">Email Address</span>
-              <p className="font-semibold text-navy">{user.email}</p>
+              <p className="font-semibold text-ink">{user.email}</p>
             </div>
             <div className="space-y-1 rounded-2xl bg-slate-50/70 p-4 border border-slate-100">
               <span className="text-slate-400 text-xs">Phone Number</span>
-              <p className="font-semibold text-navy">{user.phone || "Not specified"}</p>
+              <p className="font-semibold text-ink">{user.phone || "Not specified"}</p>
             </div>
             <div className="space-y-1 rounded-2xl bg-slate-50/70 p-4 border border-slate-100">
               <span className="text-slate-400 text-xs">Account Role</span>
-              <p className="font-semibold text-navy uppercase tracking-wider">{user.role}</p>
+              <p className="font-semibold text-ink uppercase tracking-wider">{user.role}</p>
             </div>
           </div>
         )}
       </div>
 
       {/* Account Security & Sign Out */}
-      <div className="rounded-3xl border border-slate-200/80 bg-white p-4 sm:p-6 shadow-card flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="stagger-3 rounded-[1.25rem] border border-slate-200/70 bg-white p-4 sm:p-6 shadow-card card-hover flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h3 className="font-display text-base sm:text-lg font-bold text-navy">Session &amp; Security</h3>
-          <p className="text-xs text-slate-500">Signed in securely on this device</p>
+          <h3 className="font-display text-base sm:text-lg font-bold text-ink tracking-[-0.01em]">Session &amp; Security</h3>
+          <p className="text-[12px] text-slate-500">Signed in securely on this device</p>
         </div>
         <button
           type="button"
           onClick={handleSignOut}
-          className="rounded-2xl border border-rose-200 bg-rose-50/60 px-5 py-2.5 text-xs font-semibold text-rose-700 hover:bg-rose-100 transition active:scale-95 self-start sm:self-auto"
+          className="btn-danger px-5 py-2.5 text-[13px] self-start sm:self-auto"
         >
           Sign Out of Account
         </button>

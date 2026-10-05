@@ -25,24 +25,24 @@ export function EmptyState({
 
   return (
     <div
-      className={`mx-auto w-full text-center rounded-3xl border border-slate-200/80 bg-white shadow-card flex flex-col items-center justify-center ${
-        isSm ? "p-6 max-w-md space-y-3" : isLg ? "p-12 md:p-16 max-w-2xl space-y-6" : "p-8 md:p-12 max-w-xl space-y-4"
+      className={`mx-auto w-full text-center rounded-[1.25rem] border border-slate-200/70 bg-white shadow-card card-hover flex flex-col items-center justify-center animate-page-enter ${
+        isSm ? "p-6 max-w-md space-y-3" : isLg ? "p-10 md:p-14 max-w-2xl space-y-5" : "p-8 md:p-10 max-w-xl space-y-4"
       }`}
     >
       <div className="flex items-center justify-center">
         {typeof icon === "string" ? (
-          <span className={isSm ? "text-3xl" : "text-5xl"}>{icon}</span>
+          <span className={`emoji-float select-none ${isSm ? "text-3xl" : "text-5xl"}`}>{icon}</span>
         ) : (
-          <div className="text-slate-400">{icon}</div>
+          <div className="text-slate-400 animate-float">{icon}</div>
         )}
       </div>
 
-      <div className="space-y-1.5 max-w-md">
-        <h3 className={`font-display font-bold text-navy ${isSm ? "text-lg" : "text-xl md:text-2xl"}`}>
+      <div className="space-y-2 max-w-md">
+        <h3 className={`font-display font-bold text-ink leading-snug tracking-[-0.015em] ${isSm ? "text-[17px]" : "text-xl md:text-2xl"}`}>
           {title}
         </h3>
         {body && (
-          <p className="text-xs md:text-sm text-slate-500 leading-relaxed">
+          <p className="text-[13.5px] md:text-sm text-slate-500 leading-[1.55]">
             {body}
           </p>
         )}
@@ -53,7 +53,7 @@ export function EmptyState({
           {action.href ? (
             <Link
               to={action.href}
-              className="inline-flex items-center gap-2 rounded-2xl bg-navy px-5 py-2.5 text-xs md:text-sm font-semibold text-white shadow-md hover:bg-navy-800 transition active:scale-95"
+              className="btn-primary text-[14px]"
             >
               {action.label}
             </Link>
@@ -61,7 +61,7 @@ export function EmptyState({
             <button
               type="button"
               onClick={action.onClick}
-              className="inline-flex items-center gap-2 rounded-2xl bg-navy px-5 py-2.5 text-xs md:text-sm font-semibold text-white shadow-md hover:bg-navy-800 transition active:scale-95"
+              className="btn-primary text-[14px]"
             >
               {action.label}
             </button>

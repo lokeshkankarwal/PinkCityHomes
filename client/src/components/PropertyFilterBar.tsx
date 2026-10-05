@@ -141,11 +141,11 @@ export function PropertyFilterBar({
   }
 
   return (
-    <div className="space-y-4 rounded-3xl border border-slate-200/80 bg-white p-4 sm:p-6 shadow-card">
+    <div className="space-y-4 rounded-[1.5rem] border border-slate-200/80 bg-white p-4 sm:p-6 shadow-card">
       {/* Top row: Results count & Sorting */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
         <div>
-          <h2 className="font-display text-base sm:text-lg font-bold text-navy flex items-center gap-2">
+          <h2 className="font-display text-base sm:text-lg font-bold text-ink flex items-center gap-2">
             <span>{loading ? "Searching..." : `${totalCount} ${listingType === "RENT" ? "rental homes" : "homes"} found`}</span>
             {totalCount > 0 && <span className="text-[11px] font-bold text-pink-700 bg-pink-50 px-2 py-0.5 rounded-full border border-pink-200">Jaipur</span>}
           </h2>
@@ -156,7 +156,7 @@ export function PropertyFilterBar({
           <select
             value={filters.sort}
             onChange={(e) => onChange({ ...filters, sort: e.target.value })}
-            className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 font-semibold text-navy focus:outline-none focus:ring-2 focus:ring-pink-500"
+            className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 font-semibold text-ink focus:outline-none focus:ring-2 focus:ring-pink-500"
           >
             <option value="recommended">Recommended</option>
             <option value="newest">Newest First</option>
@@ -304,7 +304,7 @@ export function PropertyFilterBar({
                 placeholder="e.g. 2500000"
                 value={filters.minPrice}
                 onChange={(e) => onChange({ ...filters, minPrice: e.target.value })}
-                className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 bg-white text-xs text-navy focus:outline-none focus:ring-2 focus:ring-pink-300"
+                className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 bg-white text-xs text-ink focus:outline-none focus:ring-2 focus:ring-pink-300"
               />
             </div>
 
@@ -315,7 +315,7 @@ export function PropertyFilterBar({
                 placeholder="e.g. 9500000"
                 value={filters.maxPrice}
                 onChange={(e) => onChange({ ...filters, maxPrice: e.target.value })}
-                className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 bg-white text-xs text-navy focus:outline-none focus:ring-2 focus:ring-pink-300"
+                className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 bg-white text-xs text-ink focus:outline-none focus:ring-2 focus:ring-pink-300"
               />
             </div>
 
@@ -326,7 +326,7 @@ export function PropertyFilterBar({
                 placeholder="e.g. 1000"
                 value={filters.minArea ?? ""}
                 onChange={(e) => onChange({ ...filters, minArea: e.target.value })}
-                className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 bg-white text-xs text-navy focus:outline-none focus:ring-2 focus:ring-pink-300"
+                className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 bg-white text-xs text-ink focus:outline-none focus:ring-2 focus:ring-pink-300"
               />
             </div>
 
@@ -335,7 +335,7 @@ export function PropertyFilterBar({
               <select
                 value={filters.bathrooms ?? ""}
                 onChange={(e) => onChange({ ...filters, bathrooms: e.target.value })}
-                className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 bg-white text-xs text-navy focus:outline-none focus:ring-2 focus:ring-pink-300"
+                className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 bg-white text-xs text-ink focus:outline-none focus:ring-2 focus:ring-pink-300"
               >
                 <option value="">Any</option>
                 <option value="1">1+ Bath</option>

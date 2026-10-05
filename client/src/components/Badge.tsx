@@ -55,8 +55,8 @@ export function Badge({
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full border font-semibold tracking-wider uppercase transition-colors ${colorClasses} ${
-        isSm ? "px-2 py-0.5 text-[10px]" : "px-3 py-1 text-xs"
+      className={`inline-flex items-center gap-1.5 rounded-full border font-semibold tracking-[0.06em] uppercase transition-all duration-200 badge-pop ${colorClasses} ${
+        isSm ? "px-2 py-0.5 text-[10.5px]" : "px-3 py-1 text-[11px]"
       } ${className}`}
     >
       {showDot && (

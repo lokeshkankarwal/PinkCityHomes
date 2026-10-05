@@ -175,14 +175,14 @@ export default function AdminSellerDetailPage() {
   if (loading) return <div className="py-24 text-center text-ink/60">Loading seller profile &amp; inventory...</div>;
   if (error || !data) {
     return (
-      <div className="rounded-3xl border border-red-200 bg-red-50 p-8 text-center space-y-3">
-        <h3 className="font-serif text-xl font-bold text-red-900">Seller Not Found</h3>
+      <div className="rounded-[1.25rem] border border-red-200 bg-red-50 p-8 text-center space-y-3">
+        <h3 className="font-display text-xl font-bold text-red-900 tracking-[-0.02em]">Seller Not Found</h3>
         <p className="text-sm text-red-700">{error || "Could not retrieve seller profile."}</p>
         <button
           onClick={() => navigate("/admin/sellers")}
           className="rounded-xl bg-ink px-4 py-2 text-xs font-semibold text-sand hover:bg-ink/90"
         >
-          &larr; Back to Sellers Directory
+          ← Back to Sellers Directory
         </button>
       </div>
     );
@@ -195,21 +195,21 @@ export default function AdminSellerDetailPage() {
   const isApproved = seller.status === "APPROVED" && !isSuspended;
 
   return (
-    <div className="space-y-8 pb-16">
+    <div className="space-y-8 pb-16 animate-in-page">
       {/* Breadcrumb & Navigation */}
       <div className="flex items-center gap-2 text-xs text-ink/60">
         <Link to="/admin/sellers" className="hover:text-ink font-semibold">
-          &larr; Sellers Directory
+          ← Sellers Directory
         </Link>
         <span>/</span>
         <span className="text-ink">{user.name}</span>
       </div>
 
       {/* Seller Header Profile Card */}
-      <div className="rounded-3xl border border-ink/10 bg-white p-6 sm:p-8 shadow-sm">
+      <div className="rounded-[1.25rem] border border-ink/10 bg-white p-6 sm:p-8 shadow-sm">
         <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
           <div className="flex items-start gap-5">
-            <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-2xl bg-gradient-to-tr from-pink-500 to-amber-500 flex items-center justify-center text-white text-2xl sm:text-3xl font-bold font-serif shadow-sm overflow-hidden flex-shrink-0">
+            <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-2xl bg-gradient-to-tr from-pink-500 to-amber-500 flex items-center justify-center text-white text-2xl sm:text-3xl font-bold font-display shadow-sm overflow-hidden flex-shrink-0">
               {(user.avatarUrl || user.avatar) ? (
                 <img src={imgSrc(user.avatarUrl || user.avatar)} alt="" className="h-full w-full object-cover" />
               ) : (
@@ -219,7 +219,7 @@ export default function AdminSellerDetailPage() {
 
             <div className="space-y-1.5">
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="font-serif text-2xl sm:text-3xl font-bold text-ink">{user.name}</h1>
+                <h1 className="font-display text-2xl sm:text-3xl font-bold text-ink tracking-[-0.02em]">{user.name}</h1>
                 <span
                   className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider ${
                     isSuspended
@@ -334,23 +334,23 @@ export default function AdminSellerDetailPage() {
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 pt-6 mt-6 border-t border-ink/10">
           <div className="rounded-2xl bg-sand/40 p-3">
             <span className="text-[10px] uppercase font-bold text-ink/50">Total Properties</span>
-            <p className="font-serif text-xl font-bold text-ink mt-0.5">{stats.totalProperties}</p>
+            <p className="font-display text-xl font-bold text-ink tracking-[-0.02em] mt-0.5">{stats.totalProperties}</p>
           </div>
           <div className="rounded-2xl bg-sand/40 p-3">
             <span className="text-[10px] uppercase font-bold text-moss">Active Searchable</span>
-            <p className="font-serif text-xl font-bold text-moss mt-0.5">{stats.activeProperties}</p>
+            <p className="font-display text-xl font-bold text-moss tracking-[-0.02em] mt-0.5">{stats.activeProperties}</p>
           </div>
           <div className="rounded-2xl bg-sand/40 p-3">
             <span className="text-[10px] uppercase font-bold text-amber-800">Inactive / Deactivated</span>
-            <p className="font-serif text-xl font-bold text-amber-800 mt-0.5">{stats.inactiveProperties}</p>
+            <p className="font-display text-xl font-bold text-amber-800 tracking-[-0.02em] mt-0.5">{stats.inactiveProperties}</p>
           </div>
           <div className="rounded-2xl bg-sand/40 p-3">
             <span className="text-[10px] uppercase font-bold text-ink/50">Marked SOLD</span>
-            <p className="font-serif text-xl font-bold text-ink mt-0.5">{stats.soldProperties}</p>
+            <p className="font-display text-xl font-bold text-ink tracking-[-0.02em] mt-0.5">{stats.soldProperties}</p>
           </div>
           <div className="rounded-2xl bg-sand/40 p-3">
             <span className="text-[10px] uppercase font-bold text-ink/50">Total Views</span>
-            <p className="font-serif text-xl font-bold text-ink mt-0.5">{stats.totalViews}</p>
+            <p className="font-display text-xl font-bold text-ink tracking-[-0.02em] mt-0.5">{stats.totalViews}</p>
           </div>
         </div>
       </div>
@@ -359,7 +359,7 @@ export default function AdminSellerDetailPage() {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="font-serif text-xl font-bold">Seller Properties ({properties.length})</h2>
+            <h2 className="font-display text-xl font-bold tracking-[-0.02em]">Seller Properties ({properties.length})</h2>
             <p className="text-xs text-ink/60">
               Complete catalogued inventory listed by {user.name}
             </p>
@@ -367,7 +367,7 @@ export default function AdminSellerDetailPage() {
         </div>
 
         {properties.length === 0 ? (
-          <div className="rounded-3xl border border-ink/10 bg-white p-12 text-center text-ink/60">
+          <div className="rounded-[1.25rem] border border-ink/10 bg-white p-12 text-center text-ink/60">
             This seller has not posted any property listings yet.
           </div>
         ) : (
@@ -375,7 +375,7 @@ export default function AdminSellerDetailPage() {
             {properties.map((p) => (
               <div
                 key={p.id}
-                className="overflow-hidden rounded-3xl border border-ink/10 bg-white shadow-sm transition hover:shadow-md flex flex-col justify-between"
+                className="overflow-hidden rounded-[1.25rem] border border-ink/10 bg-white shadow-sm transition hover:shadow-md card-hover flex flex-col justify-between"
               >
                 <div>
                   <div className="relative">
@@ -403,8 +403,8 @@ export default function AdminSellerDetailPage() {
                   </div>
 
                   <div className="p-4 space-y-2">
-                    <h3 className="font-serif text-base font-bold line-clamp-1">{p.title}</h3>
-                    <p className="font-serif text-lg font-bold text-brass">
+                    <h3 className="font-display text-base font-bold line-clamp-1 tracking-[-0.01em]">{p.title}</h3>
+                    <p className="font-display text-lg font-bold text-brass tracking-[-0.02em]">
                       {p.listingType === "RENT" ? `${inr(p.price)}/mo` : inr(p.price)}
                     </p>
                     <p className="text-xs text-ink/70">
@@ -501,8 +501,8 @@ export default function AdminSellerDetailPage() {
       {/* Reject Modal with Reason */}
       {showRejectModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 backdrop-blur-sm p-4">
-          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-xl space-y-4">
-            <h3 className="font-serif text-lg font-bold text-ink">
+          <div className="w-full max-w-md rounded-[1.25rem] bg-white p-6 shadow-xl space-y-4">
+            <h3 className="font-display text-lg font-bold text-ink tracking-[-0.01em]">
               Reject Seller Application
             </h3>
             <p className="text-xs text-ink/70">

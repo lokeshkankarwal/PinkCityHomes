@@ -113,20 +113,18 @@ const navLink = ({ isActive }: { isActive: boolean }) =>
   `relative px-3.5 py-2 rounded-2xl text-xs font-semibold tracking-wide transition-all duration-200 ${
     isActive
       ? "text-pink-600 bg-pink-50/80 shadow-xs font-bold"
-      : "text-slate-600 hover:text-navy hover:bg-slate-100/70"
+      : "text-slate-600 hover:text-ink hover:bg-slate-100/70"
   }`;
 
 const drawerNavLink = ({ isActive }: { isActive: boolean }) =>
   `flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-semibold tracking-wide transition-all duration-200 min-h-[44px] ${
     isActive
       ? "text-pink-600 bg-pink-50 font-bold border border-pink-100 shadow-xs"
-      : "text-slate-700 hover:text-navy hover:bg-slate-100/80"
+      : "text-slate-700 hover:text-ink hover:bg-slate-100/80"
   }`;
 
 const bottomNavLink = ({ isActive }: { isActive: boolean }) =>
-  `flex flex-col items-center justify-center flex-1 py-1 px-0.5 sm:px-1 text-[9.5px] sm:text-[10px] font-semibold tracking-tight transition duration-150 ${
-    isActive ? "text-pink-600 font-bold" : "text-slate-500 hover:text-navy"
-  }`;
+  `bottom-nav-item ${isActive ? "is-active" : ""}`;
 
 const adminNavLink = ({ isActive }: { isActive: boolean }) =>
   `relative px-3 py-1.5 rounded-xl text-xs font-semibold tracking-wide transition-all duration-200 ${
@@ -214,16 +212,16 @@ export default function Layout() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 antialiased">
+    <div className="min-h-screen flex flex-col bg-sand text-ink antialiased font-sans">
       {/* Toast Notification Container */}
       <ToastContainer />
 
       {/* ── Top Header ────────────────────────────────────────────── */}
       <header
-        className={`sticky top-0 z-40 border-b backdrop-blur-md transition-colors ${
+        className={`sticky top-0 z-40 border-b backdrop-blur-xl transition-colors ${
           isSuperAdmin
-            ? "bg-slate-950/95 border-slate-800 text-white"
-            : "bg-white/95 border-slate-200 shadow-sm text-slate-900"
+            ? "bg-slate-950/90 border-slate-800 text-white"
+            : "bg-white/85 border-slate-200/70 shadow-xs text-ink"
         }`}
       >
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
@@ -233,12 +231,12 @@ export default function Layout() {
               to={isSuperAdmin ? "/admin/dashboard" : isSeller ? "/seller/dashboard" : "/"}
               className="flex items-center gap-2.5 group"
             >
-              <div className="h-9 w-9 rounded-2xl bg-gradient-to-tr from-pink-600 via-rose-500 to-amber-500 flex items-center justify-center text-white font-display font-black text-lg shadow-md group-hover:scale-105 transition-transform duration-200">
+              <div className="h-9 w-9 rounded-2xl bg-gradient-to-tr from-pink-600 via-rose-500 to-amber-500 flex items-center justify-center text-white font-display font-extrabold text-lg shadow-card group-hover:scale-105 transition-all duration-200">
                 P
               </div>
-              <span className="font-display text-2xl font-bold tracking-tight">
-                <span className="text-pink-600">Pink</span>
-                <span className={isSuperAdmin ? "text-white" : "text-navy"}>CityHomes</span>
+              <span className="logo-text text-xl sm:text-2xl">
+                <span className="logo-accent">Pink</span>
+                <span className={isSuperAdmin ? "logo-white" : "logo-ink"}>CityHomes</span>
               </span>
             </Link>
 
@@ -316,12 +314,12 @@ export default function Layout() {
                     </NavLink>
                     <NavLink to="/customer/cart" className={navLink}>
                       <span className="flex items-center gap-1.5">
-                        <svg className="w-3.5 h-3.5 text-navy" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg className="w-3.5 h-3.5 text-ink" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                         </svg>
                         <span>Cart</span>
                         {cartCount > 0 && (
-                          <span className="rounded-full bg-navy px-1.5 py-0.2 text-[10px] font-bold text-white">
+                          <span className="rounded-full bg-ink px-1.5 py-0.2 text-[10px] font-bold text-white">
                             {cartCount}
                           </span>
                         )}
@@ -356,7 +354,7 @@ export default function Layout() {
                     <button
                       type="button"
                       onClick={() => setProfileDropdownOpen((prev) => !prev)}
-                      className="flex items-center gap-2 rounded-2xl border border-slate-200/80 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-navy hover:bg-slate-100 transition active:scale-95"
+                      className="flex items-center gap-2 rounded-2xl border border-slate-200/80 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-ink hover:bg-slate-100 transition active:scale-95"
                     >
                       <div className="h-6 w-6 rounded-full bg-pink-600 text-white flex items-center justify-center text-[11px] font-bold">
                         {user.name.charAt(0).toUpperCase()}
@@ -371,14 +369,14 @@ export default function Layout() {
                     {profileDropdownOpen && (
                       <div className="absolute right-0 mt-2 w-56 rounded-3xl border border-slate-200/80 bg-white p-2 shadow-xl animate-scale-in z-50">
                         <div className="px-3 py-2 border-b border-slate-100">
-                          <p className="text-xs font-bold text-navy truncate">{user.name}</p>
+                          <p className="text-xs font-bold text-ink truncate">{user.name}</p>
                           <p className="text-[11px] text-slate-500 truncate">{user.email}</p>
                         </div>
 
                         <div className="py-1 text-xs">
                           <Link
                             to="/customer/profile"
-                            className="flex items-center gap-2 px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-50 hover:text-navy transition font-medium"
+                            className="flex items-center gap-2 px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-50 hover:text-ink transition font-medium"
                           >
                             <UserIcon className="w-4 h-4 text-slate-500" />
                             <span>Profile &amp; Settings</span>
@@ -387,14 +385,14 @@ export default function Layout() {
                             <>
                               <Link
                                 to="/customer/favourites"
-                                className="flex items-center gap-2 px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-50 hover:text-navy transition font-medium"
+                                className="flex items-center gap-2 px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-50 hover:text-ink transition font-medium"
                               >
                                 <HeartIcon className="w-4 h-4 text-pink-600" filled />
                                 <span>Saved Homes</span>
                               </Link>
                               <Link
                                 to="/customer/orders"
-                                className="flex items-center gap-2 px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-50 hover:text-navy transition font-medium"
+                                className="flex items-center gap-2 px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-50 hover:text-ink transition font-medium"
                               >
                                 <BoxIcon className="w-4 h-4 text-slate-500" />
                                 <span>Orders &amp; Purchases</span>
@@ -428,13 +426,13 @@ export default function Layout() {
                   <div className="flex items-center gap-2">
                     <Link
                       to="/login"
-                      className="rounded-2xl px-4 py-2 text-xs font-semibold text-navy hover:text-pink-600 transition"
+                      className="rounded-2xl px-4 py-2 text-xs font-semibold text-ink hover:text-pink-600 transition"
                     >
                       Log in
                     </Link>
                     <Link
                       to="/register"
-                      className="rounded-2xl bg-navy px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-navy-800 transition active:scale-95"
+                      className="rounded-2xl bg-ink px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-slate-800 transition active:scale-95"
                     >
                       Sign up
                     </Link>
@@ -446,26 +444,32 @@ export default function Layout() {
 
           {/* ── Mobile Actions & Hamburger Button ── */}
           <div className="flex items-center gap-1.5 md:hidden">
-            {isCustomer && cartCount > 0 && (
-              <Link to="/customer/cart" className="relative p-2 text-slate-700 hover:text-navy" aria-label="Purchase Cart">
+            {isCustomer && (
+              <Link
+                to="/customer/cart"
+                className={`header-icon-btn ${isSuperAdmin ? "is-superadmin" : ""}`}
+                aria-label="Purchase Cart"
+              >
                 <CartIcon className="w-5 h-5" />
-                <span className="absolute top-1 right-1 rounded-full bg-pink-600 text-white text-[9px] font-bold h-4 w-4 flex items-center justify-center">
-                  {cartCount}
-                </span>
+                {cartCount > 0 && (
+                  <span className="badge-pop absolute top-1 right-1 rounded-full bg-pink-600 text-white text-[9px] font-bold h-4 w-4 flex items-center justify-center shadow-sm">
+                    {cartCount}
+                  </span>
+                )}
               </Link>
             )}
 
             <button
               type="button"
               onClick={() => setMobileMenuOpen(true)}
-              className={`p-2 rounded-2xl transition active:scale-95 ${
+              className={`header-icon-btn ${
                 isSuperAdmin
-                  ? "text-slate-300 hover:text-white bg-slate-900 border border-slate-800"
-                  : "text-slate-800 hover:bg-slate-100 border border-slate-300 bg-white shadow-xs"
+                  ? "is-superadmin bg-slate-900/60 border border-slate-800"
+                  : "bg-white border border-slate-200/70 shadow-xs"
               }`}
               aria-label="Open navigation menu"
             >
-              <MenuIcon className="w-6 h-6" />
+              <MenuIcon className="w-5 h-5" />
             </button>
           </div>
         </div>
@@ -494,7 +498,7 @@ export default function Layout() {
                       {user.name.charAt(0).toUpperCase()}
                     </div>
                     <div className="min-w-0 truncate">
-                      <p className="font-display font-bold text-sm text-navy truncate">{user.name}</p>
+                      <p className="font-display font-bold text-sm text-ink truncate">{user.name}</p>
                       <span className="inline-block rounded-full bg-pink-50 text-pink-700 text-[9px] font-bold px-2 py-0.5 uppercase tracking-wider">
                         {isSeller ? (user.sellerStatus === "APPROVED" ? "VERIFIED SELLER" : "SELLER") : user.role}
                       </span>
@@ -503,7 +507,7 @@ export default function Layout() {
                   <button
                     type="button"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="rounded-full p-2 text-slate-400 hover:text-navy hover:bg-slate-100 transition flex-shrink-0"
+                    className="rounded-full p-2 text-slate-400 hover:text-ink hover:bg-slate-100 transition flex-shrink-0"
                     aria-label="Close menu"
                   >
                     <CloseIcon className="w-5 h-5" />
@@ -515,14 +519,14 @@ export default function Layout() {
                     <div className="h-7 w-7 rounded-xl bg-gradient-to-tr from-pink-600 to-amber-500 flex items-center justify-center text-white font-display font-bold text-xs">
                       P
                     </div>
-                    <span className="font-display text-base font-bold text-navy">
+                    <span className="font-display text-base font-bold text-ink">
                       <span className="text-pink-600">Pink</span>CityHomes
                     </span>
                   </div>
                   <button
                     type="button"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="rounded-full p-1.5 text-slate-400 hover:text-navy hover:bg-slate-100 transition"
+                    className="rounded-full p-1.5 text-slate-400 hover:text-ink hover:bg-slate-100 transition"
                     aria-label="Close menu"
                   >
                     <CloseIcon className="w-5 h-5" />
@@ -576,13 +580,13 @@ export default function Layout() {
                     <div className="grid grid-cols-2 gap-2 pt-3">
                       <Link
                         to="/login"
-                        className="rounded-xl border border-slate-200 px-3 py-2.5 text-center text-xs font-semibold text-navy hover:bg-slate-50 transition"
+                        className="rounded-xl border border-slate-200 px-3 py-2.5 text-center text-xs font-semibold text-ink hover:bg-slate-50 transition"
                       >
                         Log In
                       </Link>
                       <Link
                         to="/register"
-                        className="rounded-xl bg-navy px-3 py-2.5 text-center text-xs font-semibold text-white shadow hover:bg-navy-800 transition"
+                        className="rounded-xl bg-ink px-3 py-2.5 text-center text-xs font-semibold text-white shadow hover:bg-slate-800 transition"
                       >
                         Sign Up
                       </Link>
@@ -615,7 +619,7 @@ export default function Layout() {
       </main>
 
       {/* ── Mobile Bottom App Bar (Fixed at bottom on phones, clean SVG icons, 5 items max) ───────── */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 border-t border-slate-200/80 backdrop-blur-md md:hidden px-1 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] pb-safe">
+      <nav className="bottom-nav px-1">
         <div className="flex items-center justify-around h-16">
           {isSuperAdmin ? (
             // Superadmin Bottom Nav
@@ -623,42 +627,52 @@ export default function Layout() {
               <NavLink to="/admin/dashboard" className={bottomNavLink}>
                 {({ isActive }) => (
                   <>
-                    <HomeIcon className={`w-5 h-5 mb-0.5 transition-transform duration-150 ${isActive ? "scale-110 text-pink-600" : ""}`} />
-                    <span>Home</span>
+                    <div className="nav-icon-wrap">
+                      <HomeIcon className={`nav-icon w-5 h-5 transition-all duration-200 ${isActive ? "" : ""}`} />
+                    </div>
+                    <span className="bottom-nav-label">Home</span>
                   </>
                 )}
               </NavLink>
               <NavLink to="/admin/users" className={bottomNavLink}>
                 {({ isActive }) => (
                   <>
-                    <UsersIcon className={`w-5 h-5 mb-0.5 transition-transform duration-150 ${isActive ? "scale-110 text-pink-600" : ""}`} />
-                    <span>Users</span>
+                    <div className="nav-icon-wrap">
+                      <UsersIcon className="nav-icon w-5 h-5 transition-all duration-200" />
+                    </div>
+                    <span className="bottom-nav-label">Users</span>
                   </>
                 )}
               </NavLink>
               <NavLink to="/admin/sellers" className={bottomNavLink}>
                 {({ isActive }) => (
                   <>
-                    <BuildingIcon className={`w-5 h-5 mb-0.5 transition-transform duration-150 ${isActive ? "scale-110 text-pink-600" : ""}`} />
-                    <span>Sellers</span>
+                    <div className="nav-icon-wrap">
+                      <BuildingIcon className="nav-icon w-5 h-5 transition-all duration-200" />
+                    </div>
+                    <span className="bottom-nav-label">Sellers</span>
                   </>
                 )}
               </NavLink>
               <NavLink to="/admin/properties" className={bottomNavLink}>
                 {({ isActive }) => (
                   <>
-                    <HomeIcon className={`w-5 h-5 mb-0.5 transition-transform duration-150 ${isActive ? "scale-110 text-pink-600" : ""}`} />
-                    <span>Properties</span>
+                    <div className="nav-icon-wrap">
+                      <HomeIcon className="nav-icon w-5 h-5 transition-all duration-200" />
+                    </div>
+                    <span className="bottom-nav-label">Properties</span>
                   </>
                 )}
               </NavLink>
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(true)}
-                className="flex flex-col items-center justify-center flex-1 py-1 px-1 text-[10px] font-semibold text-slate-500 hover:text-navy transition"
+                className="bottom-nav-item"
               >
-                <MenuIcon className="w-5 h-5 mb-0.5" />
-                <span>More</span>
+                <div className="nav-icon-wrap">
+                  <MenuIcon className="nav-icon w-5 h-5 transition-all duration-200" />
+                </div>
+                <span className="bottom-nav-label">More</span>
               </button>
             </>
           ) : isSeller ? (
@@ -667,48 +681,60 @@ export default function Layout() {
               <NavLink to="/seller/dashboard" className={bottomNavLink}>
                 {({ isActive }) => (
                   <>
-                    <DashboardIcon className={`w-5 h-5 mb-0.5 transition-transform duration-150 ${isActive ? "scale-110 text-pink-600" : ""}`} />
-                    <span className="truncate">Dashboard</span>
+                    <div className="nav-icon-wrap">
+                      <DashboardIcon className="nav-icon w-5 h-5 transition-all duration-200" />
+                    </div>
+                    <span className="bottom-nav-label truncate">Dashboard</span>
                   </>
                 )}
               </NavLink>
               <NavLink to="/properties" className={bottomNavLink}>
                 {({ isActive }) => (
                   <>
-                    <SearchIcon className={`w-5 h-5 mb-0.5 transition-transform duration-150 ${isActive ? "scale-110 text-pink-600" : ""}`} />
-                    <span>Buy</span>
+                    <div className="nav-icon-wrap">
+                      <SearchIcon className="nav-icon w-5 h-5 transition-all duration-200" />
+                    </div>
+                    <span className="bottom-nav-label">Buy</span>
                   </>
                 )}
               </NavLink>
               <NavLink to="/rentals" className={bottomNavLink}>
                 {({ isActive }) => (
                   <>
-                    <KeyIcon className={`w-5 h-5 mb-0.5 transition-transform duration-150 ${isActive ? "scale-110 text-pink-600" : ""}`} />
-                    <span>Rent</span>
+                    <div className="nav-icon-wrap">
+                      <KeyIcon className="nav-icon w-5 h-5 transition-all duration-200" />
+                    </div>
+                    <span className="bottom-nav-label">Rent</span>
                   </>
                 )}
               </NavLink>
               <NavLink to="/seller/properties" className={bottomNavLink}>
                 {({ isActive }) => (
                   <>
-                    <BuildingIcon className={`w-5 h-5 mb-0.5 transition-transform duration-150 ${isActive ? "scale-110 text-pink-600" : ""}`} />
-                    <span>Listings</span>
+                    <div className="nav-icon-wrap">
+                      <BuildingIcon className="nav-icon w-5 h-5 transition-all duration-200" />
+                    </div>
+                    <span className="bottom-nav-label">Listings</span>
                   </>
                 )}
               </NavLink>
               <NavLink to="/seller/clients" className={bottomNavLink}>
                 {({ isActive }) => (
                   <>
-                    <UsersIcon className={`w-5 h-5 mb-0.5 transition-transform duration-150 ${isActive ? "scale-110 text-pink-600" : ""}`} />
-                    <span>Leads</span>
+                    <div className="nav-icon-wrap">
+                      <UsersIcon className="nav-icon w-5 h-5 transition-all duration-200" />
+                    </div>
+                    <span className="bottom-nav-label">Leads</span>
                   </>
                 )}
               </NavLink>
               <NavLink to="/customer/profile" className={bottomNavLink}>
                 {({ isActive }) => (
                   <>
-                    <UserIcon className={`w-5 h-5 mb-0.5 transition-transform duration-150 ${isActive ? "scale-110 text-pink-600" : ""}`} />
-                    <span>Profile</span>
+                    <div className="nav-icon-wrap">
+                      <UserIcon className="nav-icon w-5 h-5 transition-all duration-200" />
+                    </div>
+                    <span className="bottom-nav-label">Profile</span>
                   </>
                 )}
               </NavLink>
@@ -719,50 +745,58 @@ export default function Layout() {
               <NavLink to="/properties" className={bottomNavLink}>
                 {({ isActive }) => (
                   <>
-                    <SearchIcon className={`w-5 h-5 mb-0.5 transition-transform duration-150 ${isActive ? "scale-110 text-pink-600" : ""}`} />
-                    <span>Buy</span>
+                    <div className="nav-icon-wrap">
+                      <SearchIcon className="nav-icon w-5 h-5 transition-all duration-200" />
+                    </div>
+                    <span className="bottom-nav-label">Buy</span>
                   </>
                 )}
               </NavLink>
               <NavLink to="/rentals" className={bottomNavLink}>
                 {({ isActive }) => (
                   <>
-                    <KeyIcon className={`w-5 h-5 mb-0.5 transition-transform duration-150 ${isActive ? "scale-110 text-pink-600" : ""}`} />
-                    <span>Rent</span>
+                    <div className="nav-icon-wrap">
+                      <KeyIcon className="nav-icon w-5 h-5 transition-all duration-200" />
+                    </div>
+                    <span className="bottom-nav-label">Rent</span>
                   </>
                 )}
               </NavLink>
               <NavLink to="/customer/favourites" className={bottomNavLink}>
                 {({ isActive }) => (
                   <>
-                    <div className="relative mb-0.5">
+                    <div className="nav-icon-wrap">
                       <HeartIcon
                         filled={isActive}
-                        className={`w-5 h-5 transition-transform duration-150 ${isActive ? "scale-110 text-pink-600" : ""}`}
+                        className="nav-icon w-5 h-5 transition-all duration-200"
                       />
                       {favCount > 0 && (
-                        <span className="absolute -top-1 -right-2 rounded-full bg-pink-600 text-white text-[9px] font-bold h-3.5 w-3.5 flex items-center justify-center">
+                        <span className="badge-pop absolute -top-1 -right-2 rounded-full bg-pink-600 text-white text-[9px] font-bold h-3.5 w-3.5 flex items-center justify-center shadow-sm">
                           {favCount}
                         </span>
                       )}
                     </div>
-                    <span>Saved</span>
+                    <span className="bottom-nav-label">Saved</span>
                   </>
                 )}
               </NavLink>
               <NavLink to="/customer/orders" className={bottomNavLink}>
                 {({ isActive }) => (
                   <>
-                    <BoxIcon className={`w-5 h-5 mb-0.5 transition-transform duration-150 ${isActive ? "scale-110 text-pink-600" : ""}`} />
-                    <span>Orders</span>
+                    <div className="nav-icon-wrap">
+                      <BoxIcon className="nav-icon w-5 h-5 transition-all duration-200" />
+                    </div>
+                    <span className="bottom-nav-label">Orders</span>
                   </>
                 )}
               </NavLink>
               <NavLink to="/customer/profile" className={bottomNavLink}>
                 {({ isActive }) => (
                   <>
-                    <UserIcon className={`w-5 h-5 mb-0.5 transition-transform duration-150 ${isActive ? "scale-110 text-pink-600" : ""}`} />
-                    <span>Profile</span>
+                    <div className="nav-icon-wrap">
+                      <UserIcon className="nav-icon w-5 h-5 transition-all duration-200" />
+                    </div>
+                    <span className="bottom-nav-label">Profile</span>
                   </>
                 )}
               </NavLink>
@@ -773,40 +807,50 @@ export default function Layout() {
               <NavLink to="/" end className={bottomNavLink}>
                 {({ isActive }) => (
                   <>
-                    <HomeIcon className={`w-5 h-5 mb-0.5 transition-transform duration-150 ${isActive ? "scale-110 text-pink-600" : ""}`} />
-                    <span>Home</span>
+                    <div className="nav-icon-wrap">
+                      <HomeIcon className="nav-icon w-5 h-5 transition-all duration-200" />
+                    </div>
+                    <span className="bottom-nav-label">Home</span>
                   </>
                 )}
               </NavLink>
               <NavLink to="/properties" className={bottomNavLink}>
                 {({ isActive }) => (
                   <>
-                    <SearchIcon className={`w-5 h-5 mb-0.5 transition-transform duration-150 ${isActive ? "scale-110 text-pink-600" : ""}`} />
-                    <span>Buy</span>
+                    <div className="nav-icon-wrap">
+                      <SearchIcon className="nav-icon w-5 h-5 transition-all duration-200" />
+                    </div>
+                    <span className="bottom-nav-label">Buy</span>
                   </>
                 )}
               </NavLink>
               <NavLink to="/rentals" className={bottomNavLink}>
                 {({ isActive }) => (
                   <>
-                    <KeyIcon className={`w-5 h-5 mb-0.5 transition-transform duration-150 ${isActive ? "scale-110 text-pink-600" : ""}`} />
-                    <span>Rent</span>
+                    <div className="nav-icon-wrap">
+                      <KeyIcon className="nav-icon w-5 h-5 transition-all duration-200" />
+                    </div>
+                    <span className="bottom-nav-label">Rent</span>
                   </>
                 )}
               </NavLink>
               <NavLink to="/customer/favourites" className={bottomNavLink}>
                 {({ isActive }) => (
                   <>
-                    <HeartIcon className={`w-5 h-5 mb-0.5 transition-transform duration-150 ${isActive ? "scale-110 text-pink-600" : ""}`} />
-                    <span>Saved</span>
+                    <div className="nav-icon-wrap">
+                      <HeartIcon filled={isActive} className="nav-icon w-5 h-5 transition-all duration-200" />
+                    </div>
+                    <span className="bottom-nav-label">Saved</span>
                   </>
                 )}
               </NavLink>
               <NavLink to="/login" className={bottomNavLink}>
                 {({ isActive }) => (
                   <>
-                    <UserIcon className={`w-5 h-5 mb-0.5 transition-transform duration-150 ${isActive ? "scale-110 text-pink-600" : ""}`} />
-                    <span>Sign In</span>
+                    <div className="nav-icon-wrap">
+                      <UserIcon className="nav-icon w-5 h-5 transition-all duration-200" />
+                    </div>
+                    <span className="bottom-nav-label">Sign In</span>
                   </>
                 )}
               </NavLink>

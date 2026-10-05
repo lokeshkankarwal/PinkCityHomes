@@ -209,8 +209,8 @@ export default function SellerClientsPage() {
       {loading ? (
         <div className="py-20 text-center text-ink/60">Loading CRM data...</div>
       ) : clients.length === 0 ? (
-        <div className="rounded-3xl border border-ink/10 bg-white p-12 text-center space-y-3">
-          <p className="font-serif text-xl font-bold">No clients recorded</p>
+        <div className="rounded-[1.25rem] border border-ink/10 bg-white p-12 text-center space-y-3">
+          <p className="font-display text-xl font-bold tracking-[-0.02em]">No clients recorded</p>
           <p className="text-sm text-ink/70">
             Click "+ Add Client" to record interested buyers or register manual leads.
           </p>
@@ -252,7 +252,7 @@ export default function SellerClientsPage() {
                         }`}
                       />
                       <div>
-                        <h3 className="font-serif text-base font-bold text-ink">{c.name}</h3>
+                        <h3 className="font-display text-base font-bold text-ink tracking-[-0.01em]">{c.name}</h3>
                         <p className="text-xs text-ink/60">{c.phone} {c.email ? `· ${c.email}` : ""}</p>
                       </div>
                     </div>
@@ -334,7 +334,7 @@ export default function SellerClientsPage() {
                       Added {new Date(selectedClient.createdAt).toLocaleDateString()}
                     </span>
                   </div>
-                  <h2 className="font-serif text-2xl font-bold mt-2 text-ink">{selectedClient.name}</h2>
+                  <h2 className="font-display text-2xl font-bold mt-2 text-ink tracking-[-0.02em]">{selectedClient.name}</h2>
                   <p className="text-xs text-ink/70">📞 {selectedClient.phone}</p>
                   {selectedClient.email && <p className="text-xs text-ink/70">✉️ {selectedClient.email}</p>}
                 </div>
@@ -366,7 +366,7 @@ export default function SellerClientsPage() {
 
                 {/* History */}
                 <div className="space-y-4 pt-2">
-                  <h4 className="font-serif text-base font-bold">Activity Timeline</h4>
+                  <h4 className="font-display text-base font-bold tracking-[-0.01em]">Activity Timeline</h4>
                   <div className="space-y-2 max-h-56 overflow-y-auto text-xs">
                     {(selectedClient.interactions || []).length === 0 ? (
                       <p className="text-ink/50 text-center py-3">No activity logged yet.</p>
@@ -385,7 +385,7 @@ export default function SellerClientsPage() {
                 </div>
               </div>
             ) : (
-              <div className="rounded-3xl border border-dashed border-ink/20 p-8 text-center text-xs text-ink/50">
+              <div className="rounded-[1.25rem] border border-dashed border-ink/20 p-8 text-center text-xs text-ink/50">
                 Select a client to view their full profile, interaction log, and property visits.
               </div>
             )}
@@ -396,9 +396,9 @@ export default function SellerClientsPage() {
       {/* Add Client Modal */}
       {showAddClient && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/60 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl space-y-4">
+          <div className="w-full max-w-md rounded-[1.25rem] bg-white p-6 shadow-2xl space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="font-serif text-xl font-bold">Register Client / Lead</h3>
+              <h3 className="font-display text-xl font-bold tracking-[-0.02em]">Register Client / Lead</h3>
               <button onClick={() => setShowAddClient(false)} className="text-xl text-ink/50 hover:text-ink">
                 &times;
               </button>
@@ -485,9 +485,9 @@ export default function SellerClientsPage() {
       {/* Log Interaction Modal */}
       {showLogInteraction && selectedClient && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/60 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl space-y-4">
+          <div className="w-full max-w-md rounded-[1.25rem] bg-white p-6 shadow-2xl space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="font-serif text-xl font-bold">Log Interaction</h3>
+              <h3 className="font-display text-xl font-bold tracking-[-0.02em]">Log Interaction</h3>
               <button onClick={() => setShowLogInteraction(false)} className="text-xl text-ink/50 hover:text-ink">
                 &times;
               </button>
@@ -546,9 +546,9 @@ export default function SellerClientsPage() {
       {/* Schedule Visit Modal */}
       {showScheduleVisit && selectedClient && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/60 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl space-y-4">
+          <div className="w-full max-w-md rounded-[1.25rem] bg-white p-6 shadow-2xl space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="font-serif text-xl font-bold">Schedule Property Visit</h3>
+              <h3 className="font-display text-xl font-bold tracking-[-0.02em]">Schedule Property Visit</h3>
               <button onClick={() => setShowScheduleVisit(false)} className="text-xl text-ink/50 hover:text-ink">
                 &times;
               </button>

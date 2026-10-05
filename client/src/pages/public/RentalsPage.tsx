@@ -110,20 +110,20 @@ export default function RentalsPage() {
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
   return (
-    <div className="space-y-6 pb-16 animate-fade-in">
+    <div className="space-y-6 pb-16 animate-in-page">
       {/* Header & Location Search */}
-      <div className="space-y-4">
-        <div>
-          <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-800">
+      <div className="space-y-4 stagger-0">
+        <div className="stagger-0">
+          <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[12px] font-bold text-emerald-800 leading-snug">
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
             </svg>
             <span>Rental Homes in Jaipur</span>
           </div>
-          <h1 className="font-display text-3xl font-bold mt-2 sm:text-4xl text-navy">
+          <h1 className="font-display text-3xl font-bold mt-2 sm:text-4xl text-ink tracking-[-0.02em] leading-[1.15]">
             Find Furnished &amp; Unfurnished Rentals in Jaipur
           </h1>
-          <p className="text-xs sm:text-sm text-slate-500 max-w-2xl mt-1">
+          <p className="page-subtitle mt-2 max-w-2xl">
             Browse verified flats, apartments, and villas available for monthly lease across Jaipur's premier residential localities.
           </p>
         </div>
@@ -203,11 +203,11 @@ export default function RentalsPage() {
                   setPage((p) => Math.max(1, p - 1));
                   window.scrollTo({ top: 120, behavior: "smooth" });
                 }}
-                className="rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-700 disabled:opacity-40 hover:bg-slate-50 transition shadow-xs active:scale-95"
+                className="btn-ghost px-4 py-2.5 text-[13px] disabled:opacity-40 shadow-xs active:scale-95"
               >
-                &larr; Previous
+                ← Previous
               </button>
-              <span className="text-xs font-bold text-slate-600 px-3">
+              <span className="text-[12px] font-bold text-slate-600 px-3 leading-snug">
                 Page {page} of {totalPages}
               </span>
               <button
@@ -216,9 +216,9 @@ export default function RentalsPage() {
                   setPage((p) => Math.min(totalPages, p + 1));
                   window.scrollTo({ top: 120, behavior: "smooth" });
                 }}
-                className="rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-700 disabled:opacity-40 hover:bg-slate-50 transition shadow-xs active:scale-95"
+                className="btn-ghost px-4 py-2.5 text-[13px] disabled:opacity-40 shadow-xs active:scale-95"
               >
-                Next &rarr;
+                Next →
               </button>
             </div>
           )}

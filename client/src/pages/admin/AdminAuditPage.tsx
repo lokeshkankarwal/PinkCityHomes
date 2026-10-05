@@ -43,12 +43,12 @@ export default function AdminAuditPage() {
   };
 
   return (
-    <div className="space-y-6 pb-16">
+    <div className="space-y-6 pb-16 animate-in-page">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="font-serif text-3xl font-bold">System Audit Logs</h1>
-          <p className="text-sm text-ink/70">
+        <div className="stagger-0">
+          <h1 className="font-display text-[28px] font-bold text-ink tracking-[-0.02em] leading-[1.15] mt-1">System Audit Logs</h1>
+          <p className="page-subtitle mt-2">
             Immutable event stream capturing administrative actions, seller onboarding, property deletions, and state transitions
           </p>
         </div>
@@ -79,14 +79,14 @@ export default function AdminAuditPage() {
       {loading ? (
         <div className="py-20 text-center text-ink/60">Loading audit trail...</div>
       ) : displayedLogs.length === 0 ? (
-        <div className="rounded-3xl border border-ink/10 bg-white p-12 text-center text-sm text-ink/60">
+        <div className="stagger-1 rounded-[1.25rem] border border-slate-200/70 bg-white p-12 shadow-card text-center text-sm text-ink/60">
           No audit log events found for the selected category.
         </div>
       ) : (
-        <div className="rounded-3xl border border-ink/10 bg-white p-6 shadow-sm overflow-x-auto">
+        <div className="stagger-1 rounded-[1.25rem] border border-slate-200/70 bg-white p-6 shadow-card overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead>
-              <tr className="border-b border-ink/10 text-xs font-semibold text-ink/60 uppercase">
+              <tr className="border-b border-ink/10 text-[12px] text-slate-500 leading-snug font-semibold text-ink/60 uppercase">
                 <th className="py-3 px-4">Timestamp</th>
                 <th className="py-3 px-4">Action</th>
                 <th className="py-3 px-4">Actor</th>
@@ -94,7 +94,7 @@ export default function AdminAuditPage() {
                 <th className="py-3 px-4">Audit Details</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-ink/5 text-xs">
+            <tbody className="divide-y divide-ink/5 text-[12px] text-slate-500 leading-snug">
               {displayedLogs.map((log) => (
                 <tr key={log.id} className="hover:bg-sand/20">
                   <td className="py-3 px-4 text-ink/60 whitespace-nowrap">
@@ -102,7 +102,7 @@ export default function AdminAuditPage() {
                   </td>
                   <td className="py-3 px-4">
                     <span
-                      className={`font-mono text-[11px] font-bold px-2 py-0.5 rounded-lg border ${getActionBadge(
+                      className={`font-mono label-ui font-bold px-2 py-0.5 rounded-lg border ${getActionBadge(
                         log.action
                       )}`}
                     >
@@ -113,7 +113,7 @@ export default function AdminAuditPage() {
                     {log.actor ? (
                       <div>
                         <p className="font-semibold">{log.actor.name}</p>
-                        <p className="text-[10px] text-ink/50 font-mono">{log.actor.email}</p>
+                        <p className="label-ui text-ink/50 font-mono">{log.actor.email}</p>
                       </div>
                     ) : (
                       <span className="text-ink/50 italic">System / Superadmin</span>
@@ -122,12 +122,12 @@ export default function AdminAuditPage() {
                   <td className="py-3 px-4">
                     <span className="font-semibold text-ink">{log.entityType}</span>
                     {log.entityId && (
-                      <p className="font-mono text-ink/40 text-[10px] truncate max-w-[140px]">
+                      <p className="font-mono text-ink/40 label-ui truncate max-w-[140px]">
                         {log.entityId}
                       </p>
                     )}
                   </td>
-                  <td className="py-3 px-4 font-mono text-[11px] text-ink/70 max-w-sm truncate">
+                  <td className="py-3 px-4 font-mono label-ui text-ink/70 max-w-sm truncate">
                     {log.metadata ? (
                       <span title={JSON.stringify(log.metadata, null, 2)}>
                         {JSON.stringify(log.metadata)}

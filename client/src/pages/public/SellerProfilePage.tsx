@@ -95,23 +95,23 @@ export default function SellerProfilePage() {
   ];
 
   return (
-    <div className="space-y-8 pb-20 animate-fade-in">
+    <div className="space-y-8 pb-20 animate-in-page">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-xs text-slate-500">
-        <Link to="/properties" className="hover:text-navy font-semibold transition">
+        <Link to="/properties" className="hover:text-ink font-semibold transition">
           Properties
         </Link>
         <span>/</span>
         <span>Verified Sellers</span>
         <span>/</span>
-        <span className="text-navy font-bold truncate max-w-[200px]">{seller.companyName || seller.name}</span>
+        <span className="text-ink font-bold truncate max-w-[200px]">{seller.companyName || seller.name}</span>
       </div>
 
       {/* Seller Header Profile Card */}
-      <div className="rounded-4xl border border-slate-200/80 bg-white p-6 sm:p-8 shadow-card">
+      <div className="rounded-[1.5rem] border border-slate-200/80 bg-white p-6 sm:p-8 shadow-card">
         <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
           <div className="flex items-start gap-5">
-            <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-3xl bg-gradient-to-tr from-pink-600 via-rose-500 to-amber-500 flex items-center justify-center text-white text-2xl sm:text-3xl font-bold font-display shadow-md overflow-hidden flex-shrink-0">
+            <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-2xl bg-gradient-to-tr from-pink-600 via-rose-500 to-amber-500 flex items-center justify-center text-white text-2xl sm:text-3xl font-bold font-display shadow-md overflow-hidden flex-shrink-0">
               {seller.avatarUrl ? (
                 <img src={imgSrc(seller.avatarUrl)} alt="" className="h-full w-full object-cover" />
               ) : (
@@ -121,7 +121,7 @@ export default function SellerProfilePage() {
 
             <div className="space-y-1.5">
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="font-display text-2xl sm:text-3xl font-bold text-navy">
+                <h1 className="font-display text-2xl sm:text-3xl font-bold text-ink">
                   {seller.companyName || seller.name}
                 </h1>
                 <span className="rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
@@ -131,7 +131,7 @@ export default function SellerProfilePage() {
 
               {seller.companyName && (
                 <p className="text-xs font-semibold text-slate-600 flex items-center gap-1.5">
-                  <span>👤</span> Listed by: <span className="text-navy font-bold">{seller.name}</span>
+                  <span>👤</span> Listed by: <span className="text-ink font-bold">{seller.name}</span>
                 </p>
               )}
 
@@ -142,7 +142,7 @@ export default function SellerProfilePage() {
                   </a>
                 )}
                 {seller.phone && (
-                  <a href={`tel:${seller.phone}`} className="hover:text-pink-600 transition flex items-center gap-1 font-semibold text-navy">
+                  <a href={`tel:${seller.phone}`} className="hover:text-pink-600 transition flex items-center gap-1 font-semibold text-ink">
                     <span>📞</span> {seller.phone}
                   </a>
                 )}
@@ -158,7 +158,7 @@ export default function SellerProfilePage() {
             {seller.phone && (
               <a
                 href={`tel:${seller.phone}`}
-                className="rounded-2xl bg-navy px-4 py-2.5 text-xs font-semibold text-white shadow hover:bg-navy-800 transition flex items-center gap-1.5 active:scale-95"
+                className="rounded-2xl bg-ink px-4 py-2.5 text-xs font-semibold text-white shadow hover:bg-slate-800 transition flex items-center gap-1.5 active:scale-95"
               >
                 <span>📞</span> Call Agent
               </a>
@@ -188,7 +188,7 @@ export default function SellerProfilePage() {
         <div className="grid grid-cols-3 gap-3 pt-6 mt-6 border-t border-slate-100">
           <div className="rounded-2xl bg-slate-50 p-4 text-center sm:text-left">
             <span className="text-[10px] uppercase font-bold text-slate-400">Total Listings</span>
-            <p className="font-display text-2xl font-bold text-navy mt-0.5">{stats.total}</p>
+            <p className="font-display text-2xl font-bold text-ink mt-0.5">{stats.total}</p>
           </div>
           <div className="rounded-2xl bg-slate-50 p-4 text-center sm:text-left">
             <span className="text-[10px] uppercase font-bold text-slate-400">For Sale</span>
@@ -205,7 +205,7 @@ export default function SellerProfilePage() {
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h2 className="font-display text-2xl font-bold text-navy">
+            <h2 className="font-display text-2xl font-bold text-ink">
               Properties by {seller.companyName || seller.name} ({filteredProperties.length})
             </h2>
             <p className="text-xs text-slate-500">

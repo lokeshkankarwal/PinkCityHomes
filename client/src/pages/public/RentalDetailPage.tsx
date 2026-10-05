@@ -27,10 +27,10 @@ export default function RentalDetailPage() {
   if (!property) {
     return (
       <div className="py-24 text-center space-y-4">
-        <h2 className="font-serif text-2xl font-bold">Rental Listing Not Found</h2>
+        <h2 className="font-display text-2xl font-bold tracking-[-0.02em]">Rental Listing Not Found</h2>
         <p className="text-sm text-ink/70">The property you are looking for is unavailable or has been removed.</p>
         <Link to="/rentals" className="inline-block rounded-xl bg-ink px-4 py-2 text-sm text-sand">
-          &larr; Back to Rentals
+          ← Back to Rentals
         </Link>
       </div>
     );
@@ -39,7 +39,7 @@ export default function RentalDetailPage() {
   const primaryImg = property.images?.[0]?.path;
 
   return (
-    <div className="space-y-8 pb-16">
+    <div className="space-y-8 pb-16 animate-in-page">
       <nav className="flex items-center gap-2 text-xs text-ink/60">
         <Link to="/" className="hover:text-ink">Home</Link>
         <span>/</span>
@@ -50,36 +50,36 @@ export default function RentalDetailPage() {
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-6">
-          <div className="overflow-hidden rounded-3xl border border-ink/10 bg-sand/30 shadow-sm">
+          <div className="overflow-hidden rounded-[1.25rem] border border-ink/10 bg-sand/30 shadow-sm">
             <img src={imgSrc(primaryImg)} alt={property.title} className="h-80 w-full object-cover" />
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 rounded-2xl border border-ink/10 bg-white p-5 shadow-sm">
             <div>
               <span className="text-xs text-ink/60 uppercase">Bedrooms</span>
-              <p className="font-serif text-lg font-bold">{property.bhk} BHK</p>
+              <p className="font-display text-lg font-bold tracking-[-0.01em]">{property.bhk} BHK</p>
             </div>
             <div>
               <span className="text-xs text-ink/60 uppercase">Carpet Area</span>
-              <p className="font-serif text-lg font-bold">{property.carpetArea} sq ft</p>
+              <p className="font-display text-lg font-bold tracking-[-0.01em]">{property.carpetArea} sq ft</p>
             </div>
             <div>
               <span className="text-xs text-ink/60 uppercase">Bathrooms</span>
-              <p className="font-serif text-lg font-bold">{property.bathrooms}</p>
+              <p className="font-display text-lg font-bold tracking-[-0.01em]">{property.bathrooms}</p>
             </div>
             <div>
               <span className="text-xs text-ink/60 uppercase">Furnishing</span>
-              <p className="font-serif text-lg font-bold capitalize">{property.furnishing.replace(/_/g, " ").toLowerCase()}</p>
+              <p className="font-display text-lg font-bold capitalize tracking-[-0.01em]">{property.furnishing.replace(/_/g, " ").toLowerCase()}</p>
             </div>
           </div>
 
           <div className="rounded-2xl border border-ink/10 bg-white p-6 shadow-sm space-y-3">
-            <h3 className="font-serif text-xl font-bold">Rental Overview</h3>
+            <h3 className="font-display text-xl font-bold tracking-[-0.02em]">Rental Overview</h3>
             <p className="text-sm text-ink/80 leading-relaxed whitespace-pre-line">{property.description}</p>
           </div>
 
           <div className="rounded-2xl border border-ink/10 bg-white p-6 shadow-sm space-y-4">
-            <h3 className="font-serif text-xl font-bold">Property Specifications</h3>
+            <h3 className="font-display text-xl font-bold tracking-[-0.02em]">Property Specifications</h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-y-4 gap-x-6 text-sm">
               <div>
                 <span className="text-ink/60">Monthly Rent</span>
@@ -111,11 +111,11 @@ export default function RentalDetailPage() {
 
         {/* Sidebar */}
         <div className="space-y-6">
-          <div className="rounded-3xl border border-ink/10 bg-white p-6 shadow-md space-y-6">
+          <div className="rounded-[1.25rem] border border-ink/10 bg-white p-6 shadow-md space-y-6">
             <div>
               <span className="text-xs uppercase tracking-wider text-moss font-semibold">For Rent</span>
-              <h1 className="mt-1 font-serif text-2xl font-bold">{property.title}</h1>
-              <p className="mt-3 text-3xl font-serif font-bold text-ink">
+              <h1 className="mt-1 font-display text-2xl font-bold tracking-[-0.02em]">{property.title}</h1>
+              <p className="mt-3 text-3xl font-display font-bold text-ink tracking-[-0.02em]">
                 {inr(property.price)} <span className="text-sm font-normal text-ink/60">/ month</span>
               </p>
             </div>
@@ -131,8 +131,8 @@ export default function RentalDetailPage() {
             </div>
           </div>
 
-          <div className="rounded-3xl border border-ink/10 bg-white p-5 shadow-sm space-y-3">
-            <h3 className="font-serif text-base font-bold">Location</h3>
+          <div className="rounded-[1.25rem] border border-ink/10 bg-white p-5 shadow-sm space-y-3">
+            <h3 className="font-display text-base font-bold tracking-[-0.01em]">Location</h3>
             <p className="text-sm font-semibold text-ink">📍 {property.locality}</p>
             <p className="text-xs text-ink/70 capitalize">{property.address || property.locality}, Jaipur, Rajasthan</p>
           </div>

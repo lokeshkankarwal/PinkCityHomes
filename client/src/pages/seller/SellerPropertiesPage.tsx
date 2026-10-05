@@ -488,12 +488,12 @@ export default function SellerPropertiesPage() {
       {/* 6-STEP PROPERTY CREATION & EDIT WIZARD MODAL */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/60 p-4 backdrop-blur-sm overflow-y-auto">
-          <div className="w-full max-w-2xl rounded-3xl bg-white p-6 sm:p-8 shadow-2xl space-y-5 my-8 max-h-[92vh] overflow-y-auto flex flex-col justify-between">
+          <div className="w-full max-w-2xl rounded-[1.25rem] bg-white p-6 sm:p-8 shadow-2xl space-y-5 my-8 max-h-[92vh] overflow-y-auto flex flex-col justify-between">
             {/* Modal Header */}
             <div>
               <div className="flex items-center justify-between border-b border-ink/10 pb-3">
                 <div>
-                  <h2 className="font-serif text-2xl font-bold">
+                  <h2 className="font-display text-2xl font-bold tracking-[-0.02em]">
                     {editingProperty ? "Edit Property Listing" : "Add Property Listing"}
                   </h2>
                   <p className="text-xs text-ink/60 mt-0.5">
@@ -827,9 +827,9 @@ export default function SellerPropertiesPage() {
                       min={1}
                       value={formData.price}
                       onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
-                      className="w-full rounded-xl border border-ink/20 px-3 py-2 text-sm font-serif font-bold text-ink focus:outline-none focus:ring-2 focus:ring-pink-300"
+                      className="w-full rounded-xl border border-ink/20 px-3 py-2 text-sm font-display font-bold text-ink focus:outline-none focus:ring-2 focus:ring-pink-300"
                     />
-                    <p className="mt-1 text-xs font-serif font-bold text-pink-700">
+                    <p className="mt-1 text-xs font-display font-bold text-pink-700">
                       Formatted: {inr(formData.price)} {formData.listingType === "RENT" ? "/ month" : ""}
                     </p>
                   </div>
@@ -838,7 +838,7 @@ export default function SellerPropertiesPage() {
                   {formData.carpetArea > 0 && formData.listingType !== "RENT" && (
                     <div className="rounded-2xl bg-sand/30 border border-ink/5 p-4 space-y-1">
                       <p className="font-semibold text-ink">Estimated Unit Rate</p>
-                      <p className="text-sm font-serif font-bold text-ink">
+                      <p className="text-sm font-display font-bold text-ink">
                         ₹{Math.round(formData.price / formData.carpetArea).toLocaleString("en-IN")} / sq ft
                       </p>
                       <p className="text-[11px] text-ink/60">
@@ -889,7 +889,7 @@ export default function SellerPropertiesPage() {
               {step === 6 && (
                 <div className="space-y-4 animate-fade-in">
                   <div className="rounded-2xl bg-sand/30 border border-ink/10 p-5 space-y-3">
-                    <h3 className="font-serif text-lg font-bold text-ink border-b border-ink/10 pb-2">
+                    <h3 className="font-display text-lg font-bold text-ink tracking-[-0.01em] border-b border-ink/10 pb-2">
                       Listing Summary
                     </h3>
 
@@ -915,7 +915,7 @@ export default function SellerPropertiesPage() {
 
                       <div>
                         <span className="text-ink/60">Price:</span>
-                        <p className="font-bold text-pink-700 font-serif text-base">
+                        <p className="font-bold text-pink-700 font-display text-base">
                           {inr(formData.price)} {formData.listingType === "RENT" ? "/mo" : ""}
                         </p>
                       </div>
@@ -962,7 +962,7 @@ export default function SellerPropertiesPage() {
                     onClick={handlePrevStep}
                     className="rounded-xl border border-ink/20 px-4 py-2 text-xs font-bold text-ink hover:bg-sand/60 transition"
                   >
-                    &larr; Back
+                    ← Back
                   </button>
                 ) : (
                   <button
@@ -980,7 +980,7 @@ export default function SellerPropertiesPage() {
                     onClick={handleNextStep}
                     className="rounded-xl bg-ink px-6 py-2.5 text-xs font-bold text-sand hover:bg-pink-700 transition shadow"
                   >
-                    Next: {stepsList[step].label} &rarr;
+                    Next: {stepsList[step].label} →
                   </button>
                 ) : (
                   <button
@@ -1000,9 +1000,9 @@ export default function SellerPropertiesPage() {
       {/* Upload Photos Modal */}
       {showUploadModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/60 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl space-y-4">
+          <div className="w-full max-w-lg rounded-[1.25rem] bg-white p-6 shadow-2xl space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="font-serif text-xl font-bold">Property Photos</h3>
+              <h3 className="font-display text-xl font-bold tracking-[-0.02em]">Property Photos</h3>
               <button
                 onClick={() => setShowUploadModal(null)}
                 className="text-xl text-ink/50 hover:text-ink"

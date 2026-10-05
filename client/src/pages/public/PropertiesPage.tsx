@@ -124,20 +124,20 @@ export default function PropertiesPage() {
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
   return (
-    <div className="space-y-6 pb-16 animate-fade-in">
+    <div className="space-y-6 pb-16 animate-in-page">
       {/* Header & Location Search */}
-      <div className="space-y-4">
-        <div>
-          <div className="inline-flex items-center gap-1.5 rounded-full border border-pink-200 bg-pink-50 px-3 py-1 text-xs font-bold text-pink-700">
+      <div className="space-y-4 stagger-0">
+        <div className="stagger-0">
+          <div className="inline-flex items-center gap-1.5 rounded-full border border-pink-200 bg-pink-50 px-3 py-1 text-[12px] font-bold text-pink-700 leading-snug">
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
             </svg>
             <span>Properties for Sale in Jaipur</span>
           </div>
-          <h1 className="font-display text-3xl font-bold mt-2 sm:text-4xl text-navy">
+          <h1 className="font-display text-3xl font-bold mt-2 sm:text-4xl text-ink tracking-[-0.02em] leading-[1.15]">
             Find Your Dream Home in the Pink City
           </h1>
-          <p className="text-xs sm:text-sm text-slate-500 max-w-2xl mt-1">
+          <p className="page-subtitle mt-2 max-w-2xl">
             Explore verified residential apartments, luxury villas, and independent houses across Jaipur's top micro-markets.
           </p>
         </div>
@@ -222,11 +222,11 @@ export default function PropertiesPage() {
                   setPage((p) => Math.max(1, p - 1));
                   window.scrollTo({ top: 120, behavior: "smooth" });
                 }}
-                className="rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-700 disabled:opacity-40 hover:bg-slate-50 transition shadow-xs active:scale-95"
+                className="btn-ghost px-4 py-2.5 text-[13px] disabled:opacity-40 shadow-xs active:scale-95"
               >
-                &larr; Previous
+                ← Previous
               </button>
-              <span className="text-xs font-bold text-slate-600 px-3">
+              <span className="text-[12px] font-bold text-slate-600 px-3 leading-snug">
                 Page {page} of {totalPages}
               </span>
               <button
@@ -235,9 +235,9 @@ export default function PropertiesPage() {
                   setPage((p) => Math.min(totalPages, p + 1));
                   window.scrollTo({ top: 120, behavior: "smooth" });
                 }}
-                className="rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-700 disabled:opacity-40 hover:bg-slate-50 transition shadow-xs active:scale-95"
+                className="btn-ghost px-4 py-2.5 text-[13px] disabled:opacity-40 shadow-xs active:scale-95"
               >
-                Next &rarr;
+                Next →
               </button>
             </div>
           )}

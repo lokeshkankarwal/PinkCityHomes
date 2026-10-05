@@ -70,11 +70,11 @@ export default function CartPage() {
   const total = cart?.items.reduce((sum, i) => sum + (i.property?.price || 0), 0) || 0;
 
   return (
-    <div className="space-y-6 pb-16 animate-fade-in">
-      <div>
-        <span className="text-xs font-bold uppercase tracking-wider text-pink-600">Checkout Cart</span>
-        <h1 className="font-display text-3xl font-bold text-navy mt-1">Purchase Closing Cart</h1>
-        <p className="text-xs sm:text-sm text-slate-500">
+    <div className="space-y-6 pb-16 animate-in-page">
+      <div className="stagger-0">
+        <span className="page-eyebrow">Checkout Cart</span>
+        <h1 className="page-title mt-1">Purchase Closing Cart</h1>
+        <p className="page-subtitle mt-2">
           Reserved inventory ready for title verification, escrow, and sub-registrar registry
         </p>
       </div>
@@ -89,7 +89,7 @@ export default function CartPage() {
             to="/customer/orders"
             className="rounded-2xl bg-emerald-700 px-4 py-2 text-white text-xs font-bold hover:bg-emerald-800 transition"
           >
-            View My Orders &rarr;
+            View My Orders →
           </Link>
         </div>
       )}
@@ -115,38 +115,38 @@ export default function CartPage() {
               return (
                 <div
                   key={item.id}
-                  className="flex flex-col sm:flex-row items-center gap-4 rounded-3xl border border-slate-200/80 bg-white p-4 shadow-card hover:shadow-card-hover transition"
+                  className="stagger-1 flex flex-col sm:flex-row items-center gap-4 rounded-[1.25rem] border border-slate-200/70 bg-white p-4 shadow-card card-hover"
                 >
                   <img
                     src={imgSrc(p?.images?.[0]?.path)}
                     alt=""
                     className="h-28 w-full sm:w-36 rounded-2xl object-cover bg-slate-100 flex-shrink-0"
                   />
-                  <div className="flex-1 space-y-1 text-center sm:text-left min-w-0">
-                    <span className="rounded-full bg-pink-50 text-pink-700 border border-pink-200 px-2.5 py-0.5 text-[10px] font-bold uppercase">
+                  <div className="flex-1 space-y-1.5 text-center sm:text-left min-w-0">
+                    <span className="rounded-full bg-pink-50 text-pink-700 border border-pink-200/80 px-2.5 py-0.5 text-[10.5px] font-bold tracking-[0.06em] uppercase">
                       {p?.bhk ? `${p.bhk} BHK` : "Property"}
                     </span>
-                    <h3 className="font-display text-base font-bold text-navy truncate">
+                    <h3 className="font-display text-base font-bold text-ink truncate tracking-[-0.01em] leading-snug">
                       {p?.title || "Property"}
                     </h3>
-                    <p className="text-xs text-slate-500 capitalize">
+                    <p className="text-[12px] text-slate-500 capitalize leading-snug">
                       📍 {p?.locality}, {p?.city || "Jaipur"}
                     </p>
-                    <p className="font-display text-lg font-bold text-navy pt-0.5">
+                    <p className="font-display text-lg font-bold text-ink pt-0.5 tracking-[-0.02em]">
                       {inr(p?.price)}
                     </p>
                   </div>
                   <div className="flex sm:flex-col gap-2 flex-shrink-0">
                     <Link
                       to={`/properties/${p?.id || item.propertyId}`}
-                      className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition text-center"
+                      className="btn-ghost px-3 py-2 text-[12px] min-h-[36px]"
                     >
                       View
                     </Link>
                     <button
                       type="button"
                       onClick={() => void handleRemove(item.propertyId, p?.title)}
-                      className="rounded-xl border border-rose-200 bg-rose-50/60 px-3 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-100 transition"
+                      className="btn-danger px-3 py-2 text-[12px] min-h-[36px]"
                     >
                       Remove
                     </button>
@@ -158,13 +158,13 @@ export default function CartPage() {
 
           {/* Order Summary sidebar */}
           <div className="space-y-4">
-            <div className="rounded-4xl border border-slate-200/80 bg-white p-6 shadow-card space-y-5">
-              <h2 className="font-display text-xl font-bold text-navy">Order Summary</h2>
+            <div className="stagger-2 rounded-[1.5rem] border border-slate-200/70 bg-white p-6 shadow-card space-y-5 card-hover">
+              <h2 className="font-display text-xl font-bold text-ink tracking-[-0.02em]">Order Summary</h2>
 
-              <div className="space-y-2.5 text-xs text-slate-600 border-b border-slate-100 pb-4">
+              <div className="space-y-2.5 text-[13px] text-slate-500 border-b border-slate-100 pb-4">
                 <div className="flex justify-between">
                   <span>Reserved Properties</span>
-                  <span className="font-bold text-navy">{cart.items.length}</span>
+                  <span className="font-bold text-ink">{cart.items.length}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Title Verification Fee</span>
@@ -177,20 +177,20 @@ export default function CartPage() {
               </div>
 
               <div className="flex items-baseline justify-between pt-1">
-                <span className="text-sm font-bold text-navy">Total Value</span>
-                <span className="font-display text-2xl font-bold text-navy">{inr(total)}</span>
+                <span className="text-[14px] font-bold text-ink">Total Value</span>
+                <span className="font-display text-2xl font-bold text-ink tracking-[-0.02em]">{inr(total)}</span>
               </div>
 
               <button
                 type="button"
                 onClick={handleCheckout}
                 disabled={checkingOut}
-                className="w-full rounded-2xl bg-pink-600 py-3.5 text-xs sm:text-sm font-semibold text-white shadow-md hover:bg-pink-700 transition active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+                className="w-full btn-accent py-3.5 text-[14px] disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {checkingOut ? (
                   <span>Processing Closing...</span>
                 ) : (
-                  <span>Initiate Closing &rarr;</span>
+                  <span>Initiate Closing →</span>
                 )}
               </button>
 

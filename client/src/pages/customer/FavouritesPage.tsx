@@ -48,11 +48,11 @@ export default function FavouritesPage() {
   };
 
   return (
-    <div className="space-y-6 pb-16 animate-fade-in">
-      <div>
-        <span className="text-xs font-bold uppercase tracking-wider text-pink-600">Saved Shortlist</span>
-        <h1 className="font-display text-3xl font-bold text-navy mt-1">Saved Properties</h1>
-        <p className="text-xs sm:text-sm text-slate-500">
+    <div className="space-y-6 pb-16 animate-in-page">
+      <div className="stagger-0">
+        <span className="page-eyebrow">Saved Shortlist</span>
+        <h1 className="page-title mt-1">Saved Properties</h1>
+        <p className="page-subtitle mt-2">
           Your shortlisted homes and luxury residences for quick comparison and site visits
         </p>
       </div>
@@ -84,50 +84,50 @@ export default function FavouritesPage() {
             return (
               <article
                 key={fav.id}
-                className="overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-card hover:shadow-card-hover transition-all duration-200 flex flex-col justify-between"
+                className="stagger-1 overflow-hidden rounded-[1.25rem] border border-slate-200/70 bg-white shadow-card card-hover flex flex-col justify-between group"
               >
                 <div>
                   <Link to={`/properties/${targetId}`} className="block relative aspect-[16/10] overflow-hidden bg-slate-100">
                     <img
                       src={imgSrc(image)}
                       alt=""
-                      className="h-full w-full object-cover hover:scale-105 transition-transform duration-300"
+                      className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
                     />
                     <div className="absolute top-3 left-3">
-                      <span className="rounded-full bg-navy-950/80 text-white text-[10px] font-bold px-2.5 py-0.5 tracking-wider uppercase backdrop-blur-sm">
+                      <span className="rounded-full bg-navy-950/80 text-white text-[10.5px] font-bold px-2.5 py-0.5 tracking-[0.06em] uppercase backdrop-blur-sm shadow-xs">
                         {p?.bhk ? `${p.bhk} BHK` : "Saved Home"}
                       </span>
                     </div>
                   </Link>
 
-                  <div className="p-4 space-y-1.5">
+                  <div className="p-4 space-y-2">
                     <Link to={`/properties/${targetId}`}>
-                      <h3 className="font-display text-base font-bold text-navy line-clamp-1 hover:text-pink-600 transition">
+                      <h3 className="font-display text-[15px] font-bold text-ink line-clamp-1 hover:text-pink-600 transition-colors duration-200 tracking-[-0.01em] leading-snug">
                         {title}
                       </h3>
                     </Link>
                     {price != null && (
-                      <p className="font-display text-xl font-bold text-navy">{inr(price)}</p>
+                      <p className="font-display text-xl font-bold text-ink tracking-[-0.02em]">{inr(price)}</p>
                     )}
                     {locality && (
-                      <p className="text-xs text-slate-500 capitalize flex items-center gap-1">
+                      <p className="text-[12px] text-slate-500 capitalize flex items-center gap-1 leading-snug">
                         <span>📍</span> {locality}, Jaipur
                       </p>
                     )}
                   </div>
                 </div>
 
-                <div className="border-t border-slate-100 p-3.5 flex justify-between items-center bg-slate-50/60">
+                <div className="border-t border-slate-100/80 p-3.5 flex justify-between items-center bg-slate-50/50">
                   <Link
                     to={`/properties/${targetId}`}
-                    className="text-xs font-bold text-pink-600 hover:text-pink-700 transition"
+                    className="btn-text"
                   >
-                    View Details &rarr;
+                    View Details →
                   </Link>
                   <button
                     type="button"
                     onClick={() => void handleRemove(fav.id, title)}
-                    className="text-xs font-semibold text-rose-600 hover:text-rose-800 transition"
+                    className="text-[12px] font-semibold text-rose-600 hover:text-rose-700 transition-colors duration-200 min-h-[36px] inline-flex items-center px-2 rounded-xl hover:bg-rose-50"
                   >
                     Remove
                   </button>

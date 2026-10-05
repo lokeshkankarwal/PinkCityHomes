@@ -94,13 +94,13 @@ export default function AdminDisabledPage() {
   };
 
   return (
-    <div className="space-y-6 pb-16">
+    <div className="space-y-6 pb-16 animate-in-page">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <span className="text-xs uppercase tracking-wider text-red-700 font-bold">Platform Governance</span>
-          <h1 className="font-serif text-3xl font-bold mt-1">Disabled &amp; Suspended Directory</h1>
-          <p className="text-sm text-ink/70">
+        <div className="stagger-0">
+          <span className="page-eyebrow text-red-700">Platform Governance</span>
+          <h1 className="font-display text-[28px] font-bold text-ink tracking-[-0.02em] leading-[1.15] mt-1">Disabled &amp; Suspended Directory</h1>
+          <p className="page-subtitle mt-2">
             Audit, inspect, and reinstate disabled customer accounts, suspended sellers, and deactivated property listings
           </p>
         </div>
@@ -148,14 +148,14 @@ export default function AdminDisabledPage() {
       ) : activeTab === "users" ? (
         /* Users Tab */
         data.users.length === 0 ? (
-          <div className="rounded-3xl border border-ink/10 bg-white p-12 text-center text-sm text-ink/60">
+          <div className="rounded-[1.25rem] border border-ink/10 bg-white p-12 text-center text-sm text-ink/60 stagger-1">
             No disabled user accounts found. All registered users are in active status.
           </div>
         ) : (
-          <div className="rounded-3xl border border-ink/10 bg-white p-6 shadow-sm overflow-x-auto">
+          <div className="stagger-1 rounded-[1.25rem] border border-slate-200/70 bg-white p-6 shadow-card overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="border-b border-ink/10 text-xs font-semibold text-ink/60 uppercase">
+                <tr className="border-b border-ink/10 text-[12px] text-slate-500 leading-snug font-semibold text-ink/60 uppercase">
                   <th className="py-3 px-4">User</th>
                   <th className="py-3 px-4">Email</th>
                   <th className="py-3 px-4">Role</th>
@@ -167,13 +167,13 @@ export default function AdminDisabledPage() {
                 {data.users.map((u) => (
                   <tr key={u.id} className="hover:bg-sand/20">
                     <td className="py-3 px-4 font-semibold text-ink">{u.name}</td>
-                    <td className="py-3 px-4 text-xs font-mono text-ink/70">{u.email}</td>
+                    <td className="py-3 px-4 text-[12px] text-slate-500 leading-snug font-mono text-ink/70">{u.email}</td>
                     <td className="py-3 px-4">
-                      <span className="rounded-full bg-ink/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-ink">
+                      <span className="label-ui rounded-full bg-ink/10 px-2.5 py-0.5 font-bold uppercase tracking-wider text-ink">
                         {u.role}
                       </span>
                     </td>
-                    <td className="py-3 px-4 text-xs text-ink/60">
+                    <td className="py-3 px-4 text-[12px] text-slate-500 leading-snug text-ink/60">
                       {u.disabledAt ? new Date(u.disabledAt).toLocaleDateString() : "Previously"}
                     </td>
                     <td className="py-3 px-4 text-right">
@@ -185,7 +185,7 @@ export default function AdminDisabledPage() {
                             name: u.name,
                           })
                         }
-                        className="rounded-xl bg-moss/10 text-moss border border-moss/30 px-3 py-1 text-xs font-semibold hover:bg-moss/20 transition"
+                        className="btn-primary bg-moss/10 text-moss border-moss/30 px-3 py-1 text-[13px] hover:bg-moss/20"
                       >
                         Restore / Enable
                       </button>
@@ -199,14 +199,14 @@ export default function AdminDisabledPage() {
       ) : activeTab === "sellers" ? (
         /* Sellers Tab */
         data.sellers.length === 0 ? (
-          <div className="rounded-3xl border border-ink/10 bg-white p-12 text-center text-sm text-ink/60">
+          <div className="stagger-1 rounded-[1.25rem] border border-ink/10 bg-white p-12 text-center text-sm text-ink/60">
             No suspended or disabled sellers found. All agency accounts are in good standing.
           </div>
         ) : (
-          <div className="rounded-3xl border border-ink/10 bg-white p-6 shadow-sm overflow-x-auto">
+          <div className="stagger-1 rounded-[1.25rem] border border-slate-200/70 bg-white p-6 shadow-card overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="border-b border-ink/10 text-xs font-semibold text-ink/60 uppercase">
+                <tr className="border-b border-ink/10 text-[12px] text-slate-500 leading-snug font-semibold text-ink/60 uppercase">
                   <th className="py-3 px-4">Seller / Agency</th>
                   <th className="py-3 px-4">Contact</th>
                   <th className="py-3 px-4">Status</th>
@@ -219,24 +219,24 @@ export default function AdminDisabledPage() {
                   <tr key={s.id} className="hover:bg-sand/20">
                     <td className="py-3 px-4">
                       <p className="font-semibold text-ink">{s.user?.name}</p>
-                      <p className="text-xs text-brass font-medium">{s.companyName || "Direct Seller"}</p>
+                      <p className="text-[12px] text-slate-500 leading-snug text-brass font-medium">{s.companyName || "Direct Seller"}</p>
                     </td>
-                    <td className="py-3 px-4 text-xs text-ink/70">
+                    <td className="py-3 px-4 text-[12px] text-slate-500 leading-snug text-ink/70">
                       <p className="font-mono">{s.user?.email}</p>
                       {s.user?.phone && <p>{s.user.phone}</p>}
                     </td>
                     <td className="py-3 px-4">
-                      <span className="rounded-full bg-red-100 text-red-800 border border-red-200 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider">
+                      <span className="label-ui rounded-full bg-red-100 text-red-800 border border-red-200 px-2.5 py-0.5 font-bold uppercase tracking-wider">
                         {s.status}
                       </span>
                     </td>
-                    <td className="py-3 px-4 text-xs text-ink/60">
+                    <td className="py-3 px-4 text-[12px] text-slate-500 leading-snug text-ink/60">
                       {new Date(s.createdAt).toLocaleDateString()}
                     </td>
                     <td className="py-3 px-4 text-right space-x-2">
                       <Link
                         to={`/admin/sellers/${s.id}`}
-                        className="rounded-xl border border-ink/20 px-3 py-1 text-xs font-semibold text-ink hover:bg-sand transition"
+                        className="btn-ghost text-[13px] border-ink/20 px-3 py-1 text-ink hover:bg-sand"
                       >
                         Inspect
                       </Link>
@@ -248,7 +248,7 @@ export default function AdminDisabledPage() {
                             name: s.user?.name || s.companyName || "Seller",
                           })
                         }
-                        className="rounded-xl bg-moss/10 text-moss border border-moss/30 px-3 py-1 text-xs font-semibold hover:bg-moss/20 transition"
+                        className="btn-primary bg-moss/10 text-moss border-moss/30 px-3 py-1 text-[13px] hover:bg-moss/20"
                       >
                         Restore / Enable
                       </button>
@@ -262,15 +262,15 @@ export default function AdminDisabledPage() {
       ) : (
         /* Properties Tab */
         data.properties.length === 0 ? (
-          <div className="rounded-3xl border border-ink/10 bg-white p-12 text-center text-sm text-ink/60">
+          <div className="stagger-1 rounded-[1.25rem] border border-ink/10 bg-white p-12 text-center text-sm text-ink/60">
             No inactive or disabled properties found. All platform inventory is active or marked sold.
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
-            {data.properties.map((p) => (
+            {data.properties.map((p, idx) => (
               <div
                 key={p.id}
-                className="overflow-hidden rounded-3xl border border-ink/10 bg-white shadow-sm transition hover:shadow-md flex flex-col justify-between"
+                className={`stagger-${(idx % 3) + 1} overflow-hidden rounded-[1.25rem] border border-slate-200/70 bg-white shadow-card transition hover:shadow-md flex flex-col justify-between card-hover`}
               >
                 <div>
                   <div className="relative">
@@ -280,35 +280,35 @@ export default function AdminDisabledPage() {
                       className="h-44 w-full object-cover grayscale opacity-80"
                     />
                     <div className="absolute top-3 left-3 flex flex-wrap gap-1.5 z-10">
-                      <span className="rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-amber-600 text-white">
+                      <span className="label-ui rounded-full px-2.5 py-0.5 font-bold uppercase tracking-wider bg-amber-600 text-white">
                         {p.status}
                       </span>
-                      <span className="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-brass text-ink">
+                      <span className="label-ui rounded-full px-2 py-0.5 font-bold uppercase tracking-wider bg-brass text-ink">
                         {p.listingType === "RENT" ? "FOR RENT" : "FOR SALE"}
                       </span>
                     </div>
                   </div>
 
                   <div className="p-4 space-y-2">
-                    <h3 className="font-serif text-base font-bold line-clamp-1">{p.title}</h3>
-                    <p className="font-serif text-lg font-bold text-brass">
+                    <h3 className="font-display text-base font-bold tracking-[-0.01em] leading-snug line-clamp-1">{p.title}</h3>
+                    <p className="font-display text-lg font-bold tracking-[-0.02em] text-brass">
                       {p.listingType === "RENT" ? `${inr(p.price)}/mo` : inr(p.price)}
                     </p>
-                    <p className="text-xs text-ink/70">
+                    <p className="text-[12px] text-slate-500 leading-snug text-ink/70">
                       {p.bhk} BHK · {p.carpetArea} sq ft · <span className="capitalize">{p.locality}</span>
                     </p>
-                    <p className="text-xs text-ink/50">Seller: {p.seller?.name || "Agency"}</p>
+                    <p className="text-[12px] text-slate-500 leading-snug text-ink/50">Seller: {p.seller?.name || "Agency"}</p>
                   </div>
                 </div>
 
-                <div className="border-t border-ink/5 p-3 bg-sand/20 flex items-center justify-between text-xs">
+                <div className="border-t border-ink/5 p-3 bg-sand/20 flex items-center justify-between text-[12px] text-slate-500 leading-snug">
                   <Link
                     to={`/properties/${p.id}`}
                     target="_blank"
                     rel="noreferrer"
                     className="font-semibold text-moss hover:underline"
                   >
-                    View Listing &rarr;
+                    View Listing →
                   </Link>
                   <button
                     onClick={() =>
@@ -318,7 +318,7 @@ export default function AdminDisabledPage() {
                         name: p.title,
                       })
                     }
-                    className="rounded-xl bg-moss px-3 py-1 font-semibold text-white shadow-sm hover:bg-moss/90 transition"
+                    className="btn-primary bg-moss px-3 py-1 text-[13px] font-semibold text-white shadow-sm hover:bg-moss/90"
                   >
                     Re-enable Listing
                   </button>

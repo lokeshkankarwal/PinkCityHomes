@@ -77,11 +77,11 @@ export default function AdminUsersPage() {
   };
 
   return (
-    <div className="space-y-6 pb-16">
+    <div className="space-y-6 pb-16 animate-in-page">
       {/* Header */}
-      <div>
-        <h1 className="font-serif text-3xl font-bold">User Directory</h1>
-        <p className="text-sm text-ink/70">
+      <div className="stagger-0">
+        <h1 className="font-display text-[28px] font-bold text-ink tracking-[-0.02em] leading-[1.15] mt-1">User Directory</h1>
+        <p className="page-subtitle mt-2">
           Search, audit, and manage buyer, seller, and client accounts across PinkCityHomes
         </p>
       </div>
@@ -128,14 +128,14 @@ export default function AdminUsersPage() {
       {loading ? (
         <div className="py-20 text-center text-ink/60">Loading users...</div>
       ) : users.length === 0 ? (
-        <div className="rounded-3xl border border-ink/10 bg-white p-12 text-center text-sm text-ink/60">
+        <div className="stagger-1 rounded-[1.25rem] border border-slate-200/70 bg-white p-12 shadow-card text-center text-sm text-ink/60">
           No users found matching your search criteria.
         </div>
       ) : (
-        <div className="rounded-3xl border border-ink/10 bg-white p-6 shadow-sm overflow-x-auto">
+        <div className="stagger-1 rounded-[1.25rem] border border-slate-200/70 bg-white p-6 shadow-card overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead>
-              <tr className="border-b border-ink/10 text-xs font-semibold text-ink/60 uppercase">
+              <tr className="border-b border-ink/10 text-[12px] text-slate-500 leading-snug font-semibold text-ink/60 uppercase">
                 <th className="py-3 px-4">User</th>
                 <th className="py-3 px-4">Role</th>
                 <th className="py-3 px-4">Status / Company</th>
@@ -151,12 +151,12 @@ export default function AdminUsersPage() {
                   <tr key={u.id} className="hover:bg-sand/20">
                     <td className="py-3 px-4">
                       <p className="font-semibold text-ink">{u.name}</p>
-                      <p className="text-xs font-mono text-ink/60">{u.email}</p>
-                      {u.phone && <p className="text-[11px] text-ink/50">{u.phone}</p>}
+                      <p className="text-[12px] text-slate-500 leading-snug font-mono text-ink/60">{u.email}</p>
+                      {u.phone && <p className="label-ui text-ink/50">{u.phone}</p>}
                     </td>
                     <td className="py-3 px-4">
                       <span
-                        className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                        className={`label-ui rounded-full px-2.5 py-0.5 font-bold uppercase tracking-wider ${
                           u.role === "SUPERADMIN"
                             ? "bg-ink text-sand"
                             : u.role === "SELLER"
@@ -167,9 +167,9 @@ export default function AdminUsersPage() {
                         {u.role}
                       </span>
                     </td>
-                    <td className="py-3 px-4 text-xs">
+                    <td className="py-3 px-4 text-[12px] text-slate-500 leading-snug">
                       {isUserDisabled ? (
-                        <span className="rounded-full bg-red-100 text-red-800 border border-red-200 px-2 py-0.5 text-[10px] font-bold uppercase">
+                        <span className="label-ui rounded-full bg-red-100 text-red-800 border border-red-200 px-2 py-0.5 font-bold uppercase">
                           Disabled
                         </span>
                       ) : u.sellerProfile ? (
@@ -180,10 +180,10 @@ export default function AdminUsersPage() {
                         <span className="text-moss font-medium">Active</span>
                       )}
                     </td>
-                    <td className="py-3 px-4 text-xs">
+                    <td className="py-3 px-4 text-[12px] text-slate-500 leading-snug">
                       {u.role === "SELLER" ? (
                         <span
-                          className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                          className={`label-ui rounded-full px-2 py-0.5 font-bold uppercase tracking-wider ${
                             u.sellerProfile?.status === "APPROVED"
                               ? "bg-moss/10 text-moss border border-moss/30"
                               : u.sellerProfile?.status === "REJECTED"
@@ -202,14 +202,14 @@ export default function AdminUsersPage() {
                             : "Pending Approval"}
                         </span>
                       ) : u.role === "SUPERADMIN" ? (
-                        <span className="text-ink/40 text-[11px]">System Superadmin</span>
+                        <span className="text-ink/40 label-ui">System Superadmin</span>
                       ) : u.emailVerifiedAt ? (
                         <span className="font-semibold text-moss">Verified ✓</span>
                       ) : (
                         <span className="text-amber-800 font-medium">Pending OTP</span>
                       )}
                     </td>
-                    <td className="py-3 px-4 text-xs text-ink/60">
+                    <td className="py-3 px-4 text-[12px] text-slate-500 leading-snug text-ink/60">
                       {new Date(u.createdAt).toLocaleDateString()}
                     </td>
                     <td className="py-3 px-4 text-right">
@@ -217,14 +217,14 @@ export default function AdminUsersPage() {
                         isUserDisabled ? (
                           <button
                             onClick={() => setTargetUser({ user: u, action: "ENABLE" })}
-                            className="rounded-xl bg-moss/10 text-moss border border-moss/30 px-3 py-1 text-xs font-semibold hover:bg-moss/20 transition"
+                            className="btn-primary bg-moss/10 text-moss border-moss/30 px-3 py-1 text-[13px] hover:bg-moss/20"
                           >
                             Re-enable
                           </button>
                         ) : (
                           <button
                             onClick={() => setTargetUser({ user: u, action: "DISABLE" })}
-                            className="rounded-xl border border-red-200 bg-red-50 text-red-700 px-3 py-1 text-xs font-semibold hover:bg-red-100 transition"
+                            className="btn-danger border-red-200 bg-red-50 text-red-700 px-3 py-1 text-[13px] hover:bg-red-100"
                           >
                             Disable
                           </button>

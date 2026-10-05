@@ -155,11 +155,11 @@ export default function AdminSellersPage() {
   };
 
   return (
-    <div className="space-y-6 pb-16">
+    <div className="space-y-6 pb-16 animate-in-page">
       {/* Header */}
-      <div>
-        <h1 className="font-serif text-3xl font-bold">Seller Management</h1>
-        <p className="text-sm text-ink/70">
+      <div className="stagger-0">
+        <h1 className="font-display text-[28px] font-bold text-ink tracking-[-0.02em] leading-[1.15] mt-1">Seller Management</h1>
+        <p className="page-subtitle mt-2">
           Review, approve, reject, and govern property seller and agency access on PinkCityHomes
         </p>
       </div>
@@ -212,14 +212,14 @@ export default function AdminSellersPage() {
       {loading ? (
         <div className="py-20 text-center text-ink/60">Loading sellers directory...</div>
       ) : sellers.length === 0 ? (
-        <div className="rounded-3xl border border-ink/10 bg-white p-12 text-center text-sm text-ink/60">
+        <div className="stagger-1 rounded-[1.25rem] border border-slate-200/70 bg-white p-12 shadow-card text-center text-sm text-ink/60">
           No sellers found in the &ldquo;{activeTab}&rdquo; view.
         </div>
       ) : (
-        <div className="rounded-3xl border border-ink/10 bg-white p-6 shadow-sm overflow-x-auto">
+        <div className="stagger-1 rounded-[1.25rem] border border-slate-200/70 bg-white p-6 shadow-card overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead>
-              <tr className="border-b border-ink/10 text-xs font-semibold text-ink/60 uppercase">
+              <tr className="border-b border-ink/10 text-[12px] text-slate-500 leading-snug font-semibold text-ink/60 uppercase">
                 <th className="py-3 px-4">Name</th>
                 <th className="py-3 px-4">Company Name</th>
                 <th className="py-3 px-4">Email</th>
@@ -248,25 +248,25 @@ export default function AdminSellersPage() {
                       </Link>
                     </td>
 
-                    <td className="py-3.5 px-4 text-xs font-medium text-brass">
+                    <td className="py-3.5 px-4 text-[12px] text-slate-500 leading-snug font-medium text-brass">
                       {s.companyName ? `🏢 ${s.companyName}` : "—"}
                     </td>
 
-                    <td className="py-3.5 px-4 font-mono text-xs text-ink/70">
+                    <td className="py-3.5 px-4 font-mono text-[12px] text-slate-500 leading-snug text-ink/70">
                       {s.user?.email}
                     </td>
 
-                    <td className="py-3.5 px-4 text-xs text-ink/70">
+                    <td className="py-3.5 px-4 text-[12px] text-slate-500 leading-snug text-ink/70">
                       {s.user?.phone || "—"}
                     </td>
 
-                    <td className="py-3.5 px-4 text-xs text-ink/60">
+                    <td className="py-3.5 px-4 text-[12px] text-slate-500 leading-snug text-ink/60">
                       {new Date(s.createdAt).toLocaleDateString()}
                     </td>
 
                     <td className="py-3.5 px-4">
                       <span
-                        className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                        className={`label-ui rounded-full px-2.5 py-0.5 font-bold uppercase tracking-wider ${
                           isSuspended
                             ? "bg-red-100 text-red-800 border border-red-200"
                             : isPending
@@ -286,7 +286,7 @@ export default function AdminSellersPage() {
                       </span>
                     </td>
 
-                    <td className="py-3.5 px-4 text-xs font-semibold text-ink/80">
+                    <td className="py-3.5 px-4 text-[12px] text-slate-500 leading-snug font-semibold text-ink/80">
                       🏡 {s.propertiesCount ?? 0}
                     </td>
 
@@ -294,7 +294,7 @@ export default function AdminSellersPage() {
                       <div className="flex items-center justify-end gap-1.5">
                         <Link
                           to={`/admin/sellers/${s.id}`}
-                          className="rounded-lg border border-ink/20 px-2.5 py-1 text-xs font-semibold text-ink hover:bg-sand transition"
+                          className="btn-ghost text-[13px] border-ink/20 px-2.5 py-1 text-ink hover:bg-sand"
                         >
                           View Details
                         </Link>
@@ -304,14 +304,14 @@ export default function AdminSellersPage() {
                             <button
                               onClick={() => void handleApprove(s)}
                               disabled={actionLoading}
-                              className="rounded-lg bg-moss px-2.5 py-1 text-xs font-semibold text-white shadow-sm hover:bg-moss/90 transition disabled:opacity-50"
+                              className="btn-primary bg-moss px-2.5 py-1 text-[13px] font-semibold text-white shadow-sm hover:bg-moss/90 disabled:opacity-50"
                             >
                               Approve
                             </button>
                             <button
                               onClick={() => setRejectTarget(s)}
                               disabled={actionLoading}
-                              className="rounded-lg border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-700 hover:bg-red-100 transition disabled:opacity-50"
+                              className="btn-danger border-red-200 bg-red-50 px-2.5 py-1 text-[13px] font-semibold text-red-700 hover:bg-red-100 disabled:opacity-50"
                             >
                               Reject
                             </button>
@@ -322,7 +322,7 @@ export default function AdminSellersPage() {
                           <button
                             onClick={() => setStatusModalTarget({ seller: s, action: "DISABLE" })}
                             disabled={actionLoading}
-                            className="rounded-lg border border-red-200 bg-red-50 text-red-700 px-2.5 py-1 text-xs font-semibold hover:bg-red-100 transition"
+                            className="btn-danger border-red-200 bg-red-50 text-red-700 px-2.5 py-1 text-[13px] font-semibold hover:bg-red-100"
                           >
                             Disable
                           </button>
@@ -332,7 +332,7 @@ export default function AdminSellersPage() {
                           <button
                             onClick={() => setStatusModalTarget({ seller: s, action: "ENABLE" })}
                             disabled={actionLoading}
-                            className="rounded-lg bg-moss/10 text-moss border border-moss/30 px-2.5 py-1 text-xs font-semibold hover:bg-moss/20 transition"
+                            className="btn-primary bg-moss/10 text-moss border-moss/30 px-2.5 py-1 text-[13px] font-semibold hover:bg-moss/20"
                           >
                             Enable
                           </button>
@@ -342,7 +342,7 @@ export default function AdminSellersPage() {
                           <button
                             onClick={() => void handleApprove(s)}
                             disabled={actionLoading}
-                            className="rounded-lg bg-moss/10 text-moss border border-moss/30 px-2.5 py-1 text-xs font-semibold hover:bg-moss/20 transition"
+                            className="btn-primary bg-moss/10 text-moss border-moss/30 px-2.5 py-1 text-[13px] font-semibold hover:bg-moss/20"
                           >
                             Approve
                           </button>
@@ -351,7 +351,7 @@ export default function AdminSellersPage() {
                         <button
                           onClick={() => setDeleteTarget(s)}
                           disabled={actionLoading}
-                          className="rounded-lg border border-red-200 bg-white text-red-600 px-2.5 py-1 text-xs font-semibold hover:bg-red-50 transition"
+                          className="btn-danger border-red-200 bg-white text-red-600 px-2.5 py-1 text-[13px] font-semibold hover:bg-red-50"
                           title="Permanently delete seller and all their properties"
                         >
                           Delete
@@ -369,8 +369,8 @@ export default function AdminSellersPage() {
       {/* Reject Modal with Reason */}
       {rejectTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 backdrop-blur-sm p-4">
-          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-xl space-y-4">
-            <h3 className="font-serif text-lg font-bold text-ink">
+          <div className="w-full max-w-md rounded-[1.25rem] bg-white p-6 shadow-xl space-y-4">
+            <h3 className="font-display text-lg font-bold text-ink tracking-[-0.01em]">
               Reject Seller Application
             </h3>
             <p className="text-xs text-ink/70">

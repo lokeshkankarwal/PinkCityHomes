@@ -103,10 +103,10 @@ export default function ProjectsPage() {
   }, [projects, localityInput]);
 
   return (
-    <div className="space-y-6 pb-12">
-      <div>
-        <h1 className="font-serif text-3xl font-bold">Direct Builder &amp; Society Projects</h1>
-        <p className="text-sm text-ink/70">
+    <div className="space-y-6 pb-12 animate-in-page">
+      <div className="stagger-0">
+        <h1 className="page-title">Direct Builder &amp; Society Projects</h1>
+        <p className="page-subtitle mt-2">
           Curated developments and societies with multiple residential flats for buy and rent
         </p>
       </div>
@@ -192,7 +192,7 @@ export default function ProjectsPage() {
           {filtered.map((p) => (
             <article
               key={p.project_id}
-              className="overflow-hidden rounded-3xl border border-ink/10 bg-white shadow-sm flex flex-col justify-between hover:shadow-md transition"
+              className="overflow-hidden rounded-[1.25rem] border border-ink/10 bg-white shadow-sm flex flex-col justify-between card-hover transition"
             >
               <div>
                 <div className="h-44 bg-gradient-to-br from-ink/15 via-sand to-brass/25 p-6 flex flex-col justify-between relative">
@@ -208,7 +208,7 @@ export default function ProjectsPage() {
                     <p className="text-xs uppercase tracking-wider text-ink/70 font-bold">
                       {p.developer_name || "Verified Developer"}
                     </p>
-                    <h3 className="font-serif text-2xl font-bold text-ink">{p.apartment_name}</h3>
+                    <h3 className="font-display text-2xl font-bold text-ink tracking-[-0.02em]">{p.apartment_name}</h3>
                   </div>
                 </div>
 
@@ -225,7 +225,7 @@ export default function ProjectsPage() {
 
                   <div>
                     <span className="text-xs text-ink/60">Valuation Range</span>
-                    <p className="font-serif text-xl font-bold text-brass">
+                    <p className="font-display text-xl font-bold text-brass tracking-[-0.02em]">
                       {inr(p.price_min)} &ndash; {inr(p.price_max)}
                     </p>
                   </div>
@@ -266,7 +266,7 @@ export default function ProjectsPage() {
                   to={`/projects/${p.project_id}`}
                   className="rounded-xl bg-ink px-4 py-2 text-xs font-semibold text-sand hover:bg-ink/90 shadow transition"
                 >
-                  Explore Project Units &rarr;
+                  Explore Project Units →
                 </Link>
               </div>
             </article>

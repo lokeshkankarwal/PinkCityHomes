@@ -29,11 +29,11 @@ export default function OrdersPage() {
   }, []);
 
   return (
-    <div className="space-y-6 pb-16 animate-fade-in">
-      <div>
-        <span className="text-xs font-bold uppercase tracking-wider text-pink-600">Purchase History</span>
-        <h1 className="font-display text-3xl font-bold text-navy mt-1">My Orders &amp; Purchases</h1>
-        <p className="text-xs sm:text-sm text-slate-500">
+    <div className="space-y-6 pb-16 animate-in-page">
+      <div className="stagger-0">
+        <span className="page-eyebrow">Purchase History</span>
+        <h1 className="page-title mt-1">My Orders &amp; Purchases</h1>
+        <p className="page-subtitle mt-2">
           Official real estate purchase orders, escrow records, and sub-registrar closing milestones
         </p>
       </div>
@@ -57,7 +57,7 @@ export default function OrdersPage() {
             return (
               <div
                 key={order.id}
-                className="flex flex-col sm:flex-row items-center gap-5 rounded-4xl border border-slate-200/80 bg-white p-5 shadow-card hover:shadow-card-hover transition-all duration-200"
+                className="stagger-1 flex flex-col sm:flex-row items-center gap-5 rounded-[1.5rem] border border-slate-200/70 bg-white p-5 shadow-card card-hover"
               >
                 <img
                   src={imgSrc(p?.images?.[0]?.path)}
@@ -68,22 +68,22 @@ export default function OrdersPage() {
                 <div className="flex-1 space-y-2 text-center sm:text-left min-w-0">
                   <div className="flex flex-wrap items-center gap-2 justify-center sm:justify-start">
                     <Badge status={order.status} />
-                    <span className="text-[11px] text-slate-400">
+                    <span className="label-ui">
                       Ordered on {new Date(order.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
                     </span>
                   </div>
 
                   <Link to={`/properties/${order.propertyId}`}>
-                    <h3 className="font-display text-lg font-bold text-navy hover:text-pink-600 transition truncate">
+                    <h3 className="font-display text-lg font-bold text-ink hover:text-pink-600 transition-colors duration-200 truncate tracking-[-0.01em]">
                       {p?.title || "Property"}
                     </h3>
                   </Link>
 
-                  <p className="text-xs text-slate-500 capitalize">
+                  <p className="text-[12px] text-slate-500 capitalize leading-snug">
                     📍 {p?.locality}, {p?.city || "Jaipur"} {p?.bhk ? `· ${p.bhk} BHK` : ""} {p?.carpetArea ? `(${p.carpetArea} sq ft)` : ""}
                   </p>
 
-                  <p className="font-display text-xl font-bold text-navy pt-1">
+                  <p className="font-display text-xl font-bold text-ink pt-1 tracking-[-0.02em]">
                     Closed at {inr(order.soldPrice)}
                   </p>
                 </div>
@@ -91,7 +91,7 @@ export default function OrdersPage() {
                 <div className="flex sm:flex-col gap-2 flex-shrink-0">
                   <Link
                     to={`/properties/${order.propertyId}`}
-                    className="rounded-2xl bg-navy px-4 py-2.5 text-xs font-semibold text-white shadow-sm hover:bg-navy-800 transition active:scale-95 text-center"
+                    className="btn-primary px-4 py-2.5 text-[13px] text-center min-h-[40px]"
                   >
                     View Property
                   </Link>

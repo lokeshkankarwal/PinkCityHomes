@@ -129,11 +129,11 @@ export default function AdminPropertiesPage() {
   };
 
   return (
-    <div className="space-y-6 pb-16">
+    <div className="space-y-6 pb-16 animate-in-page">
       {/* Header */}
-      <div>
-        <h1 className="font-serif text-3xl font-bold">Manage Platform Inventory</h1>
-        <p className="text-sm text-ink/70">
+      <div className="stagger-0">
+        <h1 className="font-display text-[28px] font-bold text-ink tracking-[-0.02em] leading-[1.15] mt-1">Manage Platform Inventory</h1>
+        <p className="page-subtitle mt-2">
           Superadmin controls: search across catalog, verify active listings, manage inactive properties, and execute SOLD deed transitions
         </p>
       </div>
@@ -185,14 +185,14 @@ export default function AdminPropertiesPage() {
       {loading ? (
         <div className="py-20 text-center text-ink/60">Loading properties...</div>
       ) : properties.length === 0 ? (
-        <div className="rounded-3xl border border-ink/10 bg-white p-12 text-center text-sm text-ink/60">
+        <div className="stagger-1 rounded-[1.25rem] border border-slate-200/70 bg-white p-12 shadow-card text-center text-sm text-ink/60">
           No properties found matching your search and filter parameters.
         </div>
       ) : (
-        <div className="rounded-3xl border border-ink/10 bg-white p-6 shadow-sm overflow-x-auto">
+        <div className="stagger-1 rounded-[1.25rem] border border-slate-200/70 bg-white p-6 shadow-card overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead>
-              <tr className="border-b border-ink/10 text-xs font-semibold text-ink/60 uppercase">
+              <tr className="border-b border-ink/10 text-[12px] text-slate-500 leading-snug font-semibold text-ink/60 uppercase">
                 <th className="py-3 px-4">Property</th>
                 <th className="py-3 px-4">Seller</th>
                 <th className="py-3 px-4">Price</th>
@@ -220,13 +220,13 @@ export default function AdminPropertiesPage() {
                         >
                           {p.title}
                         </Link>
-                        <p className="text-xs text-ink/50">
+                        <p className="text-[12px] text-slate-500 leading-snug text-ink/50">
                           {p.bhk} BHK · {p.carpetArea} sq ft {p.projectName ? `· ${p.projectName}` : ""}
                         </p>
                       </div>
                     </div>
                   </td>
-                  <td className="py-3 px-4 text-xs">
+                  <td className="py-3 px-4 text-[12px] text-slate-500 leading-snug">
                     {p.seller ? (
                       <Link
                         to={`/admin/sellers/${p.sellerId}`}
@@ -238,15 +238,15 @@ export default function AdminPropertiesPage() {
                       <span className="text-ink/60">Direct Seller</span>
                     )}
                     <br />
-                    <span className="text-[10px] text-ink/40 font-mono">{p.seller?.email}</span>
+                    <span className="label-ui text-ink/40 font-mono">{p.seller?.email}</span>
                   </td>
-                  <td className="py-3 px-4 font-serif font-bold text-brass whitespace-nowrap">
+                  <td className="py-3 px-4 font-display font-bold tracking-[-0.02em] text-brass whitespace-nowrap">
                     {p.listingType === "RENT" ? `${inr(p.price)}/mo` : inr(p.price)}
                   </td>
-                  <td className="py-3 px-4 text-xs capitalize whitespace-nowrap">{p.locality}</td>
+                  <td className="py-3 px-4 text-[12px] text-slate-500 leading-snug capitalize whitespace-nowrap">{p.locality}</td>
                   <td className="py-3 px-4">
                     <span
-                      className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                      className={`label-ui rounded-full px-2.5 py-0.5 font-bold uppercase tracking-wider ${
                         p.status === "SOLD"
                           ? "bg-ink text-sand"
                           : p.status === "ACTIVE"
@@ -263,7 +263,7 @@ export default function AdminPropertiesPage() {
                         to={`/properties/${p.id}`}
                         target="_blank"
                         rel="noreferrer"
-                        className="rounded-lg border border-ink/20 px-2 py-1 text-xs font-semibold text-ink hover:bg-sand transition"
+                        className="btn-ghost text-[13px] border-ink/20 px-2 py-1 text-ink hover:bg-sand"
                       >
                         View
                       </Link>
@@ -272,13 +272,13 @@ export default function AdminPropertiesPage() {
                         <>
                           <button
                             onClick={() => setSoldModalProp(p)}
-                            className="rounded-lg bg-moss/10 text-moss border border-moss/30 px-2 py-1 text-xs font-semibold hover:bg-moss/20 transition whitespace-nowrap"
+                            className="btn-primary bg-moss/10 text-moss border-moss/30 px-2 py-1 text-[13px] hover:bg-moss/20 whitespace-nowrap"
                           >
                             Mark SOLD
                           </button>
                           <button
                             onClick={() => setStatusTarget(p)}
-                            className={`rounded-lg border px-2 py-1 text-xs font-semibold transition whitespace-nowrap ${
+                            className={`px-2 py-1 text-[13px] font-semibold transition whitespace-nowrap rounded-lg border ${
                               p.status === "ACTIVE"
                                 ? "border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100"
                                 : "border-moss/40 bg-moss/10 text-moss hover:bg-moss/20"
@@ -291,7 +291,7 @@ export default function AdminPropertiesPage() {
 
                       <button
                         onClick={() => setDeleteTarget(p)}
-                        className="rounded-lg border border-red-200 bg-red-50 text-red-700 px-2 py-1 text-xs font-semibold hover:bg-red-100 transition whitespace-nowrap"
+                        className="btn-danger border-red-200 bg-red-50 text-red-700 px-2 py-1 text-[13px] hover:bg-red-100 whitespace-nowrap"
                       >
                         Delete
                       </button>
@@ -307,18 +307,18 @@ export default function AdminPropertiesPage() {
       {/* SOLD Authority Modal */}
       {soldModalProp && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/60 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl space-y-4">
+          <div className="w-full max-w-md rounded-[1.25rem] bg-white p-6 shadow-2xl space-y-4">
             <div>
-              <span className="text-xs uppercase tracking-wider text-moss font-bold">Superadmin Authority</span>
-              <h3 className="font-serif text-xl font-bold mt-1">Execute SOLD State Transition</h3>
-              <p className="text-xs text-ink/70 mt-1">
+              <span className="label-ui uppercase tracking-wider text-moss font-bold">Superadmin Authority</span>
+              <h3 className="font-display text-xl font-bold tracking-[-0.01em] leading-snug mt-1 text-ink">Execute SOLD State Transition</h3>
+              <p className="text-[12px] text-slate-500 leading-snug text-ink/70 mt-1">
                 Property: <strong className="text-ink">{soldModalProp.title}</strong>
               </p>
             </div>
 
             <form onSubmit={handleMarkSold} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-ink/70 mb-1">
+                <label className="block text-[12px] text-slate-500 leading-snug font-semibold text-ink/70 mb-1">
                   Customer ID (Optional deed association)
                 </label>
                 <input
@@ -334,14 +334,14 @@ export default function AdminPropertiesPage() {
                 <button
                   type="button"
                   onClick={() => setSoldModalProp(null)}
-                  className="rounded-xl px-4 py-2 text-xs font-semibold text-ink/70 hover:bg-ink/5"
+                  className="btn-ghost text-[13px] px-4 py-2 text-ink/70 hover:bg-ink/5"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={actionLoading}
-                  className="rounded-xl bg-ink px-4 py-2 text-xs font-semibold text-sand hover:bg-ink/90 disabled:opacity-50"
+                  className="btn-primary px-4 py-2 text-[14px] font-semibold text-sand hover:bg-ink/90 disabled:opacity-50"
                 >
                   {actionLoading ? "Executing Deed..." : "Confirm & Mark SOLD"}
                 </button>

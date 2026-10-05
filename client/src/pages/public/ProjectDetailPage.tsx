@@ -26,9 +26,9 @@ export default function ProjectDetailPage() {
   if (!project) {
     return (
       <div className="py-24 text-center space-y-4">
-        <h2 className="font-serif text-2xl font-bold">Project Not Found</h2>
+        <h2 className="font-display text-2xl font-bold tracking-[-0.02em]">Project Not Found</h2>
         <Link to="/projects" className="inline-block rounded-xl bg-ink px-4 py-2 text-sm text-sand">
-          &larr; Back to Projects
+          ← Back to Projects
         </Link>
       </div>
     );
@@ -38,7 +38,7 @@ export default function ProjectDetailPage() {
   const rentUnits = project.rentUnits || [];
 
   return (
-    <div className="space-y-8 pb-16">
+    <div className="space-y-8 pb-16 animate-in-page">
       {/* Breadcrumb Navigation */}
       <nav className="flex items-center gap-2 text-xs text-ink/60">
         <Link to="/" className="hover:text-ink">Home</Link>
@@ -49,7 +49,7 @@ export default function ProjectDetailPage() {
       </nav>
 
       {/* Main Hero Header */}
-      <div className="rounded-3xl bg-gradient-to-br from-ink via-[#1c3854] to-ink p-8 text-sand shadow-lg space-y-4 relative overflow-hidden">
+      <div className="rounded-[1.25rem] bg-gradient-to-br from-ink via-[#1c3854] to-ink p-8 text-sand shadow-lg space-y-4 relative overflow-hidden">
         <div className="flex flex-wrap items-center gap-2">
           <span className="rounded-full bg-brass/20 text-brass px-3 py-1 text-xs font-bold uppercase tracking-wider">
             {project.project_status || "Active Society"}
@@ -59,7 +59,7 @@ export default function ProjectDetailPage() {
           </span>
         </div>
 
-        <h1 className="font-serif text-3xl sm:text-5xl font-bold">{project.apartment_name}</h1>
+        <h1 className="font-display text-3xl sm:text-5xl font-bold tracking-[-0.02em] leading-[1.15]">{project.apartment_name}</h1>
         
         <p className="text-sand/80 text-sm max-w-2xl">
           Developed by <span className="font-semibold text-sand">{project.developer_name || "Verified Builder"}</span>
@@ -77,21 +77,21 @@ export default function ProjectDetailPage() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 rounded-2xl border border-ink/10 bg-white p-5 shadow-sm">
         <div>
           <span className="text-xs text-ink/60 uppercase font-semibold">Total Society Units</span>
-          <p className="font-serif text-xl font-bold text-ink">{project.total_units || "—"}</p>
+          <p className="font-display text-xl font-bold text-ink tracking-[-0.02em]">{project.total_units || "—"}</p>
         </div>
         <div>
           <span className="text-xs text-ink/60 uppercase font-semibold">Towers / Blocks</span>
-          <p className="font-serif text-xl font-bold text-ink">{project.total_towers || "—"}</p>
+          <p className="font-display text-xl font-bold text-ink tracking-[-0.02em]">{project.total_towers || "—"}</p>
         </div>
         <div>
           <span className="text-xs text-ink/60 uppercase font-semibold">For Sale (Buy)</span>
-          <p className="font-serif text-xl font-bold text-moss">
+          <p className="font-display text-xl font-bold text-moss tracking-[-0.02em]">
             {saleUnits.length} {saleUnits.length === 1 ? "Flat" : "Flats"}
           </p>
         </div>
         <div>
           <span className="text-xs text-ink/60 uppercase font-semibold">For Rent</span>
-          <p className="font-serif text-xl font-bold text-brass">
+          <p className="font-display text-xl font-bold text-brass tracking-[-0.02em]">
             {rentUnits.length} {rentUnits.length === 1 ? "Flat" : "Flats"}
           </p>
         </div>
@@ -102,7 +102,7 @@ export default function ProjectDetailPage() {
         <div className="lg:col-span-2 space-y-8">
           {/* Section Filter Tabs */}
           <div className="flex items-center justify-between border-b border-ink/10 pb-3">
-            <h2 className="font-serif text-2xl font-bold">Flats & Units in this Project</h2>
+            <h2 className="font-display text-2xl font-bold tracking-[-0.02em]">Flats & Units in this Project</h2>
             <div className="flex rounded-xl bg-ink/5 p-1 text-xs font-semibold">
               <button
                 type="button"
@@ -138,7 +138,7 @@ export default function ProjectDetailPage() {
           {(activeTab === "ALL" || activeTab === "BUY") && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="font-serif text-xl font-bold flex items-center gap-2">
+                <h3 className="font-display text-xl font-bold flex items-center gap-2 tracking-[-0.02em]">
                   <span className="inline-block w-2.5 h-2.5 rounded-full bg-moss"></span>
                   Units Available for Purchase (Buy)
                 </h3>
@@ -163,7 +163,7 @@ export default function ProjectDetailPage() {
           {(activeTab === "ALL" || activeTab === "RENT") && (
             <div className="space-y-4 pt-4">
               <div className="flex items-center justify-between">
-                <h3 className="font-serif text-xl font-bold flex items-center gap-2">
+                <h3 className="font-display text-xl font-bold flex items-center gap-2 tracking-[-0.02em]">
                   <span className="inline-block w-2.5 h-2.5 rounded-full bg-brass"></span>
                   Units Available for Rent (Lease)
                 </h3>
@@ -187,7 +187,7 @@ export default function ProjectDetailPage() {
           {/* Amenities */}
           {project.amenities && project.amenities.length > 0 && (
             <div className="rounded-2xl border border-ink/10 bg-white p-6 shadow-sm space-y-3">
-              <h3 className="font-serif text-xl font-bold">Society Amenities & Features</h3>
+              <h3 className="font-display text-xl font-bold tracking-[-0.02em]">Society Amenities & Features</h3>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {project.amenities.map((a, i) => (
                   <div key={i} className="flex items-center gap-2 rounded-xl bg-sand/40 p-3 text-sm font-medium capitalize text-ink">
@@ -202,11 +202,11 @@ export default function ProjectDetailPage() {
         {/* Sidebar */}
         <div className="space-y-6">
           {/* Pricing & Units Overview */}
-          <div className="rounded-3xl border border-ink/10 bg-white p-6 shadow-md space-y-4">
+          <div className="rounded-[1.25rem] border border-ink/10 bg-white p-6 shadow-md space-y-4">
             <span className="text-xs uppercase tracking-wider text-moss font-semibold">Society Overview</span>
             <div>
               <span className="text-xs text-ink/60">Typical Price Range</span>
-              <p className="font-serif text-2xl font-bold text-brass">
+              <p className="font-display text-2xl font-bold text-brass tracking-[-0.02em]">
                 {inr(project.price_min || 5000000)} &ndash; {inr(project.price_max || 20000000)}
               </p>
             </div>
@@ -221,28 +221,28 @@ export default function ProjectDetailPage() {
                 to={`/properties?locality=${encodeURIComponent(project.locality)}`}
                 className="block text-center w-full rounded-xl bg-ink py-2.5 text-xs font-semibold text-sand hover:bg-ink/90 shadow"
               >
-                Browse All Properties in {project.locality} &rarr;
+                Browse All Properties in {project.locality} →
               </Link>
               <Link
                 to={`/rentals?locality=${encodeURIComponent(project.locality)}`}
                 className="block text-center w-full rounded-xl border border-ink/20 py-2.5 text-xs font-semibold text-ink hover:bg-sand"
               >
-                Browse Rentals in {project.locality} &rarr;
+                Browse Rentals in {project.locality} →
               </Link>
             </div>
           </div>
 
           {/* Location Card */}
-          <div className="rounded-3xl border border-ink/10 bg-white p-6 shadow-sm space-y-2">
-            <h3 className="font-serif text-base font-bold">Project Address</h3>
+          <div className="rounded-[1.25rem] border border-ink/10 bg-white p-6 shadow-sm space-y-2">
+            <h3 className="font-display text-base font-bold tracking-[-0.01em]">Project Address</h3>
             <p className="text-sm font-medium text-ink">📍 {project.address || `${project.locality}, ${project.city}`}</p>
             <p className="text-xs text-ink/60 capitalize">Locality: {project.locality}</p>
             <p className="text-xs text-ink/60">City: {project.city}</p>
           </div>
 
           {/* Developer / Seller Contact Card */}
-          <div className="rounded-3xl border border-ink/10 bg-white p-6 shadow-sm space-y-3">
-            <h3 className="font-serif text-base font-bold">Developer / Sales Office</h3>
+          <div className="rounded-[1.25rem] border border-ink/10 bg-white p-6 shadow-sm space-y-3">
+            <h3 className="font-display text-base font-bold tracking-[-0.01em]">Developer / Sales Office</h3>
             <p className="text-sm font-semibold text-ink">{project.developer_name || "Authorized Sales Team"}</p>
             {project.contactPhone && (
               <p className="text-xs text-ink/70">📞 Phone: {project.contactPhone}</p>
@@ -288,8 +288,8 @@ function ProjectUnitCard({ unit, type }: { unit: Property; type: "BUY" | "RENT" 
         </div>
 
         <div className="p-4 space-y-2">
-          <h4 className="font-serif text-base font-bold text-ink line-clamp-1">{unit.title}</h4>
-          <p className="font-serif text-lg font-bold text-brass">
+          <h4 className="font-display text-base font-bold text-ink line-clamp-1 tracking-[-0.01em]">{unit.title}</h4>
+          <p className="font-display text-lg font-bold text-brass tracking-[-0.02em]">
             {type === "BUY" ? inr(unit.price) : `${inr(unit.price)}/mo`}
           </p>
           <div className="grid grid-cols-2 gap-1 text-[11px] text-ink/70 pt-1 border-t border-ink/5">

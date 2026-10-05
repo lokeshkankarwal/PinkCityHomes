@@ -115,7 +115,7 @@ export function LocationSearchBar({
           onFocus={() => setShowDropdown(true)}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
-          className="w-full rounded-2xl border border-slate-200 bg-white py-3 pl-10 pr-20 text-xs sm:text-sm font-medium text-navy placeholder:text-slate-400 shadow-sm focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-200 transition min-w-0"
+          className="w-full rounded-2xl border border-slate-200 bg-white py-3 pl-10 pr-20 text-xs sm:text-sm font-medium text-ink placeholder:text-slate-400 shadow-sm focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-200 transition min-w-0"
         />
         {inputVal ? (
           <button
@@ -130,7 +130,7 @@ export function LocationSearchBar({
           <button
             type="button"
             onClick={() => onChange(inputVal.trim())}
-            className="absolute right-2 rounded-xl bg-navy px-3 py-1.5 text-xs font-semibold text-white hover:bg-pink-600 transition active:scale-95 shadow-xs"
+            className="absolute right-2 rounded-xl bg-ink px-3 py-1.5 text-xs font-semibold text-white hover:bg-pink-600 transition active:scale-95 shadow-xs"
           >
             Search
           </button>
@@ -151,7 +151,7 @@ export function LocationSearchBar({
                     key={loc.name}
                     type="button"
                     onClick={() => handleSelect(loc.name)}
-                    className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-medium text-navy hover:bg-pink-50 hover:text-pink-700 transition"
+                    className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-medium text-ink hover:bg-pink-50 hover:text-pink-700 transition"
                   >
                     <div className="flex items-center gap-2 min-w-0">
                       <span className="text-pink-600 flex-shrink-0">📍</span>
@@ -167,7 +167,7 @@ export function LocationSearchBar({
                 ))
               ) : (
                 <div className="px-3 py-3 text-xs text-slate-600">
-                  <p className="font-semibold text-navy">No exact location found for "{inputVal}".</p>
+                  <p className="font-semibold text-ink">No exact location found for "{inputVal}".</p>
                   <p className="text-[11px] text-slate-500 mt-0.5">
                     Press Enter to search listings with "{inputVal}" in address.
                   </p>

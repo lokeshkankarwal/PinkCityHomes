@@ -69,7 +69,7 @@ function createPillIcon(text: string, isSelected: boolean, isHovered: boolean, i
   return L.divIcon({
     className: "pinkcity-pill-wrapper",
     html: `
-      <div class="px-2.5 py-1 rounded-full text-xs font-bold font-serif shadow-md transition-all duration-150 cursor-pointer border border-white/40 ${styleClasses}">
+      <div class="px-2.5 py-1 rounded-full text-xs font-bold font-display tracking-tight shadow-md transition-all duration-150 cursor-pointer border border-white/40 ${styleClasses}">
         ${text}
       </div>
     `,
@@ -228,7 +228,7 @@ export function PropertyMap({
                     </span>
                   </div>
                   <div className="p-3 space-y-1.5">
-                    <p className="font-serif text-xl font-bold text-ink">
+                    <p className="font-display text-xl font-bold text-ink tracking-[-0.02em]">
                       {inr(p.price)}
                       {isRent && <span className="text-xs font-normal text-ink/60"> / mo</span>}
                     </p>
@@ -253,7 +253,7 @@ export function PropertyMap({
                       to={p.href ?? `/properties/${p.id}`}
                       className="mt-2 block w-full text-center rounded-xl bg-pink-600 py-2 text-xs font-bold text-white hover:bg-pink-700 transition shadow"
                     >
-                      View Property &rarr;
+                      View Property →
                     </Link>
                   </div>
                 </div>

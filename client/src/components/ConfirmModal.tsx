@@ -55,7 +55,7 @@ export function ConfirmModal({
       }}
     >
       <div
-        className="w-full max-w-md transform overflow-hidden rounded-3xl bg-white p-6 shadow-modal transition-all border border-slate-200/80 animate-scale-in"
+        className="w-full max-w-md transform overflow-hidden rounded-[1.25rem] bg-white p-6 shadow-modal transition-all border border-slate-200/70 animate-scale-in"
         role="dialog"
         aria-modal="true"
       >
@@ -76,7 +76,7 @@ export function ConfirmModal({
             )}
           </div>
           <div className="flex-1">
-            <h3 className="font-display text-lg font-bold text-navy">{title}</h3>
+            <h3 className="font-display text-lg font-bold text-ink tracking-[-0.01em]">{title}</h3>
             <p className="mt-1.5 text-xs md:text-sm leading-relaxed text-slate-500">{message}</p>
           </div>
         </div>

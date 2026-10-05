@@ -134,13 +134,13 @@ export default function PropertyDetailPage() {
     return (
       <div className="py-24 text-center space-y-4 max-w-md mx-auto">
         <div className="text-5xl">🏡</div>
-        <h2 className="font-display text-2xl font-bold text-navy">Property Not Found</h2>
+        <h2 className="font-display text-2xl font-bold text-ink">Property Not Found</h2>
         <p className="text-xs text-slate-500">The property you are looking for does not exist or has been deactivated.</p>
         <Link
           to="/properties"
-          className="inline-block rounded-2xl bg-navy px-5 py-2.5 text-xs font-semibold text-white shadow hover:bg-navy-800 transition"
+          className="inline-block rounded-2xl bg-ink px-5 py-2.5 text-xs font-semibold text-white shadow hover:bg-slate-800 transition"
         >
-          &larr; Explore Verified Properties
+          ← Explore Verified Properties
         </Link>
       </div>
     );
@@ -164,16 +164,16 @@ export default function PropertyDetailPage() {
   };
 
   return (
-    <div className="space-y-8 pb-16 animate-fade-in">
+    <div className="space-y-8 pb-16 animate-in-page">
       {/* ── Breadcrumb ────────────────────────────────────────────── */}
       <nav className="flex items-center gap-2 text-xs text-slate-500">
-        <Link to="/" className="hover:text-navy transition">Home</Link>
+        <Link to="/" className="hover:text-ink transition">Home</Link>
         <span>/</span>
-        <Link to={isRent ? "/rentals" : "/properties"} className="hover:text-navy transition">
+        <Link to={isRent ? "/rentals" : "/properties"} className="hover:text-ink transition">
           {isRent ? "Rentals" : "Properties"}
         </Link>
         <span>/</span>
-        <span className="text-navy font-semibold capitalize truncate max-w-[200px]">{property.locality}</span>
+        <span className="text-ink font-semibold capitalize truncate max-w-[200px]">{property.locality}</span>
         <span>/</span>
         <span className="text-slate-400 truncate max-w-[150px]">{property.title}</span>
       </nav>
@@ -229,18 +229,18 @@ export default function PropertyDetailPage() {
                   <button
                     type="button"
                     onClick={prevImage}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-navy shadow-md opacity-80 group-hover:opacity-100 hover:bg-white transition"
+                    className="absolute left-3 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-ink shadow-md opacity-80 group-hover:opacity-100 hover:bg-white transition"
                     aria-label="Previous image"
                   >
-                    &larr;
+                    ←
                   </button>
                   <button
                     type="button"
                     onClick={nextImage}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-navy shadow-md opacity-80 group-hover:opacity-100 hover:bg-white transition"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-ink shadow-md opacity-80 group-hover:opacity-100 hover:bg-white transition"
                     aria-label="Next image"
                   >
-                    &rarr;
+                    →
                   </button>
                 </>
               )}
@@ -268,62 +268,62 @@ export default function PropertyDetailPage() {
           </div>
 
           {/* ── Quick Specs Ribbon ── */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 rounded-3xl border border-slate-200/80 bg-white p-3.5 sm:p-5 shadow-card text-center">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 rounded-[1.25rem] border border-slate-200/80 bg-white p-3.5 sm:p-5 shadow-card text-center">
             <div className="space-y-0.5">
               <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider">Bedrooms</span>
-              <p className="font-display text-lg sm:text-xl font-bold text-navy">{property.bhk} BHK</p>
+              <p className="font-display text-lg sm:text-xl font-bold text-ink tracking-tight">{property.bhk} BHK</p>
             </div>
             <div className="space-y-0.5">
               <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider">Carpet Area</span>
-              <p className="font-display text-lg sm:text-xl font-bold text-navy">{property.carpetArea} sq ft</p>
+              <p className="font-display text-lg sm:text-xl font-bold text-ink tracking-tight">{property.carpetArea} sq ft</p>
             </div>
             <div className="space-y-0.5">
               <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider">Bathrooms</span>
-              <p className="font-display text-lg sm:text-xl font-bold text-navy">{property.bathrooms}</p>
+              <p className="font-display text-lg sm:text-xl font-bold text-ink tracking-tight">{property.bathrooms}</p>
             </div>
             <div className="space-y-0.5">
               <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider">Furnishing</span>
-              <p className="font-display text-xs sm:text-base font-bold text-navy capitalize truncate">
+              <p className="font-display text-xs sm:text-base font-bold text-ink capitalize truncate tracking-tight">
                 {property.furnishing ? property.furnishing.replace(/_/g, " ").toLowerCase() : "N/A"}
               </p>
             </div>
           </div>
 
           {/* ── Overview & Description ── */}
-          <div className="rounded-3xl border border-slate-200/80 bg-white p-6 sm:p-8 shadow-card space-y-3">
-            <h3 className="font-display text-xl font-bold text-navy">Property Description</h3>
+          <div className="rounded-[1.25rem] border border-slate-200/80 bg-white p-6 sm:p-8 shadow-card space-y-3">
+            <h3 className="font-display text-xl font-bold text-ink tracking-[-0.02em]">Property Description</h3>
             <p className="text-xs sm:text-sm text-slate-600 leading-relaxed whitespace-pre-line">
               {property.description}
             </p>
           </div>
 
           {/* ── Specifications Grid ── */}
-          <div className="rounded-3xl border border-slate-200/80 bg-white p-6 sm:p-8 shadow-card space-y-4">
-            <h3 className="font-display text-xl font-bold text-navy">Key Specifications</h3>
+          <div className="rounded-[1.25rem] border border-slate-200/80 bg-white p-6 sm:p-8 shadow-card space-y-4">
+            <h3 className="font-display text-xl font-bold text-ink tracking-[-0.02em]">Key Specifications</h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-y-4 gap-x-6 text-xs sm:text-sm">
               <div className="space-y-0.5">
                 <span className="text-slate-400">Property Type</span>
-                <p className="font-semibold text-navy capitalize">{property.propertyType.replace(/_/g, " ").toLowerCase()}</p>
+                <p className="font-semibold text-ink capitalize">{property.propertyType.replace(/_/g, " ").toLowerCase()}</p>
               </div>
               <div className="space-y-0.5">
                 <span className="text-slate-400">Floor Level</span>
-                <p className="font-semibold text-navy">{property.floor != null ? `${property.floor} of ${property.totalFloors || "—"}` : "Independent"}</p>
+                <p className="font-semibold text-ink">{property.floor != null ? `${property.floor} of ${property.totalFloors || "—"}` : "Independent"}</p>
               </div>
               <div className="space-y-0.5">
                 <span className="text-slate-400">Super Built-up Area</span>
-                <p className="font-semibold text-navy">{property.superBuiltUpArea ? `${property.superBuiltUpArea} sq ft` : "—"}</p>
+                <p className="font-semibold text-ink">{property.superBuiltUpArea ? `${property.superBuiltUpArea} sq ft` : "—"}</p>
               </div>
               <div className="space-y-0.5">
                 <span className="text-slate-400">Parking</span>
-                <p className="font-semibold text-navy">{property.parking ? `${property.parking} Covered Space(s)` : "Available"}</p>
+                <p className="font-semibold text-ink">{property.parking ? `${property.parking} Covered Space(s)` : "Available"}</p>
               </div>
               <div className="space-y-0.5">
                 <span className="text-slate-400">Locality</span>
-                <p className="font-semibold text-navy capitalize">{property.locality}</p>
+                <p className="font-semibold text-ink capitalize">{property.locality}</p>
               </div>
               <div className="space-y-0.5">
                 <span className="text-slate-400">City / State</span>
-                <p className="font-semibold text-navy">{property.city || "Jaipur"}, Rajasthan</p>
+                <p className="font-semibold text-ink">{property.city || "Jaipur"}, Rajasthan</p>
               </div>
             </div>
           </div>
@@ -343,13 +343,13 @@ export default function PropertyDetailPage() {
 
         {/* ── Right Column: Sticky Price & Action Sidebar ── */}
         <div className="space-y-6">
-          <div className="static lg:sticky lg:top-20 rounded-3xl border border-slate-200/80 bg-white p-4 sm:p-6 shadow-card space-y-6">
+          <div className="static lg:sticky lg:top-20 rounded-[1.25rem] border border-slate-200/80 bg-white p-4 sm:p-6 shadow-card space-y-6">
             <div>
               <span className="text-xs uppercase tracking-wider text-pink-600 font-bold">
                 {isRent ? "Monthly Lease" : "Outright Purchase"}
               </span>
-              <h1 className="mt-1 font-display text-2xl font-bold text-navy">{property.title}</h1>
-              <p className="mt-3 text-3xl font-display font-bold text-navy">
+              <h1 className="mt-1 font-display text-2xl font-bold text-ink tracking-[-0.02em]">{property.title}</h1>
+              <p className="mt-3 text-3xl font-display font-bold text-ink tracking-[-0.02em]">
                 {inr(property.price)}
                 {isRent && <span className="text-sm font-normal text-slate-500"> / month</span>}
               </p>
@@ -366,7 +366,7 @@ export default function PropertyDetailPage() {
                 <button
                   type="button"
                   onClick={handleCart}
-                  className="w-full rounded-2xl bg-navy py-3.5 font-semibold text-sm text-white shadow-md hover:bg-navy-800 transition active:scale-95 flex items-center justify-center gap-2"
+                  className="btn-primary w-full py-3.5 text-[14px] flex items-center justify-center gap-2"
                 >
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
@@ -378,7 +378,7 @@ export default function PropertyDetailPage() {
                   <button
                     type="button"
                     onClick={handleFav}
-                    className="flex-1 rounded-2xl border border-slate-200 py-3 text-xs font-semibold text-navy hover:bg-slate-50 transition active:scale-95 flex items-center justify-center gap-1.5"
+                    className="flex-1 rounded-2xl border border-slate-200 py-3 text-xs font-semibold text-ink hover:bg-slate-50 transition active:scale-95 flex items-center justify-center gap-1.5"
                   >
                     <span>❤️</span> Save
                   </button>
@@ -394,7 +394,7 @@ export default function PropertyDetailPage() {
             )}
 
             {/* ── Seller & Agency Profile Card ── */}
-            <div className="rounded-3xl border border-slate-200/80 bg-slate-50/80 p-5 space-y-4">
+            <div className="rounded-[1.25rem] border border-slate-200/80 bg-slate-50/80 p-5 space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] uppercase tracking-wider text-slate-500 font-bold">
                   Property Listed By
@@ -414,7 +414,7 @@ export default function PropertyDetailPage() {
                     {(property.seller?.companyName || property.seller?.name || "S").charAt(0).toUpperCase()}
                   </div>
                   <div className="space-y-0.5 flex-1 min-w-0">
-                    <p className="font-display font-bold text-sm text-navy group-hover:text-pink-600 transition truncate">
+                    <p className="font-display font-bold text-sm text-ink group-hover:text-pink-600 transition truncate tracking-tight">
                       {property.seller?.companyName || property.contactName || property.seller?.name || "Direct Seller"}
                     </p>
                     {property.seller?.companyName && property.seller?.name && (
@@ -427,16 +427,16 @@ export default function PropertyDetailPage() {
                     )}
                   </div>
                   <span className="text-xs text-slate-400 group-hover:text-pink-600 group-hover:translate-x-0.5 transition">
-                    &rarr;
+                    →
                   </span>
                 </Link>
               ) : (
                 <div className="flex items-start gap-3">
-                  <div className="h-10 w-10 rounded-2xl bg-slate-200 flex items-center justify-center text-navy font-bold font-display text-base">
+                  <div className="h-10 w-10 rounded-2xl bg-slate-200 flex items-center justify-center text-ink font-bold font-display text-base">
                     🏢
                   </div>
                   <div>
-                    <p className="font-bold text-sm text-navy">{property.contactName || "Direct Seller"}</p>
+                    <p className="font-bold text-sm text-ink">{property.contactName || "Direct Seller"}</p>
                     <p className="text-xs text-slate-500">Jaipur Property Partner</p>
                   </div>
                 </div>
@@ -466,16 +466,16 @@ export default function PropertyDetailPage() {
               {sellerTargetId && (
                 <Link
                   to={`/sellers/${sellerTargetId}`}
-                  className="block w-full text-center rounded-2xl bg-white border border-slate-200 py-2.5 text-xs font-bold text-navy hover:bg-navy hover:text-white transition shadow-xs active:scale-95"
+                  className="block w-full text-center rounded-2xl bg-white border border-slate-200 py-2.5 text-xs font-bold text-ink hover:bg-ink hover:text-white transition shadow-xs active:scale-95"
                 >
-                  View Seller Profile &amp; Inventory &rarr;
+                  View Seller Profile &amp; Inventory →
                 </Link>
               )}
             </div>
 
             {/* Address snippet */}
-            <div className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-xs space-y-2">
-              <h4 className="font-display text-sm font-bold text-navy">Locality &amp; Address</h4>
+            <div className="rounded-[1.25rem] border border-slate-200/80 bg-white p-5 shadow-xs space-y-2">
+              <h4 className="font-display text-sm font-bold text-ink tracking-tight">Locality &amp; Address</h4>
               <p className="text-xs font-semibold text-slate-700">📍 {property.locality}, {property.city || "Jaipur"}</p>
               {property.address && (
                 <p className="text-xs text-slate-500 leading-relaxed">{property.address}</p>
@@ -490,7 +490,7 @@ export default function PropertyDetailPage() {
         <section className="space-y-6 pt-10 border-t border-slate-200">
           <div>
             <span className="text-xs font-bold uppercase tracking-wider text-pink-600">Similar Options</span>
-            <h2 className="font-display text-2xl font-bold text-navy mt-1">
+            <h2 className="font-display text-2xl font-bold text-ink mt-1 tracking-[-0.02em]">
               You May Also Like in Jaipur
             </h2>
           </div>
@@ -525,19 +525,19 @@ export default function PropertyDetailPage() {
             if (e.target === e.currentTarget && !submittingVisit) setShowVisitModal(false);
           }}
         >
-          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-modal space-y-4 border border-slate-200/80 animate-scale-in">
+          <div className="w-full max-w-md rounded-[1.5rem] bg-white p-6 shadow-modal space-y-4 border border-slate-200/80 animate-scale-in">
             <div className="flex items-center justify-between">
-              <h3 className="font-display text-xl font-bold text-navy">Book a Property Tour</h3>
+              <h3 className="font-display text-xl font-bold text-ink">Book a Property Tour</h3>
               <button
                 type="button"
                 onClick={() => setShowVisitModal(false)}
-                className="text-slate-400 hover:text-navy text-xl"
+                className="text-slate-400 hover:text-ink text-xl"
               >
                 &times;
               </button>
             </div>
             <p className="text-xs text-slate-500">
-              Pick a convenient date and time to visit <span className="font-bold text-navy">{property.title}</span>. The partner representative will receive your request.
+              Pick a convenient date and time to visit <span className="font-bold text-ink">{property.title}</span>. The partner representative will receive your request.
             </p>
 
             <form onSubmit={handleScheduleVisit} className="space-y-4 pt-1">
@@ -550,7 +550,7 @@ export default function PropertyDetailPage() {
                   required
                   value={visitDate}
                   onChange={(e) => setVisitDate(e.target.value)}
-                  className="w-full rounded-2xl border border-slate-200 px-4 py-2.5 text-xs text-navy focus:outline-none focus:ring-2 focus:ring-pink-500"
+                  className="w-full rounded-2xl border border-slate-200 px-4 py-2.5 text-xs text-ink focus:outline-none focus:ring-2 focus:ring-pink-500"
                 />
               </div>
 
@@ -563,7 +563,7 @@ export default function PropertyDetailPage() {
                   value={visitNotes}
                   onChange={(e) => setVisitNotes(e.target.value)}
                   placeholder="e.g. Interested in morning slot, looking for loan assistance."
-                  className="w-full rounded-2xl border border-slate-200 px-4 py-2.5 text-xs text-navy focus:outline-none focus:ring-2 focus:ring-pink-500"
+                  className="w-full rounded-2xl border border-slate-200 px-4 py-2.5 text-xs text-ink focus:outline-none focus:ring-2 focus:ring-pink-500"
                 />
               </div>
 
@@ -612,7 +612,7 @@ export default function PropertyDetailPage() {
                   onClick={prevImage}
                   className="rounded-full bg-white/20 backdrop-blur-md px-4 py-2 text-white text-xs font-bold hover:bg-white/30"
                 >
-                  &larr; Prev
+                  ← Prev
                 </button>
                 <span className="text-xs text-white/80 font-mono">
                   {activeImageIndex + 1} / {allImages.length}
@@ -621,7 +621,7 @@ export default function PropertyDetailPage() {
                   onClick={nextImage}
                   className="rounded-full bg-white/20 backdrop-blur-md px-4 py-2 text-white text-xs font-bold hover:bg-white/30"
                 >
-                  Next &rarr;
+                  Next →
                 </button>
               </div>
             )}

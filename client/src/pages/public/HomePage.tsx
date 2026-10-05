@@ -57,7 +57,7 @@ export default function HomePage() {
   ];
 
   return (
-    <div className="space-y-16 pb-16 animate-fade-in">
+    <div className="space-y-16 pb-16 animate-in-page">
       {/* ── Hero Section ────────────────────────────────────────── */}
       <section className="relative overflow-hidden rounded-4xl bg-navy-950 px-6 py-20 text-white shadow-2xl sm:px-12 md:py-28 border border-navy-800">
         {/* Subtle glowing background orbs */}
@@ -69,7 +69,7 @@ export default function HomePage() {
             <span>✨</span> Jaipur's Verified PropTech Marketplace
           </div>
 
-          <h1 className="font-display text-4xl sm:text-5xl md:text-6xl font-normal tracking-tight leading-tight">
+          <h1 className="font-display text-4xl sm:text-5xl md:text-6xl font-normal tracking-[-0.02em] leading-[1.15]">
             Find your sanctuary in the{" "}
             <span className="font-italic text-pink-500 italic">Pink City</span>.
           </h1>
@@ -81,7 +81,7 @@ export default function HomePage() {
           {/* Interactive Search Bar Card */}
           <form
             onSubmit={handleSearch}
-            className="mx-auto mt-8 flex flex-col gap-3 rounded-3xl bg-white p-3 text-navy shadow-modal sm:flex-row sm:items-center max-w-3xl border border-slate-100"
+            className="mx-auto mt-8 flex flex-col gap-3 rounded-[1.5rem] bg-white p-3 text-ink shadow-modal sm:flex-row sm:items-center max-w-3xl border border-slate-100"
           >
             {/* Buy / Rent Switch */}
             <div className="flex rounded-2xl bg-slate-100 p-1 flex-shrink-0">
@@ -89,7 +89,7 @@ export default function HomePage() {
                 type="button"
                 onClick={() => setType("buy")}
                 className={`rounded-xl px-4 py-2 text-xs font-bold transition-all duration-200 ${
-                  type === "buy" ? "bg-navy text-white shadow-sm" : "text-slate-600 hover:text-navy"
+                  type === "buy" ? "bg-ink text-white shadow-sm" : "text-slate-600 hover:text-ink"
                 }`}
               >
                 Buy
@@ -98,7 +98,7 @@ export default function HomePage() {
                 type="button"
                 onClick={() => setType("rent")}
                 className={`rounded-xl px-4 py-2 text-xs font-bold transition-all duration-200 ${
-                  type === "rent" ? "bg-navy text-white shadow-sm" : "text-slate-600 hover:text-navy"
+                  type === "rent" ? "bg-ink text-white shadow-sm" : "text-slate-600 hover:text-ink"
                 }`}
               >
                 Rent
@@ -112,7 +112,7 @@ export default function HomePage() {
                 placeholder="Locality (e.g. Mansarovar, Vaishali Nagar, C-Scheme)"
                 value={locality}
                 onChange={(e) => setLocality(e.target.value)}
-                className="w-full rounded-2xl border-0 bg-transparent px-4 py-2.5 text-xs md:text-sm text-navy placeholder-slate-400 focus:outline-none focus:ring-0"
+                className="w-full rounded-2xl border-0 bg-transparent px-4 py-2.5 text-xs md:text-sm text-ink placeholder-slate-400 focus:outline-none focus:ring-0"
               />
             </div>
 
@@ -165,47 +165,47 @@ export default function HomePage() {
 
       {/* ── Real Market Stats Strip ─────────────────────────────── */}
       <section className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <div className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-card text-center sm:text-left">
-          <p className="text-xs uppercase font-bold text-slate-500">Verified Properties</p>
-          <p className="font-display text-2xl sm:text-3xl font-bold text-navy mt-1">
+        <div className="rounded-[1.25rem] border border-slate-200/70 bg-white p-5 shadow-card text-center sm:text-left stagger-1">
+          <p className="text-[12px] text-slate-500 leading-snug uppercase font-bold">Verified Properties</p>
+          <p className="font-display text-2xl sm:text-3xl font-bold text-ink mt-1 tracking-[-0.02em]">
             {insights?.properties ? `${insights.properties}+` : "Verified"}
           </p>
-          <p className="text-[11px] text-slate-400 mt-0.5">Vetted Jaipur listings</p>
+          <p className="label-ui mt-0.5">Vetted Jaipur listings</p>
         </div>
-        <div className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-card text-center sm:text-left">
-          <p className="text-xs uppercase font-bold text-slate-500">Partner Agencies</p>
-          <p className="font-display text-2xl sm:text-3xl font-bold text-pink-600 mt-1">
+        <div className="rounded-[1.25rem] border border-slate-200/70 bg-white p-5 shadow-card text-center sm:text-left stagger-2">
+          <p className="text-[12px] text-slate-500 leading-snug uppercase font-bold">Partner Agencies</p>
+          <p className="font-display text-2xl sm:text-3xl font-bold text-pink-600 mt-1 tracking-[-0.02em]">
             {insights?.sellers ? `${insights.sellers}+` : "Approved"}
           </p>
-          <p className="text-[11px] text-slate-400 mt-0.5">Licensed sellers</p>
+          <p className="label-ui mt-0.5">Licensed sellers</p>
         </div>
-        <div className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-card text-center sm:text-left">
-          <p className="text-xs uppercase font-bold text-slate-500">Average Home Price</p>
-          <p className="font-display text-2xl sm:text-3xl font-bold text-emerald-700 mt-1">
+        <div className="rounded-[1.25rem] border border-slate-200/70 bg-white p-5 shadow-card text-center sm:text-left stagger-3">
+          <p className="text-[12px] text-slate-500 leading-snug uppercase font-bold">Average Home Price</p>
+          <p className="font-display text-2xl sm:text-3xl font-bold text-emerald-700 mt-1 tracking-[-0.02em]">
             {insights?.avgBuyPrice
               ? `₹${(insights.avgBuyPrice / 10000000).toFixed(2)} Cr`
               : "₹85L - 2Cr"}
           </p>
-          <p className="text-[11px] text-slate-400 mt-0.5">In prime micro-markets</p>
+          <p className="label-ui mt-0.5">In prime micro-markets</p>
         </div>
-        <div className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-card text-center sm:text-left">
-          <p className="text-xs uppercase font-bold text-slate-500">Title Clarity</p>
-          <p className="font-display text-2xl sm:text-3xl font-bold text-navy mt-1">100%</p>
-          <p className="text-[11px] text-slate-400 mt-0.5">Pre-verified registry</p>
+        <div className="rounded-[1.25rem] border border-slate-200/70 bg-white p-5 shadow-card text-center sm:text-left stagger-4">
+          <p className="text-[12px] text-slate-500 leading-snug uppercase font-bold">Title Clarity</p>
+          <p className="font-display text-2xl sm:text-3xl font-bold text-ink mt-1 tracking-[-0.02em]">100%</p>
+          <p className="label-ui mt-0.5">Pre-verified registry</p>
         </div>
       </section>
 
       {/* ── Featured Properties ─────────────────────────────────── */}
       <section className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
-          <div>
-            <span className="text-xs font-bold uppercase tracking-wider text-pink-600">
+          <div className="stagger-0">
+            <span className="page-eyebrow">
               Curated Homes
             </span>
-            <h2 className="font-display text-2xl sm:text-3xl font-bold text-navy mt-1">
+            <h2 className="font-display text-2xl sm:text-3xl font-bold text-ink mt-1 tracking-[-0.02em] leading-snug">
               Featured Properties in Jaipur
             </h2>
-            <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
+            <p className="page-subtitle mt-2">
               Handpicked residences with verified titles and immediate site visit availability
             </p>
           </div>
@@ -214,7 +214,7 @@ export default function HomePage() {
             className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-pink-600 hover:text-pink-700 transition"
           >
             <span>Explore all properties</span>
-            <span>&rarr;</span>
+            <span>→</span>
           </Link>
         </div>
 
@@ -253,9 +253,9 @@ export default function HomePage() {
 
       {/* ── Property Types Grid ─────────────────────────────────── */}
       <section className="space-y-6">
-        <div>
-          <span className="text-xs font-bold uppercase tracking-wider text-pink-600">Categories</span>
-          <h2 className="font-display text-2xl sm:text-3xl font-bold text-navy mt-1">
+        <div className="stagger-0">
+          <span className="page-eyebrow">Categories</span>
+          <h2 className="font-display text-2xl sm:text-3xl font-bold text-ink mt-1 tracking-[-0.02em] leading-snug">
             Browse by Property Style
           </h2>
         </div>
@@ -263,60 +263,60 @@ export default function HomePage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <Link
             to="/properties?type=APARTMENT"
-            className="group rounded-3xl border border-slate-200/80 bg-white p-6 shadow-card hover:shadow-card-hover hover:border-pink-300 transition-all duration-200"
+            className="group rounded-[1.25rem] border border-slate-200/70 bg-white p-6 shadow-card card-hover hover:shadow-card-hover hover:border-pink-300 transition-all duration-200 stagger-1"
           >
             <div className="h-12 w-12 rounded-2xl bg-pink-50 text-2xl flex items-center justify-center text-pink-600 group-hover:scale-110 transition-transform">
               🏢
             </div>
-            <h3 className="font-display text-lg font-bold text-navy mt-4 group-hover:text-pink-600 transition">
+            <h3 className="font-display text-lg font-bold text-ink mt-4 group-hover:text-pink-600 transition tracking-[-0.01em] leading-snug">
               Luxury Apartments
             </h3>
-            <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+            <p className="text-[12px] text-slate-500 leading-snug mt-1">
               Gated societies with clubhouses, 24/7 security, and modern amenities.
             </p>
           </Link>
 
           <Link
             to="/properties?type=VILLA"
-            className="group rounded-3xl border border-slate-200/80 bg-white p-6 shadow-card hover:shadow-card-hover hover:border-pink-300 transition-all duration-200"
+            className="group rounded-[1.25rem] border border-slate-200/70 bg-white p-6 shadow-card card-hover hover:shadow-card-hover hover:border-pink-300 transition-all duration-200 stagger-2"
           >
             <div className="h-12 w-12 rounded-2xl bg-amber-50 text-2xl flex items-center justify-center text-amber-600 group-hover:scale-110 transition-transform">
               🏰
             </div>
-            <h3 className="font-display text-lg font-bold text-navy mt-4 group-hover:text-pink-600 transition">
+            <h3 className="font-display text-lg font-bold text-ink mt-4 group-hover:text-pink-600 transition tracking-[-0.01em] leading-snug">
               Independent Villas
             </h3>
-            <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+            <p className="text-[12px] text-slate-500 leading-snug mt-1">
               Expansive multi-story private villas with private gardens and terrace decks.
             </p>
           </Link>
 
           <Link
             to="/properties?type=INDEPENDENT_HOUSE"
-            className="group rounded-3xl border border-slate-200/80 bg-white p-6 shadow-card hover:shadow-card-hover hover:border-pink-300 transition-all duration-200"
+            className="group rounded-[1.25rem] border border-slate-200/70 bg-white p-6 shadow-card card-hover hover:shadow-card-hover hover:border-pink-300 transition-all duration-200 stagger-3"
           >
             <div className="h-12 w-12 rounded-2xl bg-emerald-50 text-2xl flex items-center justify-center text-emerald-600 group-hover:scale-110 transition-transform">
               🏡
             </div>
-            <h3 className="font-display text-lg font-bold text-navy mt-4 group-hover:text-pink-600 transition">
+            <h3 className="font-display text-lg font-bold text-ink mt-4 group-hover:text-pink-600 transition tracking-[-0.01em] leading-snug">
               Independent Houses
             </h3>
-            <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+            <p className="text-[12px] text-slate-500 leading-snug mt-1">
               Autonomous family homes in established colonies like Malviya Nagar &amp; C-Scheme.
             </p>
           </Link>
 
           <Link
             to="/properties?type=PLOT"
-            className="group rounded-3xl border border-slate-200/80 bg-white p-6 shadow-card hover:shadow-card-hover hover:border-pink-300 transition-all duration-200"
+            className="group rounded-[1.25rem] border border-slate-200/70 bg-white p-6 shadow-card card-hover hover:shadow-card-hover hover:border-pink-300 transition-all duration-200 stagger-4"
           >
             <div className="h-12 w-12 rounded-2xl bg-sky-50 text-2xl flex items-center justify-center text-sky-600 group-hover:scale-110 transition-transform">
               📐
             </div>
-            <h3 className="font-display text-lg font-bold text-navy mt-4 group-hover:text-pink-600 transition">
+            <h3 className="font-display text-lg font-bold text-ink mt-4 group-hover:text-pink-600 transition tracking-[-0.01em] leading-snug">
               Residential Plots
             </h3>
-            <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+            <p className="text-[12px] text-slate-500 leading-snug mt-1">
               JDA-approved residential land ready for custom architectural construction.
             </p>
           </Link>
@@ -324,28 +324,28 @@ export default function HomePage() {
       </section>
 
       {/* ── Trust & Direct Connection Banner ─────────────────────── */}
-      <section className="rounded-4xl bg-navy-950 p-8 sm:p-12 text-white border border-navy-800 flex flex-col md:flex-row items-center justify-between gap-8 shadow-xl">
-        <div className="space-y-3 max-w-xl text-center md:text-left">
-          <span className="text-xs font-bold uppercase tracking-wider text-pink-400">
+      <section className="rounded-[1.5rem] bg-navy-950 p-8 sm:p-12 text-white border border-navy-800 flex flex-col md:flex-row items-center justify-between gap-8 shadow-xl">
+        <div className="space-y-3 max-w-xl text-center md:text-left stagger-0">
+          <span className="text-[12px] font-bold uppercase tracking-wider text-pink-400">
             For Real Estate Sellers &amp; Agencies
           </span>
-          <h2 className="font-display text-2xl sm:text-3xl font-bold">
+          <h2 className="font-display text-2xl sm:text-3xl font-bold tracking-[-0.02em] leading-snug">
             Showcase your Jaipur inventory to verified buyers.
           </h2>
-          <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+          <p className="text-[12px] sm:text-[13px] text-slate-300 leading-snug mt-2">
             Gain verified partner status, manage CRM leads, coordinate site visits, and track closing milestones from a single professional dashboard.
           </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-3 flex-shrink-0">
           <Link
             to="/register"
-            className="rounded-2xl bg-pink-600 px-6 py-3 text-xs md:text-sm font-semibold text-white shadow-md hover:bg-pink-700 transition active:scale-95 text-center"
+            className="btn-accent px-6 py-3 text-[14px] text-center"
           >
-            Apply as Seller Partner &rarr;
+            Apply as Seller Partner →
           </Link>
           <Link
             to="/seller/dashboard"
-            className="rounded-2xl border border-navy-700 bg-navy-900 px-6 py-3 text-xs md:text-sm font-semibold text-slate-200 hover:text-white hover:bg-navy-800 transition active:scale-95 text-center"
+            className="btn-ghost px-6 py-3 text-[13px] border border-navy-700 bg-navy-900 text-slate-200 hover:text-white hover:bg-navy-800 text-center"
           >
             Seller Portal
           </Link>
