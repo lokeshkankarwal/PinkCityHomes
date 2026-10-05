@@ -59,7 +59,16 @@ async function issueVerification(userId: string, email: string) {
     },
   });
 
-  await sendVerificationEmail(email, code);
+  void (async () => {
+    try {
+      await sendVerificationEmail(email, code);
+    } catch (err) {
+      console.error(
+        `[AUTH ERROR] Failed to dispatch verification email to ${email.slice(0, 2)}***@${email.split("@")[1] || "?"}. OTP code was already persisted and remains valid for 10 min. User can use Resend Code button. Error:`,
+        err instanceof Error ? err.message : err,
+      );
+    }
+  })();
 }
 
 export async function register(req: Request, res: Response) {

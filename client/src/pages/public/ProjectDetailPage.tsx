@@ -306,7 +306,7 @@ function ProjectUnitCard({ unit, type }: { unit: Property; type: "BUY" | "RENT" 
           to={`/properties/${unit.id}`}
           className="block text-center w-full rounded-xl bg-ink py-2 text-xs font-semibold text-sand hover:bg-ink/90 transition shadow-sm"
         >
-          {type === "BUY" ? "View Unit Details & Tour &rarr;" : "View Rental Details &rarr;"}
+          {type === "BUY" ? "View Unit Details & Tour →" : "View Rental Details →"}
         </Link>
       </div>
     </div>

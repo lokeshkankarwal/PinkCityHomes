@@ -23,6 +23,9 @@ function getSmtpTransporter(): Transporter | null {
       host: env.smtpHost,
       port: env.smtpPort,
       secure: env.smtpSecure,
+      connectionTimeout: 8000,
+      greetingTimeout: 8000,
+      socketTimeout: 15000,
       auth: {
         user: env.smtpUser,
         pass: env.smtpPass,
@@ -128,42 +131,47 @@ export async function sendVerificationEmail(
   otp: string,
 ): Promise<{ success: boolean; messageId?: string; provider?: string }> {
   const masked = maskEmail(to);
-  const provider = (env.emailProvider === "resend" || env.emailProvider === "gmail")
-    ? env.emailProvider
-    : env.smtpUser && env.smtpPass
-      ? "gmail"
+  const isProduction = env.nodeEnv === "production";
+
+  const preferredProvider: "resend" | "gmail" = isProduction && env.emailApiKey
+    ? "resend"
+    : (env.emailProvider === "resend" || env.emailProvider === "gmail")
+      ? env.emailProvider
       : env.emailApiKey
         ? "resend"
-        : "gmail";
+        : env.smtpUser && env.smtpPass
+          ? "gmail"
+          : isProduction
+            ? "resend"
+            : "gmail";
 
-  console.log(`[EMAIL] Selected provider=${provider} — dispatching OTP to ${masked}...`);
+  console.log(`[EMAIL] Selected provider=${preferredProvider} (production=${isProduction}) — dispatching OTP to ${masked}...`);
 
-  if (provider === "gmail") {
+  if (preferredProvider === "resend") {
     try {
-      return await sendViaGmailSmtp(to, otp);
-    } catch (errGmail: any) {
-      console.warn(`[EMAIL WARN] Gmail SMTP failed for ${masked}: ${errGmail?.message || errGmail}`);
-      if (env.emailApiKey) {
-        console.warn(`[EMAIL WARN] Falling back to Resend for ${masked}...`);
-        return await sendViaResend(to, otp);
+      return await sendViaResend(to, otp);
+    } catch (errResend: any) {
+      console.warn(`[EMAIL WARN] Resend failed for ${masked}: ${errResend?.message || errResend}`);
+      if (env.smtpUser && env.smtpPass && !isProduction) {
+        console.warn(`[EMAIL WARN] Falling back to Gmail SMTP for ${masked}...`);
+        return await sendViaGmailSmtp(to, otp);
       }
-      throw errGmail instanceof HttpError
-        ? errGmail
+      throw errResend instanceof HttpError
+        ? errResend
         : new HttpError(502, "Unable to send verification email. Please try again.");
     }
   }
 
-  // Provider === "resend" (or any other string -> treat as resend)
   try {
-    return await sendViaResend(to, otp);
-  } catch (errResend: any) {
-    console.warn(`[EMAIL WARN] Resend failed for ${masked}: ${errResend?.message || errResend}`);
-    if (env.smtpUser && env.smtpPass) {
-      console.warn(`[EMAIL WARN] Falling back to Gmail SMTP for ${masked}...`);
-      return await sendViaGmailSmtp(to, otp);
+    return await sendViaGmailSmtp(to, otp);
+  } catch (errGmail: any) {
+    console.warn(`[EMAIL WARN] Gmail SMTP failed for ${masked}: ${errGmail?.message || errGmail}`);
+    if (env.emailApiKey) {
+      console.warn(`[EMAIL WARN] Falling back to Resend for ${masked}...`);
+      return await sendViaResend(to, otp);
     }
-    throw errResend instanceof HttpError
-      ? errResend
+    throw errGmail instanceof HttpError
+      ? errGmail
       : new HttpError(502, "Unable to send verification email. Please try again.");
   }
 }

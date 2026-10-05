@@ -153,7 +153,7 @@ export default function RegisterPage() {
               </span>
               Details
             </span>
-            <span className="text-slate-300">&rarr;</span>
+            <span className="text-slate-300">→</span>
             <span
               className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full ${
                 showOtp
@@ -253,7 +253,7 @@ export default function RegisterPage() {
               to="/login"
               className="block w-full rounded-2xl bg-navy py-3 text-center text-xs font-semibold text-white shadow-md hover:bg-navy-800 transition active:scale-95"
             >
-              Go to Partner Login &rarr;
+              Go to Partner Login →
             </Link>
           </div>
         ) : !showOtp ? (
@@ -358,7 +358,7 @@ export default function RegisterPage() {
                 ? "Submitting..."
                 : role === "SELLER"
                 ? "Submit Seller Application"
-                : "Continue to Email Verification &rarr;"}
+                : "Continue to Email Verification"}
             </button>
           </form>
         ) : (
