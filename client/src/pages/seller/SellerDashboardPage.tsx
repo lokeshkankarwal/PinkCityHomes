@@ -21,8 +21,8 @@ type Visit = {
   scheduledAt: string;
   status: string;
   notes?: string;
-  client: { name: string; phone: string };
-  property: { title: string; locality: string };
+  client?: { name: string; phone?: string } | null;
+  property?: { title?: string; locality?: string } | null;
 };
 
 type Interaction = {
@@ -30,8 +30,8 @@ type Interaction = {
   type: string;
   notes: string;
   timestamp: string;
-  client: { name: string };
-  property?: { title: string } | null;
+  client?: { name: string } | null;
+  property?: { title?: string } | null;
 };
 
 export default function SellerDashboardPage() {
@@ -249,12 +249,12 @@ export default function SellerDashboardPage() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="space-y-1">
                       <Link
-                        to={`/seller/clients?search=${encodeURIComponent(v.client.name)}`}
+                        to={`/seller/clients?search=${encodeURIComponent(v.client?.name || "")}`}
                         className="font-display font-bold text-sm text-ink hover:text-pink-600 transition"
                       >
-                        👤 {v.client.name}
+                        👤 {v.client?.name || "Client"}
                       </Link>
-                      {v.client.phone && (
+                      {v.client?.phone && (
                         <div className="flex items-center gap-2 pt-0.5">
                           <a
                             href={`tel:${v.client.phone}`}
@@ -273,7 +273,7 @@ export default function SellerDashboardPage() {
                         </div>
                       )}
                       <p className="text-xs text-slate-600 pt-0.5">
-                        🏡 {v.property.title} · <span className="capitalize">{v.property.locality}</span>
+                        🏡 {v.property?.title || "Property Visit"} {v.property?.locality ? <>· <span className="capitalize">{v.property.locality}</span></> : null}
                       </p>
                       {v.notes && <p className="text-xs text-slate-500 italic">"{v.notes}"</p>}
                     </div>
@@ -318,7 +318,7 @@ export default function SellerDashboardPage() {
               {recent.map((inter) => (
                 <Link
                   key={inter.id}
-                  to={`/seller/clients?search=${encodeURIComponent(inter.client.name)}`}
+                  to={`/seller/clients?search=${encodeURIComponent(inter.client?.name || "")}`}
                   className="block rounded-2xl border border-slate-100 bg-slate-50/70 p-4 hover:bg-white hover:border-pink-300 hover:shadow-sm transition space-y-1.5"
                 >
                   <div className="flex items-center justify-between">
@@ -331,7 +331,7 @@ export default function SellerDashboardPage() {
                   </div>
                   <div className="flex items-center justify-between">
                     <p className="font-display font-bold text-sm text-ink hover:text-pink-600 transition">
-                      👤 {inter.client.name}
+                      👤 {inter.client?.name || "Client"}
                     </p>
                     <span className="text-xs text-pink-600 font-bold">→</span>
                   </div>

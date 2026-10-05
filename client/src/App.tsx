@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import Layout from "./components/Layout";
+import { useAuth } from "./auth";
 
 // Public pages
 import HomePage from "./pages/public/HomePage";
@@ -30,11 +31,22 @@ import AdminUsersPage from "./pages/admin/AdminUsersPage";
 import AdminDisabledPage from "./pages/admin/AdminDisabledPage";
 import AdminAuditPage from "./pages/admin/AdminAuditPage";
 
+function HomeRoute() {
+  const { user, loading } = useAuth();
+  if (loading) return null;
+  if (user) {
+    if (user.role === "SUPERADMIN") return <Navigate to="/admin/dashboard" replace />;
+    if (user.role === "SELLER") return <Navigate to="/seller/dashboard" replace />;
+    return <Navigate to="/properties" replace />;
+  }
+  return <HomePage />;
+}
+
 export default function App() {
   return (
     <Routes>
       <Route path="/" element={<Layout />}>
-        <Route index element={<HomePage />} />
+        <Route index element={<HomeRoute />} />
         <Route path="properties" element={<PropertiesPage />} />
         <Route path="properties/:id" element={<PropertyDetailPage />} />
         <Route path="rentals" element={<RentalsPage />} />

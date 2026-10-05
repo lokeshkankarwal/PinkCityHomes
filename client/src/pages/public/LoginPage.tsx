@@ -37,7 +37,7 @@ export default function LoginPage() {
       } else if (res.user?.role === "SELLER") {
         navigate("/seller/dashboard");
       } else {
-        navigate("/");
+        navigate("/properties");
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Login failed. Please check your credentials.";

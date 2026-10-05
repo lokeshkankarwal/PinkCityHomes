@@ -859,7 +859,38 @@ export async function sellerDashboard(req: Request, res: Response) {
       medium: await prisma.client.findMany({ where: { sellerId, interestLevel: "MEDIUM" } }),
       low: await prisma.client.findMany({ where: { sellerId, interestLevel: "LOW" } }),
     },
-    upcomingVisits: upcoming,
-    recentInteractions: recent,
+    upcomingVisits: await (async () => {
+      const propMap = new Map(propDocs.map((p) => [p.propertyId, p]));
+      const missingPropIds = upcoming
+        .map((v) => v.propertyId)
+        .filter((id) => id && !propMap.has(id));
+      if (missingPropIds.length > 0) {
+        const extraProps = await col.find({ propertyId: { $in: missingPropIds } }).toArray();
+        for (const p of extraProps) {
+          propMap.set(p.propertyId, p);
+        }
+      }
+      return upcoming.map((v) => {
+        const p = propMap.get(v.propertyId);
+        return {
+          ...v,
+          client: v.client || { name: "Client", phone: "" },
+          property: p
+            ? { title: p.title || "Property", locality: p.locality || (p as any).city || "Jaipur" }
+            : { title: "Property Visit", locality: "Jaipur" },
+        };
+      });
+    })(),
+    recentInteractions: await (async () => {
+      const propMap = new Map(propDocs.map((p) => [p.propertyId, p]));
+      return recent.map((r) => {
+        const p = r.propertyId ? propMap.get(r.propertyId) : null;
+        return {
+          ...r,
+          client: r.client || { name: "Client", phone: "" },
+          property: p ? { title: p.title || "Property" } : null,
+        };
+      });
+    })(),
   });
 }

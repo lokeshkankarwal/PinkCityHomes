@@ -228,7 +228,7 @@ export default function Layout() {
           {/* Brand Logo */}
           <div className="flex items-center gap-3">
             <Link
-              to={isSuperAdmin ? "/admin/dashboard" : isSeller ? "/seller/dashboard" : "/"}
+              to={isSuperAdmin ? "/admin/dashboard" : isSeller ? "/seller/dashboard" : isCustomer ? "/properties" : "/"}
               className="flex items-center gap-2.5 group"
             >
               <div className="h-9 w-9 rounded-2xl bg-gradient-to-tr from-pink-600 via-rose-500 to-amber-500 flex items-center justify-center text-white font-display font-extrabold text-lg shadow-card group-hover:scale-105 transition-all duration-200">

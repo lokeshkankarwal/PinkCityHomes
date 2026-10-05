@@ -50,7 +50,7 @@ export default function RegisterPage() {
           await refresh();
         }
         toast.success(res.message || "Account created successfully! Welcome to PinkCityHomes.");
-        navigate("/");
+        navigate("/properties");
       }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Registration failed");
