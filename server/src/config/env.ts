@@ -20,18 +20,12 @@ export const env = {
     .filter(Boolean),
   superadminEmail: process.env.SUPERADMIN_EMAIL ?? "pinkcityhomes456@gmail.com",
   superadminPassword: process.env.SUPERADMIN_PASSWORD ?? "",
-  // Gmail SMTP (Nodemailer)
-  smtpHost: (process.env.SMTP_HOST || "smtp.gmail.com").trim(),
-  smtpPort: Number(process.env.SMTP_PORT || 465),
-  smtpUser: (process.env.SMTP_USER || "pinkcityhomes456@gmail.com").trim(),
-  smtpPass: (process.env.SMTP_PASS || "kpguoarrtbrdnhtm").replace(/\s+/g, ""),
-  smtpFrom: (process.env.SMTP_FROM || "PinkCityHomes <pinkcityhomes456@gmail.com>").trim(),
-  // Resend HTTPS API (Alternative)
+  // Resend HTTPS API (email delivery)
   emailApiKey: (process.env.RESEND_API_KEY || process.env.EMAIL_API_KEY || "").trim(),
   emailFrom: (
     process.env.EMAIL_FROM ||
     process.env.RESEND_FROM ||
-    "PinkCityHomes <pinkcityhomes456@gmail.com>"
+    "PinkCityHomes <onboarding@resend.dev>"
   ).trim(),
   emailVerificationUrl: (process.env.EMAIL_VERIFICATION_URL ?? "http://localhost:5173").replace(/\/+$/, ""),
   // MongoDB Geospatial Discovery

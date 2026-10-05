@@ -24,7 +24,6 @@ export default function RegisterPage() {
   const [otp, setOtp] = useState("");
   const [otpMsg, setOtpMsg] = useState<string | null>(null);
   const [verifying, setVerifying] = useState(false);
-  const [devOtp, setDevOtp] = useState<string | null>(null);
   const [resendCooldown, setResendCooldown] = useState(0);
 
   // Seller Submitted state (No OTP)
@@ -48,7 +47,6 @@ export default function RegisterPage() {
       const res = await api.post<{
         message: string;
         pendingApproval?: boolean;
-        devOtp?: string;
         emailDelivered?: boolean;
       }>("/auth/register", {
         name,
@@ -66,15 +64,13 @@ export default function RegisterPage() {
       } else {
         // Buyer registration: OTP verification flow right at registration time
         setShowOtp(true);
-        setOtp(res.devOtp || "");
-        setDevOtp(res.devOtp || null);
         setOtpMsg(res.message || "Please enter the 6-digit verification code sent to your email.");
         setResendCooldown(60);
 
         if (res.emailDelivered) {
           toast.success("Verification code sent to your email!");
-        } else if (res.devOtp) {
-          toast.info("Registration initiated! Development verification code provided.");
+        } else {
+          toast.info("Registration initiated! Please check your email for the verification code.");
         }
       }
     } catch (err: unknown) {
@@ -114,15 +110,11 @@ export default function RegisterPage() {
     setError(null);
 
     try {
-      const res = await api.post<{ message: string; devOtp?: string; emailDelivered?: boolean }>(
+      const res = await api.post<{ message: string; emailDelivered?: boolean }>(
         "/auth/resend-otp",
         { email: email.trim().toLowerCase() }
       );
       setOtpMsg(res.message || "A fresh 6-digit OTP has been dispatched.");
-      if (res.devOtp) {
-        setDevOtp(res.devOtp);
-        setOtp(res.devOtp);
-      }
       setResendCooldown(60);
       toast.info(res.message || "A fresh OTP has been sent to your email.");
     } catch (err: unknown) {
@@ -390,26 +382,6 @@ export default function RegisterPage() {
                 <span className="font-bold text-navy">{email}</span>.
               </p>
             </div>
-
-            {/* Quick-fill helper for development / test mode */}
-            {devOtp && (
-              <div className="rounded-2xl bg-amber-50 border border-amber-200 p-3.5 flex items-center justify-between text-xs text-amber-950">
-                <div className="space-y-0.5">
-                  <p className="font-bold text-[11px] uppercase tracking-wider text-amber-800">
-                    Test Mode Verification Code
-                  </p>
-                  <p className="font-mono text-base font-bold text-navy tracking-widest">{devOtp}</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setOtp(devOtp)}
-                  className="px-3 py-1.5 rounded-xl bg-amber-200/80 hover:bg-amber-300 text-amber-900 font-bold text-xs transition cursor-pointer"
-                >
-                  Auto Fill
-                </button>
-              </div>
-            )}
-
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1.5 text-center">
                 Enter 6-Digit Code

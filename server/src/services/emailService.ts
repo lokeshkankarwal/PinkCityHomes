@@ -1,29 +1,8 @@
-import nodemailer from "nodemailer";
-import type { Transporter } from "nodemailer";
 import { Resend } from "resend";
 import { env } from "../config/env.js";
 import { HttpError } from "../middleware/error.js";
 
-let gmailTransporter: Transporter | null = null;
 let resendClient: Resend | null = null;
-
-function getGmailTransporter(): Transporter | null {
-  if (gmailTransporter) return gmailTransporter;
-  if (env.smtpUser && env.smtpPass) {
-    gmailTransporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: env.smtpUser,
-        pass: env.smtpPass,
-      },
-      connectionTimeout: 10_000,
-      greetingTimeout: 10_000,
-      socketTimeout: 15_000,
-    });
-    return gmailTransporter;
-  }
-  return null;
-}
 
 function getResendClient(): Resend | null {
   if (resendClient) return resendClient;
@@ -69,32 +48,11 @@ export async function sendVerificationEmail(
   otp: string,
 ): Promise<{ success: boolean; messageId?: string; isDevFallback?: boolean; provider?: string }> {
   const masked = maskEmail(to);
-  const gmail = getGmailTransporter();
   const resend = getResendClient();
 
   console.log(`[EMAIL] Attempting to dispatch verification code to ${masked}...`);
 
-  // ── Strategy 1: Gmail SMTP via Nodemailer ──────────────────────────────
-  if (gmail) {
-    try {
-      console.log(`[EMAIL] Sending via Gmail SMTP (${env.smtpUser})...`);
-      const info = await gmail.sendMail({
-        from: env.smtpFrom,
-        to,
-        subject: "Your PinkCityHomes Verification Code",
-        text: `Your PinkCityHomes verification code is ${otp}. It expires in 15 minutes. Do not share this code with anyone.`,
-        html: getVerificationHtml(otp),
-      });
-
-      console.log(`[EMAIL] Verification email sent successfully via Gmail (messageId: ${info.messageId})`);
-      return { success: true, messageId: info.messageId, provider: "gmail" };
-    } catch (err: any) {
-      console.warn(`[EMAIL WARN] Gmail SMTP failed: ${err.message ?? "Unknown SMTP error"}`);
-      // Fall through to Resend or Dev Fallback
-    }
-  }
-
-  // ── Strategy 2: Resend HTTPS REST API ──────────────────────────────────
+  // ── Resend HTTPS REST API ────────────────────────────────────────────────
   if (resend) {
     try {
       console.log(`[EMAIL] Sending via Resend HTTPS API...`);
@@ -116,7 +74,7 @@ export async function sendVerificationEmail(
     }
   }
 
-  // ── Strategy 3: Development / Testing Fallback ─────────────────────────
+  // ── Development / Testing Fallback (non-production only) ────────────────
   if (env.nodeEnv !== "production") {
     console.log(`[EMAIL] Development mode: Simulated verification email to ${masked}.`);
     return { success: true, isDevFallback: true, provider: "dev" };
@@ -131,5 +89,5 @@ export async function sendVerificationEmail(
 export const sendOTPEmail = sendVerificationEmail;
 
 export function checkEmailServiceConfigured(): boolean {
-  return Boolean((env.smtpUser && env.smtpPass) || env.emailApiKey);
+  return Boolean(env.emailApiKey);
 }

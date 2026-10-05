@@ -88,12 +88,10 @@ async function main() {
   await initMongoPrisma();
   await seedSuperadmin();
   await syncExistingSellers();
-  if (env.smtpUser && env.smtpPass) {
-    console.log(`[EMAIL] Gmail SMTP ready (sender: ${env.smtpFrom})`);
-  } else if (env.emailApiKey) {
+  if (env.emailApiKey) {
     console.log(`[EMAIL] Resend HTTPS API ready (sender: ${env.emailFrom})`);
   } else {
-    console.log(`[EMAIL] No email credentials configured. Running in local development mode.`);
+    console.log(`[EMAIL] No Resend API key configured. Running in local development mode (emails simulated).`);
   }
 
   const app = createApp();

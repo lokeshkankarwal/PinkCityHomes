@@ -186,7 +186,7 @@ npm run build
 
 ## 9. Deployment Notes
 
-- **Backend**: Can be deployed to Render, Railway, Fly.io, or AWS ECS. Ensure environment variables (`MONGODB_URI`, `JWT_SECRET`, `SUPERADMIN_EMAIL`, `SUPERADMIN_PASSWORD`, `SMTP_*`) are set in the platform dashboard.
+- **Backend**: Can be deployed to Render, Railway, Fly.io, or AWS ECS. Ensure environment variables (`MONGODB_URI`, `JWT_SECRET`, `SUPERADMIN_EMAIL`, `SUPERADMIN_PASSWORD`, `EMAIL_API_KEY`, `EMAIL_FROM`) are set in the platform dashboard.
 - **Frontend**: Deployable to Vercel or Netlify. Set `VITE_API_URL` to point to the live backend domain.
 - **Database**: Compatible with any MongoDB 6+ instance (MongoDB Atlas, self-hosted mongod).
 

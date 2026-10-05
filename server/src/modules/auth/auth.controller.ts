@@ -108,7 +108,6 @@ export async function register(req: Request, res: Response) {
         role: "CUSTOMER",
         pendingApproval: false,
         emailDelivered: mailResult.emailDelivered,
-        devOtp: (env.nodeEnv !== "production" || !mailResult.emailDelivered) ? code : undefined,
       });
     }
 
@@ -169,7 +168,6 @@ export async function register(req: Request, res: Response) {
     role: "CUSTOMER",
     pendingApproval: false,
     emailDelivered: mailResult.emailDelivered,
-    devOtp: (env.nodeEnv !== "production" || !mailResult.emailDelivered) ? code : undefined,
   });
 }
 
@@ -280,7 +278,6 @@ export async function resendOtp(req: Request, res: Response) {
       ? "A fresh verification code has been dispatched to your email."
       : "A fresh verification code has been generated.",
     emailDelivered: mailResult.emailDelivered,
-    devOtp: (env.nodeEnv !== "production" || !mailResult.emailDelivered) ? code : undefined,
   });
 }
 

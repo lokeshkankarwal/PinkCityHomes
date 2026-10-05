@@ -193,8 +193,8 @@ async function main() {
     console.log("[Test 9] Testing Email API failure handling in production mode");
     const { sendVerificationEmail } = await import("../services/emailService.js");
     const origEnv = env.nodeEnv;
+    const origKey = env.emailApiKey;
     (env as any).nodeEnv = "production";
-    (env as any).smtpPass = "invalid_password";
     (env as any).emailApiKey = "re_invalid_test_key_for_failure_check";
     try {
       await sendVerificationEmail("failtest@example.com", "987654");
@@ -205,7 +205,7 @@ async function main() {
       console.log("✓ Email API failure returns 502 Bad Gateway cleanly without exposing secrets\n");
     } finally {
       (env as any).nodeEnv = origEnv;
-      (env as any).smtpPass = "kpguoarrtbrdnhtm";
+      (env as any).emailApiKey = origKey;
     }
 
     console.log("============================================================");
