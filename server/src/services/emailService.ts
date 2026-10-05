@@ -33,7 +33,7 @@ function getVerificationHtml(otp: string): string {
       <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:24px;text-align:center;margin:24px 0;">
         <span style="font-size:36px;font-weight:800;letter-spacing:10px;color:#0b1d35;font-family:monospace;">${otp}</span>
       </div>
-      <p style="color:#64748b;font-size:13px;line-height:1.5;">This code expires in <strong style="color:#0b1d35;">15 minutes</strong>. For your security, never share this code with anyone.</p>
+      <p style="color:#64748b;font-size:13px;line-height:1.5;">This code expires in <strong style="color:#0b1d35;">10 minutes</strong>. For your security, never share this code with anyone.</p>
       <div style="margin-top:28px;padding-top:20px;border-top:1px solid #f1f5f9;text-align:center;">
         <p style="color:#94a3b8;font-size:12px;margin:0;">
           If you did not request this verification, please safely ignore this email.
@@ -46,44 +46,41 @@ function getVerificationHtml(otp: string): string {
 export async function sendVerificationEmail(
   to: string,
   otp: string,
-): Promise<{ success: boolean; messageId?: string; isDevFallback?: boolean; provider?: string }> {
+): Promise<{ success: boolean; messageId?: string; provider?: string }> {
   const masked = maskEmail(to);
   const resend = getResendClient();
 
-  console.log(`[EMAIL] Attempting to dispatch verification code to ${masked}...`);
+  if (!resend) {
+    console.error(`[EMAIL ERROR] Resend API key not configured. Cannot send email to ${masked}.`);
+    throw new HttpError(502, "Unable to send verification email. Please try again.");
+  }
 
-  // ── Resend HTTPS REST API ────────────────────────────────────────────────
-  if (resend) {
-    try {
-      console.log(`[EMAIL] Sending via Resend HTTPS API...`);
-      const { data, error } = await resend.emails.send({
-        from: env.emailFrom,
-        to: [to],
-        subject: "Your PinkCityHomes Verification Code",
-        text: `Your PinkCityHomes verification code is ${otp}. It expires in 15 minutes. Do not share this code with anyone.`,
-        html: getVerificationHtml(otp),
-      });
+  console.log(`[EMAIL] Attempting to dispatch verification code to ${masked} via Resend HTTPS API...`);
 
-      if (!error && data?.id) {
-        console.log(`[EMAIL] Verification email sent successfully via Resend (id: ${data.id})`);
-        return { success: true, messageId: data.id, provider: "resend" };
-      }
-      console.warn(`[EMAIL WARN] Resend API failed: ${error?.message || "Unknown error"}`);
-    } catch (err: any) {
-      console.warn(`[EMAIL WARN] Resend API failed: ${err.message}`);
+  const recipientEmail = to;
+
+  try {
+    const { data, error } = await resend.emails.send({
+      from: env.emailFrom,
+      to: [recipientEmail],
+      subject: "PinkCityHomes - Email Verification OTP",
+      text: `Your PinkCityHomes verification code is ${otp}. It expires in 10 minutes. Do not share this code with anyone.`,
+      html: getVerificationHtml(otp),
+    });
+
+    if (!error && data?.id) {
+      console.log(`[EMAIL] Verification email sent successfully via Resend (id: ${data.id})`);
+      return { success: true, messageId: data.id, provider: "resend" };
     }
-  }
 
-  // ── Development / Testing Fallback (non-production only) ────────────────
-  if (env.nodeEnv !== "production") {
-    console.log(`[EMAIL] Development mode: Simulated verification email to ${masked}.`);
-    return { success: true, isDevFallback: true, provider: "dev" };
+    const errorMsg = error?.message || "Unknown Resend API error";
+    console.error(`[EMAIL ERROR] Resend API rejected request: ${errorMsg}`);
+    throw new HttpError(502, "Unable to send verification email. Please try again.");
+  } catch (err: any) {
+    if (err instanceof HttpError) throw err;
+    console.error(`[EMAIL ERROR] Resend API exception: ${err?.message || err}`);
+    throw new HttpError(502, "Unable to send verification email. Please try again.");
   }
-
-  throw new HttpError(
-    502,
-    "Unable to deliver verification email. Please check your email settings or try again.",
-  );
 }
 
 export const sendOTPEmail = sendVerificationEmail;

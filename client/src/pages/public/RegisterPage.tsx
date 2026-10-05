@@ -47,7 +47,6 @@ export default function RegisterPage() {
       const res = await api.post<{
         message: string;
         pendingApproval?: boolean;
-        emailDelivered?: boolean;
       }>("/auth/register", {
         name,
         email: email.trim().toLowerCase(),
@@ -58,20 +57,13 @@ export default function RegisterPage() {
       });
 
       if (role === "SELLER" || res.pendingApproval) {
-        // Seller registration: No OTP. Immediately shows approval pending state.
         setSellerSubmitted(true);
         toast.success("Seller application submitted for Superadmin review!");
       } else {
-        // Buyer registration: OTP verification flow right at registration time
         setShowOtp(true);
         setOtpMsg(res.message || "Please enter the 6-digit verification code sent to your email.");
         setResendCooldown(60);
-
-        if (res.emailDelivered) {
-          toast.success("Verification code sent to your email!");
-        } else {
-          toast.info("Registration initiated! Please check your email for the verification code.");
-        }
+        toast.success(res.message || "Verification code sent to your email!");
       }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Registration failed");
@@ -110,13 +102,13 @@ export default function RegisterPage() {
     setError(null);
 
     try {
-      const res = await api.post<{ message: string; emailDelivered?: boolean }>(
+      const res = await api.post<{ message: string }>(
         "/auth/resend-otp",
         { email: email.trim().toLowerCase() }
       );
       setOtpMsg(res.message || "A fresh 6-digit OTP has been dispatched.");
       setResendCooldown(60);
-      toast.info(res.message || "A fresh OTP has been sent to your email.");
+      toast.success(res.message || "Verification code sent to your email.");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to resend OTP");
     }
