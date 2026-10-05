@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { api, setStoredToken } from "../../api/client";
 import { useAuth } from "../../auth";
@@ -19,24 +19,7 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // OTP Verification state (User/Buyer only)
-  const [showOtp, setShowOtp] = useState(false);
-  const [otp, setOtp] = useState("");
-  const [otpMsg, setOtpMsg] = useState<string | null>(null);
-  const [verifying, setVerifying] = useState(false);
-  const [resendCooldown, setResendCooldown] = useState(0);
-
-  // Seller Submitted state (No OTP)
   const [sellerSubmitted, setSellerSubmitted] = useState(false);
-
-  // Cooldown countdown effect
-  useEffect(() => {
-    if (resendCooldown <= 0) return;
-    const timer = setInterval(() => {
-      setResendCooldown((c) => Math.max(0, c - 1));
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [resendCooldown]);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,7 +30,8 @@ export default function RegisterPage() {
       const res = await api.post<{
         message: string;
         pendingApproval?: boolean;
-        emailWarning?: string;
+        token?: string;
+        user?: any;
       }>("/auth/register", {
         name,
         email: email.trim().toLowerCase(),
@@ -61,14 +45,12 @@ export default function RegisterPage() {
         setSellerSubmitted(true);
         toast.success("Seller application submitted for Superadmin review!");
       } else {
-        setShowOtp(true);
-        setOtpMsg(res.message || "Please enter the 6-digit verification code sent to your email.");
-        setResendCooldown(60);
-        toast.success(res.message || "Verification code sent to your email!");
-        if (res.emailWarning) {
-          setOtpMsg(res.emailWarning);
-          toast.info(res.emailWarning, { duration: 6000 });
+        if (res.token) {
+          setStoredToken(res.token);
+          await refresh();
         }
+        toast.success(res.message || "Account created successfully! Welcome to PinkCityHomes.");
+        navigate("/");
       }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Registration failed");
@@ -77,113 +59,24 @@ export default function RegisterPage() {
     }
   };
 
-  const handleVerifyOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setVerifying(true);
-    setError(null);
-
-    try {
-      const res = await api.post<{ message: string; token?: string; user?: any }>("/auth/verify", {
-        email: email.trim().toLowerCase(),
-        otp: otp.trim(),
-      });
-
-      if (res.token) {
-        setStoredToken(res.token);
-        await refresh();
-      }
-
-      toast.success(res.message || "Account verified successfully! Welcome to PinkCityHomes.");
-      navigate("/");
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Verification failed");
-    } finally {
-      setVerifying(false);
-    }
-  };
-
-  const handleResendOtp = async () => {
-    if (resendCooldown > 0) return;
-    setError(null);
-
-    try {
-      const res = await api.post<{ message: string; emailWarning?: string }>(
-        "/auth/resend-otp",
-        { email: email.trim().toLowerCase() }
-      );
-      const nextMsg = res.emailWarning || res.message || "A fresh 6-digit OTP has been dispatched.";
-      setOtpMsg(nextMsg);
-      setResendCooldown(60);
-      toast.success(res.message || "Verification code sent to your email.");
-      if (res.emailWarning) {
-        toast.info(res.emailWarning, { duration: 6000 });
-      }
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to resend OTP");
-    }
-  };
-
   return (
     <div className="mx-auto max-w-lg py-8 md:py-14 px-4 animate-fade-in">
       <div className="rounded-4xl border border-slate-200/80 bg-white p-7 sm:p-10 shadow-card-hover space-y-6">
-        {/* Brand header */}
         <div className="text-center space-y-2">
           <div className="inline-flex h-12 w-12 rounded-2xl bg-gradient-to-tr from-pink-600 via-rose-500 to-amber-500 items-center justify-center text-white font-display font-bold text-xl shadow-md mx-auto">
             P
           </div>
           <h1 className="font-display text-2xl sm:text-3xl font-bold text-navy">
-            {showOtp ? (
-              <>Verify Your <span className="text-pink-600">Email</span></>
-            ) : (
-              <>Create an <span className="text-pink-600">Account</span></>
-            )}
+            Create an <span className="text-pink-600">Account</span>
           </h1>
           <p className="text-xs text-slate-500">
-            {showOtp
-              ? "Complete verification to activate your buyer account immediately"
-              : role === "SELLER"
+            {role === "SELLER"
               ? "Apply to become a verified property seller or agency in Jaipur"
               : "Discover homes, schedule viewings, and save favorites in Jaipur"}
           </p>
         </div>
 
-        {/* Step Indicator (Only for Customer) */}
-        {!sellerSubmitted && role === "CUSTOMER" && (
-          <div className="flex items-center justify-center gap-2 pt-1 pb-2">
-            <span
-              className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full ${
-                !showOtp
-                  ? "bg-pink-100 text-pink-700 border border-pink-200"
-                  : "bg-slate-100 text-slate-500"
-              }`}
-            >
-              <span className="w-4 h-4 rounded-full bg-pink-600 text-white text-[10px] inline-flex items-center justify-center">
-                1
-              </span>
-              Details
-            </span>
-            <span className="text-slate-300">→</span>
-            <span
-              className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full ${
-                showOtp
-                  ? "bg-pink-100 text-pink-700 border border-pink-200"
-                  : "bg-slate-100 text-slate-400"
-              }`}
-            >
-              <span
-                className={`w-4 h-4 rounded-full text-[10px] inline-flex items-center justify-center ${
-                  showOtp ? "bg-pink-600 text-white" : "bg-slate-300 text-slate-600"
-                }`}
-              >
-                2
-              </span>
-              Verify OTP
-            </span>
-          </div>
-        )}
-
-        {/* Role Selector Tabs (Step 1 only) */}
-        {!showOtp && !sellerSubmitted && (
+        {!sellerSubmitted && (
           <div className="space-y-2">
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-600">
               Register as
@@ -233,7 +126,6 @@ export default function RegisterPage() {
         )}
 
         {sellerSubmitted ? (
-          /* Seller Application Submitted State (NO OTP) */
           <div className="space-y-6 text-center py-4">
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-emerald-50 text-3xl shadow-sm border border-emerald-100">
               🏢
@@ -265,18 +157,8 @@ export default function RegisterPage() {
               Go to Partner Login →
             </Link>
           </div>
-        ) : !showOtp ? (
-          /* Step 1: Registration Form */
+        ) : (
           <form onSubmit={handleRegister} className="space-y-4">
-            {role === "SELLER" && (
-              <div className="rounded-2xl bg-amber-50/80 border border-amber-200/80 p-3.5 text-xs text-amber-900">
-                <p className="font-bold">ℹ️ No OTP Verification Required</p>
-                <p className="text-amber-800 text-[11px] mt-0.5">
-                  Seller applications go directly to Superadmin for regulatory vetting.
-                </p>
-              </div>
-            )}
-
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                 {role === "SELLER" ? "Contact Person Full Name" : "Full Name"}
@@ -336,7 +218,7 @@ export default function RegisterPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword((p) => !p)}
-                  className="text-[11px] font-semibold text-pink-600 hover:underline"
+                  className="text-[11px] font-semibold text-pink-600 hover:underline cursor-pointer"
                 >
                   {showPassword ? "Hide" : "Show"}
                 </button>
@@ -367,80 +249,12 @@ export default function RegisterPage() {
                 ? "Submitting..."
                 : role === "SELLER"
                 ? "Submit Seller Application"
-                : "Continue to Email Verification"}
+                : "Create Account & Start Browsing"}
             </button>
-          </form>
-        ) : (
-          /* Step 2: OTP Verification Form (Instant at Registration Time!) */
-          <form onSubmit={handleVerifyOtp} className="space-y-4">
-            <div className="rounded-3xl bg-pink-50/60 p-5 border border-pink-100 text-xs text-slate-700 space-y-1.5">
-              <p className="font-bold text-navy text-sm flex items-center gap-1.5">
-                <span>✉️</span>
-                <span>Enter Verification Code</span>
-              </p>
-              <p className="text-slate-600 leading-relaxed">
-                {otpMsg || "A 6-digit code has been issued for"}{" "}
-                <span className="font-bold text-navy">{email}</span>.
-              </p>
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1.5 text-center">
-                Enter 6-Digit Code
-              </label>
-              <input
-                type="text"
-                autoFocus
-                required
-                maxLength={6}
-                placeholder="123456"
-                value={otp}
-                onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
-                className="w-full rounded-2xl border-2 border-pink-200 px-4 py-3.5 text-center font-mono text-2xl font-bold tracking-[0.35em] text-navy bg-white focus:outline-none focus:border-pink-500 focus:ring-4 focus:ring-pink-100 transition shadow-xs"
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={verifying || otp.length < 4}
-              className="w-full rounded-2xl bg-navy py-3.5 font-semibold text-sm text-white shadow-md hover:bg-navy-800 transition active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
-            >
-              {verifying && (
-                <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-              )}
-              {verifying ? "Verifying..." : "Verify & Complete Registration"}
-            </button>
-
-            <div className="flex items-center justify-between text-xs pt-2">
-              <button
-                type="button"
-                disabled={resendCooldown > 0}
-                onClick={handleResendOtp}
-                className={`font-semibold transition cursor-pointer ${
-                  resendCooldown > 0
-                    ? "text-slate-400 cursor-not-allowed"
-                    : "text-pink-600 hover:underline"
-                }`}
-              >
-                {resendCooldown > 0 ? `Resend Code in ${resendCooldown}s` : "Resend Code"}
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowOtp(false);
-                  setError(null);
-                }}
-                className="text-slate-500 hover:text-navy transition cursor-pointer underline"
-              >
-                Edit Information
-              </button>
-            </div>
           </form>
         )}
 
-        {!sellerSubmitted && !showOtp && (
+        {!sellerSubmitted && (
           <div className="text-center text-xs text-slate-500 pt-3 border-t border-slate-100">
             Already registered?{" "}
             <Link to="/login" className="font-bold text-pink-600 underline">

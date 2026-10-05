@@ -120,23 +120,31 @@ export async function register(req: Request, res: Response) {
   if (existing) {
     if (existing.role === "CUSTOMER" && !existing.emailVerifiedAt) {
       const passwordHash = await bcrypt.hash(body.password, 12);
-      await prisma.user.update({
+      const updatedUser = await prisma.user.update({
         where: { id: existing.id },
         data: {
           name: body.name || existing.name,
           phone: body.phone || existing.phone,
           passwordHash,
+          emailVerifiedAt: new Date(),
         },
       });
 
-      const { warning } = await issueVerification(existing.id, cleanEmail);
+      const token = signToken({
+        id: updatedUser.id,
+        email: updatedUser.email,
+        role: updatedUser.role,
+        name: updatedUser.name,
+      });
+      res.cookie("token", token, cookieOpts());
 
       return res.status(200).json({
-        message: "Verification code sent to your email.",
+        message: "Account created and activated successfully! Welcome to PinkCityHomes.",
         email: cleanEmail,
         role: "CUSTOMER",
         pendingApproval: false,
-        emailWarning: warning || undefined,
+        token,
+        user: publicUser(updatedUser),
       });
     }
 
@@ -181,18 +189,25 @@ export async function register(req: Request, res: Response) {
       name: body.name,
       phone: body.phone,
       role: "CUSTOMER",
-      emailVerifiedAt: null,
+      emailVerifiedAt: new Date(),
     },
   });
 
-  const { warning } = await issueVerification(user.id, user.email);
+  const token = signToken({
+    id: user.id,
+    email: user.email,
+    role: user.role,
+    name: user.name,
+  });
+  res.cookie("token", token, cookieOpts());
 
   res.status(201).json({
-    message: "Verification code sent to your email.",
+    message: "Account created successfully! Welcome to PinkCityHomes.",
     email: user.email,
     role: "CUSTOMER",
     pendingApproval: false,
-    emailWarning: warning || undefined,
+    token,
+    user: publicUser(user),
   });
 }
 
@@ -329,12 +344,6 @@ export async function login(req: Request, res: Response) {
 
   if ((user as any).isDisabled) {
     throw new HttpError(403, "Your account has been disabled by PinkCityHomes administration.");
-  }
-
-  if (user.role === "CUSTOMER") {
-    if (!user.emailVerifiedAt) {
-      throw new HttpError(403, "Please verify your email before logging in.");
-    }
   }
 
   if (user.role === "SELLER") {
