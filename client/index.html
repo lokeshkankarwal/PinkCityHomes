@@ -39,6 +39,17 @@
         rel="stylesheet"
       />
     </noscript>
+
+    <!-- SPA route restoration for static hosts (Render, GitHub Pages) -->
+    <script>
+      (function() {
+        var path = sessionStorage.getItem("spa_fallback_path");
+        if (path) {
+          sessionStorage.removeItem("spa_fallback_path");
+          window.history.replaceState(null, null, path);
+        }
+      })();
+    </script>
   </head>
   <body class="bg-sand text-ink">
     <div id="root"></div>
