@@ -332,13 +332,23 @@ export async function login(req: Request, res: Response) {
   const ok = await bcrypt.compare(body.password, user.passwordHash);
   if (!ok) throw new HttpError(401, "Invalid email or password");
 
-  if (requestedRoleRaw === "CUSTOMER" || requestedRoleRaw === "BUYER" || requestedRoleRaw === "USER") {
+  if (requestedRoleRaw === "SUPERADMIN" || requestedRoleRaw === "ADMIN") {
+    if (user.role !== "SUPERADMIN") {
+      throw new HttpError(403, "This account does not have Super Admin privileges.");
+    }
+  } else if (requestedRoleRaw === "CUSTOMER" || requestedRoleRaw === "BUYER" || requestedRoleRaw === "USER") {
     if (user.role === "SELLER") {
       throw new HttpError(403, "This account is registered as a Seller. Please use Seller Login.");
+    }
+    if (user.role === "SUPERADMIN") {
+      throw new HttpError(403, "This is a Super Admin account. Please use Super Admin Login.");
     }
   } else if (requestedRoleRaw === "SELLER" || requestedRoleRaw === "AGENCY") {
     if (user.role === "CUSTOMER") {
       throw new HttpError(403, "This account is registered as a User. Please use User Login.");
+    }
+    if (user.role === "SUPERADMIN") {
+      throw new HttpError(403, "This is a Super Admin account. Please use Super Admin Login.");
     }
   }
 

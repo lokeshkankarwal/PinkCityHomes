@@ -8,7 +8,7 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const { refresh } = useAuth();
 
-  const [loginAs, setLoginAs] = useState<"CUSTOMER" | "SELLER">("CUSTOMER");
+  const [loginAs, setLoginAs] = useState<"CUSTOMER" | "SELLER" | "SUPERADMIN">("CUSTOMER");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -66,21 +66,21 @@ export default function LoginPage() {
           <label className="block text-[12px] font-bold uppercase tracking-wider text-slate-600 leading-snug">
             Login as
           </label>
-          <div className="grid grid-cols-2 gap-2.5">
+          <div className="grid grid-cols-3 gap-2 sm:gap-2.5">
             <button
               type="button"
               onClick={() => {
                 setLoginAs("CUSTOMER");
                 setError(null);
               }}
-              className={`flex flex-col items-center justify-center gap-1.5 rounded-2xl border p-3.5 text-[12px] font-bold transition-all active:scale-95 ${
+              className={`flex flex-col items-center justify-center gap-1.5 rounded-2xl border p-3 text-[11px] sm:text-[12px] font-bold transition-all active:scale-95 ${
                 loginAs === "CUSTOMER"
                   ? "border-pink-600 bg-pink-50/70 text-pink-700 shadow-sm"
                   : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-ink"
               }`}
             >
               <span className="text-xl">👤</span>
-              <span>User / Buyer</span>
+              <span className="truncate max-w-full">User / Buyer</span>
             </button>
             <button
               type="button"
@@ -88,14 +88,29 @@ export default function LoginPage() {
                 setLoginAs("SELLER");
                 setError(null);
               }}
-              className={`flex flex-col items-center justify-center gap-1.5 rounded-2xl border p-3.5 text-[12px] font-bold transition-all active:scale-95 ${
+              className={`flex flex-col items-center justify-center gap-1.5 rounded-2xl border p-3 text-[11px] sm:text-[12px] font-bold transition-all active:scale-95 ${
                 loginAs === "SELLER"
                   ? "border-pink-600 bg-pink-50/70 text-pink-700 shadow-sm"
                   : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-ink"
               }`}
             >
               <span className="text-xl">🏢</span>
-              <span>Seller / Agency</span>
+              <span className="truncate max-w-full">Seller / Agency</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setLoginAs("SUPERADMIN");
+                setError(null);
+              }}
+              className={`flex flex-col items-center justify-center gap-1.5 rounded-2xl border p-3 text-[11px] sm:text-[12px] font-bold transition-all active:scale-95 ${
+                loginAs === "SUPERADMIN"
+                  ? "border-pink-600 bg-pink-50/70 text-pink-700 shadow-sm"
+                  : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-ink"
+              }`}
+            >
+              <span className="text-xl">🛡️</span>
+              <span className="truncate max-w-full">Super Admin</span>
             </button>
           </div>
         </div>
@@ -127,6 +142,18 @@ export default function LoginPage() {
                 Switch to User Login →
               </button>
             )}
+            {error.includes("Super Admin") && (
+              <button
+                type="button"
+                onClick={() => {
+                  setLoginAs("SUPERADMIN");
+                  setError(null);
+                }}
+                className="block text-[12px] font-bold text-rose-900 underline hover:text-rose-950 cursor-pointer"
+              >
+                Switch to Super Admin Login →
+              </button>
+            )}
           </div>
         )}
 
@@ -141,7 +168,13 @@ export default function LoginPage() {
               autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder={loginAs === "SELLER" ? "seller@agency.com" : "you@example.com"}
+              placeholder={
+                loginAs === "SUPERADMIN"
+                  ? "admin@pinkcityhomes.com"
+                  : loginAs === "SELLER"
+                  ? "seller@agency.com"
+                  : "you@example.com"
+              }
               className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-pink-500 transition shadow-xs"
             />
           </div>
@@ -180,14 +213,31 @@ export default function LoginPage() {
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
             )}
-            {loading ? "Signing in..." : `Sign In as ${loginAs === "SELLER" ? "Seller" : "User"}`}
+            {loading
+              ? "Signing in..."
+              : `Sign In as ${
+                  loginAs === "SUPERADMIN"
+                    ? "Super Admin"
+                    : loginAs === "SELLER"
+                    ? "Seller"
+                    : "User"
+                }`}
           </button>
         </form>
 
-        {loginAs === "SELLER" ? (
+        {loginAs === "SUPERADMIN" ? (
+          <div className="rounded-[1.25rem] bg-slate-100/90 border border-slate-200/80 p-4 text-[12px] text-slate-800 space-y-1 leading-snug">
+            <p className="font-bold flex items-center gap-1.5 text-ink">
+              <span>🛡️</span> Super Admin Access
+            </p>
+            <p className="text-slate-600 leading-snug label-ui">
+              Restricted portal for platform administrators: verify sellers, audit system logs, and manage properties across Jaipur.
+            </p>
+          </div>
+        ) : loginAs === "SELLER" ? (
           <div className="rounded-[1.25rem] bg-amber-50/80 border border-amber-200/80 p-4 text-[12px] text-amber-950 space-y-1 leading-snug">
             <p className="font-bold flex items-center gap-1.5">
-              <span>🛡️</span> Partner &amp; Agency Access
+              <span>🏢</span> Partner &amp; Agency Access
             </p>
             <p className="text-amber-800 leading-snug label-ui">
               Seller accounts must be approved by PinkCityHomes administration before logging in. If you have already applied, our team reviews each application within 24 hours.
